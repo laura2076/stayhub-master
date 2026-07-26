@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="stylesheet" href="ds-industry.css"><style>*{box-sizing:border-box}body{margin:0;font-family:var(--font-body),"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-heading),"Apple SD Gothic Neo","Malgun Gothic",sans-serif}a{color:var(--color-accent);text-decoration:none}a:hover{color:var(--color-accent-800)}input,select,button,textarea{font-family:inherit}::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--color-neutral-400);border:3px solid var(--color-bg)}@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes fin{from{opacity:0}to{opacity:1}}</style></helmet>
+
+<div style="min-width:1440px;height:100vh;display:flex;flex-direction:column;overflow:hidden;background:var(--color-bg)">
+
+  <div style="height:48px;flex:none;display:flex;align-items:center;gap:16px;padding:0 18px;background:var(--color-accent-900);color:var(--color-bg)">
+    <div style="display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:0;background:var(--color-accent-400)"></div><span style="font-size:13px;font-weight:700;letter-spacing:-0.2px">STAYHUB 마스터</span></div>
+    <div style="width:1px;height:18px;background:rgba(255,255,255,.16)"></div>
+    <div style="display:flex;gap:2px;font-size:12.5px">
+      <span style="padding:5px 10px;border-radius:0;background:rgba(255,255,255,.13);font-weight:600">숙소·객실</span>
+      <span style="padding:5px 10px;border-radius:0;color:rgba(255,255,255,.55)">요금·재고</span>
+      <span style="padding:5px 10px;border-radius:0;color:rgba(255,255,255,.55)">채널 연동</span>
+      <span style="padding:5px 10px;border-radius:0;color:rgba(255,255,255,.55)">예약</span>
+      <span style="padding:5px 10px;border-radius:0;color:rgba(255,255,255,.55)">정산</span>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:11.5px;color:rgba(255,255,255,.55)">
+      <span>연동 대기 3건</span><span style="width:1px;height:12px;background:rgba(255,255,255,.16)"></span><span>운영팀 · 김지현</span>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:274px;flex:none;background:var(--color-surface);border-right:1px solid var(--color-divider);display:flex;flex-direction:column;min-height:0">
+      <div style="padding:12px 12px 10px;border-bottom:1px solid var(--color-divider)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px"><span style="font-size:11px;font-weight:700;color:var(--color-neutral-700);letter-spacing:.04em">숙소 1,000</span><span style="font-size:10.5px;color:var(--color-neutral-500)">검수 필요 12</span></div>
+        <input class="input" value="{{ q }}" onChange="{{ onQ }}" placeholder="숙소명 · 숙소코드 검색" style="min-height:31px;font-size:13px"/>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:6px">
+        <sc-for list="{{ pensions }}" as="p" hint-placeholder-count="8">
+          <sc-if value="{{ p.active }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:9px 10px;border-radius:0;background:var(--color-accent-100);border:1px solid var(--color-accent-300);margin-bottom:3px;cursor:pointer">
+              <div style="font-size:12.5px;font-weight:700;color:var(--color-accent-800)">{{ p.name }}</div>
+              <div style="margin-top:3px;font-size:10.5px;color:var(--color-accent-700)">{{ p.meta }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ p.inactive }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:9px 10px;border-radius:0;margin-bottom:3px;cursor:pointer" style-hover="background:var(--color-neutral-200)">
+              <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12.5px;font-weight:500;color:var(--color-neutral-800)">{{ p.name }}</span><sc-if value="{{ p.warn }}" hint-placeholder-val="{{ false }}"><span style="width:5px;height:5px;border-radius:50%;background:var(--color-accent)"></span></sc-if></div>
+              <div style="margin-top:3px;font-size:10.5px;color:var(--color-neutral-500)">{{ p.meta }}</div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div style="flex:none;padding:10px 12px;border-top:1px solid var(--color-divider);font-size:10.5px;color:var(--color-neutral-500);line-height:1.5">이 프로토타입은 <b style="color:var(--color-neutral-700)">속초 더샵 스파 펜션</b> 실제 스냅샷 1건만 데이터가 채워져 있습니다.</div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0">
+
+      <div style="flex:none;background:var(--color-bg);border-bottom:1px solid var(--color-divider);padding:13px 20px 0">
+        <div style="display:flex;align-items:flex-start;gap:14px">
+          <div style="min-width:0">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:10.5px;font-family:ui-monospace,Menlo,monospace;color:var(--color-neutral-700);background:var(--color-neutral-200);padding:2px 6px;border-radius:0">2656</span>
+              <span style="font-family:var(--font-heading);font-size:24px;font-weight:600;letter-spacing:-0.01em">속초 더샵 스파 펜션</span>
+              <span style="font-size:10.5px;font-weight:700;color:var(--color-accent-700);background:var(--color-accent-100);padding:3px 7px;border-radius:0">판매중</span>
+            </div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--color-neutral-700);flex-wrap:wrap">
+              <span>강원 속초시 장사항해안길 21</span><span style="color:var(--color-neutral-300)">·</span><span>28객실</span><span style="color:var(--color-neutral-300)">·</span><span>바다전망</span><span style="color:var(--color-neutral-300)">·</span><span>스파 전객실</span><span style="color:var(--color-neutral-300)">·</span><span>공용수영장(냉수)</span>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="text-align:right;margin-right:4px"><div style="font-size:10.5px;color:var(--color-neutral-500)">마지막 저장</div><div style="font-size:11.5px;font-weight:600;color:var(--color-neutral-700)">{{ savedAt }}</div></div>
+            <button class="btn btn-secondary" onClick="{{ goChannels }}" style="height:32px">연결 관계 보기</button>
+            <button class="btn btn-primary" style="height:32px">채널 전송</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:2px;margin-top:14px">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+            <sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ t.go }}" style="padding:8px 13px;font-size:12.5px;font-weight:700;color:var(--color-accent-900);border-bottom:2px solid var(--color-accent-900);cursor:pointer;display:flex;align-items:center;gap:6px">{{ t.label }}<span style="font-size:10.5px;font-weight:600;color:var(--color-neutral-700);background:var(--color-neutral-200);padding:1px 5px;border-radius:0">{{ t.count }}</span></div>
+            </sc-if>
+            <sc-if value="{{ t.off }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ t.go }}" style="padding:8px 13px;font-size:12.5px;font-weight:500;color:var(--color-neutral-600);border-bottom:2px solid transparent;cursor:pointer;display:flex;align-items:center;gap:6px" style-hover="color:var(--color-accent-900)">{{ t.label }}<span style="font-size:10.5px;color:var(--color-neutral-500)">{{ t.count }}</span></div>
+            </sc-if>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;min-height:0">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+
+          <sc-if value="{{ isRooms }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:none;display:flex;align-items:center;gap:10px;padding:9px 20px;background:var(--color-surface);border-bottom:1px solid var(--color-divider)">
+              <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--color-neutral-700)">
+                <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:3px;height:11px;background:var(--color-accent);border-radius:2px"></span>객실 오버라이드 {{ ovCount }}</span>
+                <span style="color:var(--color-neutral-300)">|</span>
+                <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:11px;height:0;border-top:1px dashed var(--color-neutral-400)"></span>숙소 기본값 상속</span>
+              </div>
+              <div style="flex:1"></div>
+              <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:8px;animation:fin .16s ease">
+                  <span style="font-size:12px;font-weight:700;color:var(--color-accent-800)">{{ selCount }}객실 선택</span>
+                  <button class="btn btn-primary" onClick="{{ openBulk }}" style="height:29px;font-size:13px">일괄 편집</button>
+                  <button class="btn btn-secondary" onClick="{{ previewDelete }}" style="height:29px;font-size:13px">객실 삭제</button>
+                  <button class="btn btn-secondary" onClick="{{ clearSel }}" style="height:29px;font-size:13px">해제</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:11px;color:var(--color-neutral-500)">행을 선택하면 일괄 편집</span>
+                  <button class="btn btn-secondary" onClick="{{ openNewRoom }}" style="height:29px;font-size:13px">+ 객실 추가</button>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="flex:1;overflow:auto;background:var(--color-bg)">
+              <div style="min-width:1290px">
+                <div style="display:grid;grid-template-columns:36px 214px 104px 100px 170px 186px 122px 148px 132px 78px;position:sticky;top:0;z-index:2;background:var(--color-surface);border-bottom:1px solid var(--color-divider)">
+                  <div style="padding:8px 0 8px 13px"><input type="checkbox" checked="{{ allSel }}" onChange="{{ toggleAll }}" style="cursor:pointer"/></div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700);border-right:1px solid var(--color-divider)">객실</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">기준/최대</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">추가인원</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">바베큐</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">바베큐 요금</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">스파</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">구조 / 침구</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">객실내 시설</div>
+                  <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">채널</div>
+                </div>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+                  <div style="display:grid;grid-template-columns:36px 214px 104px 100px 170px 186px 122px 148px 132px 78px;border-bottom:1px solid var(--color-divider);font-size:12px" style-hover="background:var(--color-surface)">
+                    <div style="padding:8px 0 0 13px"><input type="checkbox" checked="{{ r.sel }}" onChange="{{ r.toggle }}" style="cursor:pointer"/></div>
+                    <div style="padding:7px 12px;border-right:1px solid var(--color-divider);min-width:0">
+                      <div style="display:flex;align-items:center;gap:7px">
+                        <span style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--color-neutral-500)">{{ r.code }}</span>
+                        <span style="font-weight:700">{{ r.short }}</span>
+                      </div>
+                      <div style="margin-top:2px;font-size:10.5px;color:var(--color-neutral-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.tag }} · {{ r.area }}</div>
+                    </div>
+                    <div style="padding:7px 12px">
+                      <sc-if value="{{ r.paxOv }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-weight:700"><span style="width:3px;height:12px;background:var(--color-accent);border-radius:2px"></span>{{ r.pax }}</span></sc-if>
+                      <sc-if value="{{ r.paxInh }}" hint-placeholder-val="{{ true }}"><span style="color:var(--color-neutral-600);border-bottom:1px dashed var(--color-neutral-300)">{{ r.pax }}</span></sc-if>
+                      <sc-if value="{{ r.ghostPax }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;color:var(--color-neutral-400);margin-top:2px">숙소 {{ r.paxBase }}</div></sc-if>
+                    </div>
+                    <div style="padding:7px 12px">
+                      <sc-if value="{{ r.extraOv }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-weight:700"><span style="width:3px;height:12px;background:var(--color-accent);border-radius:2px"></span>{{ r.extra }}</span></sc-if>
+                      <sc-if value="{{ r.extraInh }}" hint-placeholder-val="{{ true }}"><span style="color:var(--color-neutral-600);border-bottom:1px dashed var(--color-neutral-300)">{{ r.extra }}</span></sc-if>
+                    </div>
+                    <div onClick="{{ r.editBbq }}" style="padding:7px 12px;cursor:pointer" style-hover="background:var(--color-accent-100)">
+                      <sc-if value="{{ r.bbqOv }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-weight:700"><span style="width:3px;height:12px;background:var(--color-accent);border-radius:2px"></span>{{ r.bbq }}</span></sc-if>
+                      <sc-if value="{{ r.bbqInh }}" hint-placeholder-val="{{ true }}"><span style="color:var(--color-neutral-600);border-bottom:1px dashed var(--color-neutral-300)">{{ r.bbq }}</span></sc-if>
+                      <sc-if value="{{ r.ghostBbq }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;color:var(--color-neutral-400);margin-top:2px">숙소 {{ r.bbqBase }}</div></sc-if>
+                    </div>
+                    <div style="padding:7px 12px;color:var(--color-neutral-600)">{{ r.bbqFee }}</div>
+                    <div style="padding:7px 12px">
+                      <sc-if value="{{ r.spaOv }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-weight:700"><span style="width:3px;height:12px;background:var(--color-accent);border-radius:2px"></span>{{ r.spa }}</span></sc-if>
+                      <sc-if value="{{ r.spaInh }}" hint-placeholder-val="{{ true }}"><span style="color:var(--color-neutral-600);border-bottom:1px dashed var(--color-neutral-300)">{{ r.spa }}</span></sc-if>
+                      <sc-if value="{{ r.ghostSpa }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;color:var(--color-neutral-400);margin-top:2px">숙소 {{ r.spaBase }}</div></sc-if>
+                    </div>
+                    <div style="padding:7px 12px"><span style="color:var(--color-neutral-800)">{{ r.form }}</span> <span style="color:var(--color-neutral-500)">· {{ r.bed }}</span></div>
+                    <div style="padding:7px 12px"><span style="font-size:11px;font-weight:600;color:var(--color-neutral-800);background:var(--color-neutral-200);padding:2px 7px;border-radius:0">{{ r.facil }}</span></div>
+                    <div style="padding:7px 12px;display:flex;gap:3px">
+                      <sc-if value="{{ r.cnOk }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px;font-weight:700;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:0;background:var(--color-neutral-200);color:var(--color-neutral-700)">N</span></sc-if>
+                      <sc-if value="{{ r.cnBad }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:700;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:0;background:var(--color-accent-200);color:var(--color-accent-800)">N</span></sc-if>
+                      <sc-if value="{{ r.cyOk }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px;font-weight:700;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:0;background:var(--color-neutral-200);color:var(--color-neutral-700)">여</span></sc-if>
+                      <sc-if value="{{ r.cyBad }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:700;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:0;background:var(--color-accent-200);color:var(--color-accent-800)">여</span></sc-if>
+                      <sc-if value="{{ r.cjOk }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px;font-weight:700;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:0;background:var(--color-neutral-200);color:var(--color-neutral-700)">야</span></sc-if>
+                      <sc-if value="{{ r.cjBad }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:700;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:0;background:var(--color-accent-200);color:var(--color-accent-800)">야</span></sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isBlocks }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;overflow-y:auto;padding:16px 20px 40px;background:var(--color-bg)">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                <span style="font-size:12.5px;font-weight:700">시설 항목 · 블록정보</span>
+                <div style="flex:1"></div>
+                <div style="display:flex;border:1px solid var(--color-divider)">
+                  <sc-for list="{{ bfilters }}" as="bf" hint-placeholder-count="4">
+                    <sc-if value="{{ bf.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ bf.pick }}" style="padding:6px 11px;background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer;border-left:1px solid var(--color-divider)">{{ bf.label }} {{ bf.n }}</div></sc-if>
+                    <sc-if value="{{ bf.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ bf.pick }}" style="padding:6px 11px;font-size:12px;color:var(--color-neutral-700);cursor:pointer;border-left:1px solid var(--color-divider)" style-hover="background:var(--color-neutral-200)">{{ bf.label }} {{ bf.n }}</div></sc-if>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--color-neutral-600);line-height:1.6;margin-bottom:12px">전사 시설 카탈로그 {{ catalogN }}개 항목 중 이 숙소 보유 <b>{{ ownedN }}</b>개 — 사용중 {{ usedN }} · 보유하지만 판매 미노출 {{ offN }} · 미보유 {{ noneN }}. 항목 자체가 없는 시설은 채널 전송에서 제외되고, 관련 FAQ도 자동 비활성됩니다.</div>
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+                <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="6">
+                  <div class="blueprint" style="background:transparent"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                    <div style="display:flex;align-items:center;gap:8px;padding:10px 13px;border-bottom:1px solid var(--color-divider)">
+                      <span style="font-size:12.5px;font-weight:700">{{ b.label }}</span>
+                      <sc-if value="{{ b.isUsed }}" hint-placeholder-val="{{ true }}"><span class="tag tag-accent" style="font-weight:700">사용중</span></sc-if>
+                      <sc-if value="{{ b.isOff }}" hint-placeholder-val="{{ false }}"><span class="tag tag-neutral" style="font-weight:700">보유 · 사용안함</span></sc-if>
+                      <sc-if value="{{ b.isNone }}" hint-placeholder-val="{{ false }}"><span class="tag tag-outline" style="font-weight:700">미보유</span></sc-if>
+                      <div style="flex:1"></div>
+                      <sc-if value="{{ b.isUsed }}" hint-placeholder-val="{{ false }}"><button class="btn btn-secondary" onClick="{{ b.turnOff }}" style="height:22px;padding:0 8px;font-size:11px">사용 중지</button></sc-if>
+                      <sc-if value="{{ b.isOff }}" hint-placeholder-val="{{ false }}"><button class="btn btn-secondary" onClick="{{ b.remove }}" style="height:22px;padding:0 8px;font-size:11px">항목 제거</button></sc-if>
+                      <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--color-neutral-400)">{{ b.key }}</span>
+                    </div>
+                    <sc-if value="{{ b.isNone }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:12px 13px;display:flex;align-items:center;gap:11px">
+                        <div style="flex:1;border:1px dashed var(--color-neutral-400);padding:9px 11px;font-size:11.5px;line-height:1.6;color:var(--color-neutral-600)">이 숙소에 없는 항목입니다. 추가하면 카탈로그가 정의한 필수 필드가 생기고, 채널 {{ b.chanN }}곳 · FAQ {{ b.faqN }}건이 함께 살아납니다.</div>
+                        <button class="btn btn-secondary" onClick="{{ b.add }}" style="flex:none;height:28px;font-size:12px">+ 항목 추가</button>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ b.isOff }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:9px 13px;display:flex;align-items:center;gap:11px;background:var(--color-surface);border-bottom:1px solid var(--color-divider)">
+                        <span style="flex:1;font-size:11.5px;line-height:1.6;color:var(--color-neutral-700)">항목은 보유하지만 판매에 노출하지 않습니다. 관련 FAQ {{ b.faqN }}건은 자동 비활성 상태입니다.</span>
+                        <button class="btn btn-primary" onClick="{{ b.turnOn }}" style="flex:none;height:28px;font-size:12px">사용으로 전환</button>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ b.hasFields }}" hint-placeholder-val="{{ true }}">
+                    <div style="padding:4px 13px 12px">
+                      <sc-for list="{{ b.fields }}" as="f" hint-placeholder-count="4">
+                        <div style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid var(--color-surface)">
+                          <span style="width:88px;flex:none;font-size:11px;color:var(--color-neutral-600);padding-top:2px">{{ f.k }}</span>
+                          <span style="flex:1;font-size:12px;line-height:1.5">{{ f.v }}</span>
+                          <sc-if value="{{ f.calc }}" hint-placeholder-val="{{ false }}"><span class="tag tag-outline" style="flex:none;font-size:10px">객실에서 자동 산출</span></sc-if>
+                          <sc-if value="{{ f.isTyped }}" hint-placeholder-val="{{ true }}"><span class="tag tag-neutral" style="flex:none;font-size:10px">{{ f.tName }}</span></sc-if>
+                          <sc-if value="{{ f.isFree }}" hint-placeholder-val="{{ false }}"><span class="tag tag-neutral" style="flex:none;font-size:10px;opacity:.65">자유 텍스트</span></sc-if>
+                          <sc-if value="{{ f.editable }}" hint-placeholder-val="{{ true }}"><button class="btn btn-secondary" onClick="{{ f.edit }}" style="flex:none;height:23px;padding:0 8px;font-size:11px">수정</button></sc-if>
+                        </div>
+                      </sc-for>
+                      <div style="display:flex;align-items:center;gap:6px;margin-top:9px;flex-wrap:wrap">
+                        <span style="font-size:10.5px;color:var(--color-neutral-500)">연결</span>
+                        <sc-if value="{{ b.roomWarn }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;font-weight:600;color:var(--color-accent-800);background:var(--color-accent-200);padding:2px 7px;border-radius:0">객실 0</span></sc-if>
+                        <sc-if value="{{ b.roomOk }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px;font-weight:600;color:var(--color-neutral-700);background:var(--color-neutral-200);padding:2px 7px;border-radius:0">객실 {{ b.rooms }}</span></sc-if>
+                        <span style="font-size:10.5px;font-weight:600;color:var(--color-neutral-700);background:var(--color-neutral-200);padding:2px 7px;border-radius:0">채널 {{ b.chanN }}</span>
+                        <sc-if value="{{ b.faqWarn }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;font-weight:600;color:var(--color-accent-800);background:var(--color-accent-200);padding:2px 7px;border-radius:0">FAQ {{ b.faqN }} 비활성</span></sc-if>
+                        <sc-if value="{{ b.faqOk }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px;font-weight:600;color:var(--color-neutral-700);background:var(--color-neutral-200);padding:2px 7px;border-radius:0">FAQ {{ b.faqN }}</span></sc-if>
+                      </div>
+                      <sc-if value="{{ b.hasNote }}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px;padding:8px 10px;background:var(--color-surface);border-radius:0;font-size:11px;line-height:1.6;color:var(--color-neutral-600);max-height:76px;overflow:hidden">{{ b.note }}</div></sc-if>
+                    </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isOptions }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;overflow:auto;padding:16px 20px 40px;background:var(--color-bg)">
+              <div style="margin-bottom:12px">
+                <div style="font-size:12.5px;font-weight:700;margin-bottom:3px">바베큐 형태 옵션 · 요금</div>
+                <div style="font-size:11px;color:var(--color-neutral-600);line-height:1.6">모든 입력값은 전사 옵션 코드에서 고릅니다 — 자유 텍스트가 아니므로 연결 규칙을 걸 수 있습니다. <b>요금은 객실이 아니라 옵션에 붙습니다</b>: 옵션 요금 한 번을 고치면 그 옵션을 쓰는 모든 객실·블록 문구·채널 요금이 함께 갱신됩니다.</div>
+              </div>
+              <div class="blueprint" style="background:transparent;min-width:1080px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="display:grid;grid-template-columns:190px 150px 210px repeat(3,minmax(0,1fr)) 86px;background:var(--color-surface);border-bottom:1px solid var(--color-divider)">
+                  <div style="padding:8px 13px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">옵션</div>
+                  <div style="padding:8px 13px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">코드</div>
+                  <div style="padding:8px 13px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">이용요금 (이 숙소)</div>
+                  <div style="padding:8px 13px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">네이버</div>
+                  <div style="padding:8px 13px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">여기어때</div>
+                  <div style="padding:8px 13px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">야놀자</div>
+                  <div style="padding:8px 13px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">사용</div>
+                </div>
+                <sc-for list="{{ optRows }}" as="o" hint-placeholder-count="6">
+                  <div style="display:grid;grid-template-columns:190px 150px 210px repeat(3,minmax(0,1fr)) 86px;border-bottom:1px solid var(--color-divider);font-size:12px;align-items:center">
+                    <div style="padding:9px 13px;font-weight:700">{{ o.label }}</div>
+                    <div style="padding:9px 13px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--color-neutral-500)">{{ o.code }}</div>
+                    <div style="padding:7px 13px;display:flex;align-items:center;gap:8px">
+                      <span style="flex:1;min-width:0">{{ o.fee }}</span>
+                      <button class="btn btn-secondary" onClick="{{ o.edit }}" style="flex:none;height:23px;padding:0 8px;font-size:11px">수정</button>
+                    </div>
+                    <div style="padding:9px 13px;color:var(--color-neutral-700)">{{ o.chA }}</div>
+                    <div style="padding:9px 13px;color:var(--color-neutral-700)">{{ o.chB }}</div>
+                    <div style="padding:9px 13px;color:var(--color-neutral-700)">{{ o.chC }}</div>
+                    <div style="padding:9px 13px">
+                      <sc-if value="{{ o.inUse }}" hint-placeholder-val="{{ true }}"><span class="tag tag-accent" style="font-weight:700">{{ o.usedN }}객실</span></sc-if>
+                      <sc-if value="{{ o.unused }}" hint-placeholder-val="{{ false }}"><span class="tag tag-neutral">미사용</span></sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:12px;font-size:11px;color:var(--color-neutral-600);line-height:1.6">채널 열은 매핑 사전값입니다 — 같은 옵션이 네이버 "숯불그릴", 여기어때 "참숯BBQ", 야놀자 "숯불BBQ"로 자동 변환됩니다. 객실 탭의 바베큐 셀을 누르면 이 옵션 목록에서만 고를 수 있고, 요금은 선택한 옵션에서 따라옵니다.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isChannels }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;overflow:auto;padding:16px 20px 40px;background:var(--color-bg)">
+              <div style="background:var(--color-bg);border:1px solid var(--color-divider);border-radius:0;overflow:hidden;margin-bottom:14px;min-width:900px">
+                <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid var(--color-divider)">
+                  <span style="font-size:12.5px;font-weight:700">채널별 값 매핑</span>
+                  <span style="font-size:11px;color:var(--color-neutral-600)">마스터 값 1개 → 채널 사전(dictionary)을 통해 채널 표현으로 변환합니다.</span>
+                  <div style="flex:1"></div>
+                  <span style="font-size:11px;font-weight:700;color:var(--color-accent-800);background:var(--color-accent-200);padding:3px 8px;border-radius:0">불일치 {{ mismatchN }}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:130px 250px repeat(3,minmax(0,1fr));background:var(--color-surface);border-bottom:1px solid var(--color-divider)">
+                  <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">항목</div>
+                  <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">마스터 값 (단일 원본)</div>
+                  <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">네이버</div>
+                  <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">여기어때</div>
+                  <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">야놀자</div>
+                </div>
+                <sc-for list="{{ chanRows }}" as="m" hint-placeholder-count="4">
+                  <div style="display:grid;grid-template-columns:130px 250px repeat(3,minmax(0,1fr));border-bottom:1px solid var(--color-divider);font-size:12px">
+                    <div style="padding:11px 14px;font-weight:700">{{ m.label }}</div>
+                    <div style="padding:11px 14px;color:var(--color-neutral-800);line-height:1.6">{{ m.master }}</div>
+                    <div style="padding:11px 14px">
+                      <sc-if value="{{ m.a.ok }}" hint-placeholder-val="{{ true }}"><div style="color:var(--color-neutral-800);line-height:1.6">{{ m.a.v }}</div></sc-if>
+                      <sc-if value="{{ m.a.bad }}" hint-placeholder-val="{{ false }}">
+                        <div style="padding:7px 9px;background:var(--color-accent-100);border:1px solid var(--color-accent-300);border-radius:0">
+                          <div style="color:var(--color-accent-900);font-weight:600;line-height:1.5">{{ m.a.v }}</div>
+                          <div style="margin-top:3px;font-size:10.5px;color:var(--color-accent-800);line-height:1.5">{{ m.a.why }}</div>
+                          <button class="btn btn-primary" onClick="{{ m.a.sync }}" style="margin-top:6px;height:23px;padding:0 8px;font-size:11px">마스터값으로 교정</button>
+                        </div>
+                      </sc-if>
+                    </div>
+                    <div style="padding:11px 14px">
+                      <sc-if value="{{ m.b.ok }}" hint-placeholder-val="{{ true }}"><div style="color:var(--color-neutral-800);line-height:1.6">{{ m.b.v }}</div></sc-if>
+                      <sc-if value="{{ m.b.bad }}" hint-placeholder-val="{{ false }}">
+                        <div style="padding:7px 9px;background:var(--color-accent-100);border:1px solid var(--color-accent-300);border-radius:0">
+                          <div style="color:var(--color-accent-900);font-weight:600;line-height:1.5">{{ m.b.v }}</div>
+                          <div style="margin-top:3px;font-size:10.5px;color:var(--color-accent-800);line-height:1.5">{{ m.b.why }}</div>
+                          <button class="btn btn-primary" onClick="{{ m.b.sync }}" style="margin-top:6px;height:23px;padding:0 8px;font-size:11px">마스터값으로 교정</button>
+                        </div>
+                      </sc-if>
+                    </div>
+                    <div style="padding:11px 14px">
+                      <sc-if value="{{ m.c.ok }}" hint-placeholder-val="{{ true }}"><div style="color:var(--color-neutral-800);line-height:1.6">{{ m.c.v }}</div></sc-if>
+                      <sc-if value="{{ m.c.bad }}" hint-placeholder-val="{{ false }}">
+                        <div style="padding:7px 9px;background:var(--color-accent-100);border:1px solid var(--color-accent-300);border-radius:0">
+                          <div style="color:var(--color-accent-900);font-weight:600;line-height:1.5">{{ m.c.v }}</div>
+                          <div style="margin-top:3px;font-size:10.5px;color:var(--color-accent-800);line-height:1.5">{{ m.c.why }}</div>
+                          <button class="btn btn-primary" onClick="{{ m.c.sync }}" style="margin-top:6px;height:23px;padding:0 8px;font-size:11px">마스터값으로 교정</button>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background:var(--color-bg);border:1px solid var(--color-divider);border-radius:0;padding:13px 14px;min-width:900px">
+                <div style="font-size:12.5px;font-weight:700;margin-bottom:3px">테마 매핑 사전</div>
+                <div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:11px">채널마다 용어가 다르므로, 마스터 값 1개 = 채널별 용어 N개로 사전을 고정해 두면 사람이 채널마다 다시 고를 필요가 없습니다.</div>
+                <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+                  <sc-for list="{{ dict }}" as="d" hint-placeholder-count="3">
+                    <div style="border:1px solid var(--color-divider);border-radius:0;padding:10px 11px">
+                      <div style="font-size:11.5px;font-weight:700;margin-bottom:7px">{{ d.master }}</div>
+                      <sc-for list="{{ d.rows }}" as="dr" hint-placeholder-count="3">
+                        <div style="display:flex;align-items:center;gap:7px;padding:3px 0">
+                          <span style="font-size:10px;font-weight:700;width:18px;height:18px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:0;background:var(--color-neutral-200);color:var(--color-neutral-700)">{{ dr.k }}</span>
+                          <span style="font-size:11.5px;color:var(--color-neutral-800)">{{ dr.v }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isFaq }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;overflow-y:auto;background:var(--color-bg)">
+              <div style="padding:11px 20px;background:var(--color-accent-100);border-bottom:1px solid var(--color-accent-300)">
+                <div style="font-size:12px;font-weight:700;color:var(--color-accent-900)">시설 값을 인용하는 답변 {{ derivedFaqN }}건은 자유 입력이 아니라 시설 값에서 생성됩니다 — 사람이 따로 고칠 곳이 없으므로 어긋날 수 없습니다.</div>
+                <div style="margin-top:4px;font-size:11px;color:var(--color-accent-800)">미사용 시설과 연결된 16건은 자동 비활성이라 채널로 전송되지 않습니다 (개별수영장 · 애견동반 · 캠핑).</div>
+              </div>
+              <div style="display:grid;grid-template-columns:104px 72px minmax(0,1.1fr) minmax(0,1.5fr);position:sticky;top:0;background:var(--color-surface);border-bottom:1px solid var(--color-divider);z-index:2">
+                <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">분류</div>
+                <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">번호</div>
+                <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">질문</div>
+                <div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--color-neutral-700)">답변</div>
+              </div>
+              <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="16">
+                <div style="display:grid;grid-template-columns:104px 72px minmax(0,1.1fr) minmax(0,1.5fr);border-bottom:1px solid var(--color-divider);font-size:12px">
+                  <div style="padding:8px 14px"><span style="font-size:10.5px;font-weight:600;color:var(--color-neutral-700);background:var(--color-neutral-200);padding:2px 7px;border-radius:0">{{ f.cate }}</span></div>
+                  <div style="padding:8px 14px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--color-neutral-500)">{{ f.qid }}</div>
+                  <div style="padding:8px 14px;line-height:1.6">{{ f.q }}</div>
+                  <div style="padding:8px 14px;line-height:1.6">
+                    <sc-if value="{{ f.answered }}" hint-placeholder-val="{{ true }}"><span style="color:var(--color-neutral-800)">{{ f.a }}</span></sc-if>
+                    <sc-if value="{{ f.blank }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;color:var(--color-neutral-600);background:var(--color-neutral-200);padding:2px 7px;border-radius:0">미사용 시설 · 자동 비활성</span></sc-if>
+                    <sc-if value="{{ f.derived }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
+                        <span class="tag tag-outline" style="font-size:10px">시설 값에서 생성</span>
+                        <span style="font-size:10.5px;color:var(--color-neutral-500)">{{ f.src }}</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;overflow-y:auto;padding:16px 20px 40px;background:var(--color-bg)">
+              <sc-for list="{{ history }}" as="h" hint-placeholder-count="4">
+                <div style="background:var(--color-bg);border:1px solid var(--color-divider);border-radius:0;padding:12px 14px;margin-bottom:9px">
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="font-size:12.5px;font-weight:700">{{ h.title }}</span>
+                    <span style="font-size:10.5px;font-weight:700;color:var(--color-accent-800);background:var(--color-accent-100);padding:2px 7px;border-radius:0">연쇄 {{ h.n }}건</span>
+                    <div style="flex:1"></div>
+                    <span style="font-size:11px;color:var(--color-neutral-500)">{{ h.who }} · {{ h.at }}</span>
+                  </div>
+                  <div style="margin-top:7px;display:flex;align-items:center;gap:8px;font-size:12px">
+                    <span style="color:var(--color-neutral-500);text-decoration:line-through">{{ h.before }}</span>
+                    <span style="color:var(--color-neutral-400)">→</span>
+                    <span style="font-weight:600">{{ h.after }}</span>
+                  </div>
+                  <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">
+                    <sc-for list="{{ h.chips }}" as="c" hint-placeholder-count="3"><span style="font-size:10.5px;font-weight:600;color:var(--color-neutral-700);background:var(--color-neutral-200);padding:3px 8px;border-radius:0">{{ c.t }}</span></sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <sc-if value="{{ showRight }}" hint-placeholder-val="{{ true }}">
+          <div style="width:340px;flex:none;background:var(--color-surface);border-left:1px solid var(--color-divider);display:flex;flex-direction:column;min-height:0">
+            <div style="flex:none;padding:12px 14px;border-bottom:1px solid var(--color-divider)">
+              <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);letter-spacing:.04em">필드 인스펙터</div>
+              <div style="margin-top:6px;font-family:var(--font-heading);font-size:17px;font-weight:600">바베큐 유형</div>
+              <div style="margin-top:3px;font-size:11px;color:var(--color-neutral-600)">숙소 블록 shared_bbq / private_bbq 에서 파생</div>
+            </div>
+            <div style="flex:none;padding:12px 14px;border-bottom:1px solid var(--color-divider)">
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;padding:9px 10px;border:1px solid var(--color-divider);border-radius:0;background:var(--color-bg)">
+                  <div style="font-size:10.5px;color:var(--color-neutral-500);margin-bottom:4px">숙소 기본값</div>
+                  <div style="font-size:12px;font-weight:600;color:var(--color-neutral-700)">공용BBQ · 가스그릴</div>
+                </div>
+                <div style="flex:1;padding:9px 10px;border:1px solid var(--color-accent-300);border-radius:0;background:var(--color-accent-100)">
+                  <div style="font-size:10.5px;color:var(--color-accent-800);margin-bottom:4px">오버라이드</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--color-accent-900)">3층 6실 개별BBQ</div>
+                </div>
+              </div>
+              <div style="margin-top:9px;font-size:11px;line-height:1.6;color:var(--color-neutral-600)">숙소 값을 기본값으로 두고 객실에서 필요한 것만 덮어씁니다. 기본값을 바꾸면 오버라이드가 없는 객실만 자동 갱신되고, 오버라이드 객실은 미리보기에서 따로 확인합니다.</div>
+            </div>
+            <div style="flex:none;padding:12px 14px;border-bottom:1px solid var(--color-divider)">
+              <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);letter-spacing:.04em;margin-bottom:8px">영향 범위</div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px">
+                <sc-for list="{{ scope }}" as="s" hint-placeholder-count="4">
+                  <div style="padding:8px 10px;background:var(--color-bg);border:1px solid var(--color-divider);border-radius:0">
+                    <div style="font-family:var(--font-heading);font-size:21px;font-weight:600">{{ s.n }}</div>
+                    <div style="font-size:10.5px;color:var(--color-neutral-600);margin-top:1px">{{ s.t }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:12px 14px">
+              <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);letter-spacing:.04em;margin-bottom:9px">변경 이력</div>
+              <sc-for list="{{ history }}" as="h" hint-placeholder-count="4">
+                <div style="padding:9px 0;border-bottom:1px solid var(--color-divider)">
+                  <div style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font-size:11.5px;font-weight:700;line-height:1.4">{{ h.title }}</span>
+                    <div style="flex:1"></div>
+                    <span style="font-size:10px;color:var(--color-neutral-400);white-space:nowrap">{{ h.at }}</span>
+                  </div>
+                  <div style="margin-top:4px;font-size:11px;color:var(--color-neutral-600);line-height:1.5">{{ h.before }} → <b style="color:var(--color-neutral-800)">{{ h.after }}</b></div>
+                  <div style="margin-top:5px;display:flex;align-items:center;gap:6px">
+                    <span style="font-size:10px;font-weight:700;color:var(--color-accent-800);background:var(--color-accent-100);padding:2px 6px;border-radius:0">연쇄 {{ h.n }}건</span>
+                    <span style="font-size:10px;color:var(--color-neutral-500)">{{ h.who }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ bulkOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(16,18,22,.34);display:flex;align-items:center;justify-content:center;z-index:40;animation:fin .14s ease">
+      <div class="blueprint elev-lg" style="width:520px;background:var(--color-bg);animation:tin .18s ease"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="padding:15px 18px;border-bottom:1px solid var(--color-divider)">
+          <div style="font-family:var(--font-heading);font-size:19px;font-weight:600">일괄 편집 · {{ selCount }}객실</div>
+          <div style="margin-top:3px;font-size:11.5px;color:var(--color-neutral-600)">선택한 객실에만 값을 씁니다. 저장 전에 연쇄 갱신 대상을 확인합니다.</div>
+        </div>
+        <div style="padding:16px 18px">
+          <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);margin-bottom:7px">필드</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:15px">
+            <sc-for list="{{ bulkFields }}" as="f" hint-placeholder-count="5">
+              <sc-if value="{{ f.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ f.pick }}" style="padding:7px 11px;border:1px solid var(--color-accent-900);background:var(--color-accent-900);color:var(--color-bg);border-radius:0;font-size:12px;font-weight:700;cursor:pointer">{{ f.label }}</div></sc-if>
+              <sc-if value="{{ f.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ f.pick }}" style="padding:7px 11px;border:1px solid var(--color-divider);background:var(--color-bg);color:var(--color-neutral-800);border-radius:0;font-size:12px;font-weight:600;cursor:pointer" style-hover="background:var(--color-surface)">{{ f.label }}</div></sc-if>
+            </sc-for>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);margin-bottom:7px">값</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <sc-for list="{{ bulkValues }}" as="v" hint-placeholder-count="3">
+              <sc-if value="{{ v.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ v.pick }}" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--color-accent);background:var(--color-accent-100);border-radius:0;cursor:pointer"><span style="width:14px;height:14px;border-radius:50%;border:4px solid var(--color-accent);background:var(--color-bg)"></span><span style="font-size:12.5px;font-weight:700;color:var(--color-accent-800)">{{ v.label }}</span></div></sc-if>
+              <sc-if value="{{ v.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ v.pick }}" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--color-divider);background:var(--color-bg);border-radius:0;cursor:pointer" style-hover="background:var(--color-surface)"><span style="width:14px;height:14px;border-radius:50%;border:1px solid var(--color-neutral-300)"></span><span style="font-size:12.5px;color:var(--color-neutral-800)">{{ v.label }}</span></div></sc-if>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:13px 18px;border-top:1px solid var(--color-divider);background:var(--color-surface)">
+          <div style="flex:1;font-size:11px;color:var(--color-neutral-600)">{{ bulkHint }}</div>
+          <button class="btn btn-secondary" onClick="{{ closeBulk }}" style="height:32px">취소</button>
+          <button class="btn btn-primary" onClick="{{ previewBulk }}" style="height:32px">연쇄 갱신 미리보기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ nrOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:flex;align-items:center;justify-content:center;z-index:42;animation:fin .14s ease">
+      <div class="blueprint elev-lg" style="width:520px;background:var(--color-bg);animation:tin .18s ease"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="padding:15px 18px;border-bottom:1px solid var(--color-divider)">
+          <div style="font-family:var(--font-heading);font-size:19px;font-weight:600">객실 신규 등록</div>
+          <div style="margin-top:3px;font-size:11.5px;color:var(--color-neutral-600)">값을 지정하지 않은 항목은 숙소 기본값을 상속합니다.</div>
+        </div>
+        <div style="padding:16px 18px">
+          <div class="field" style="margin-bottom:14px"><label>객실명</label><input class="input" value="{{ nrName }}" onChange="{{ onNrName }}" style="min-height:32px;font-size:13px"/></div>
+          <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);margin-bottom:7px">층</div>
+          <div style="display:flex;gap:6px;margin-bottom:14px">
+            <sc-for list="{{ nrFloors }}" as="f" hint-placeholder-count="5">
+              <sc-if value="{{ f.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ f.pick }}" style="padding:7px 13px;border:1px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer">{{ f.label }}</div></sc-if>
+              <sc-if value="{{ f.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ f.pick }}" style="padding:7px 13px;border:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-800);cursor:pointer" style-hover="background:var(--color-neutral-200)">{{ f.label }}</div></sc-if>
+            </sc-for>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);margin-bottom:7px">수용 인원</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+            <sc-for list="{{ nrPax }}" as="p" hint-placeholder-count="2">
+              <sc-if value="{{ p.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ p.pick }}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--color-accent);background:var(--color-accent-100);cursor:pointer"><span style="width:14px;height:14px;border-radius:50%;border:4px solid var(--color-accent);background:var(--color-bg)"></span><span style="font-size:12.5px;font-weight:700;color:var(--color-accent-800)">{{ p.label }}</span></div></sc-if>
+              <sc-if value="{{ p.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ p.pick }}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--color-divider);cursor:pointer" style-hover="background:var(--color-surface)"><span style="width:14px;height:14px;border-radius:50%;border:1px solid var(--color-neutral-300)"></span><span style="font-size:12.5px;color:var(--color-neutral-800)">{{ p.label }}</span></div></sc-if>
+            </sc-for>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);margin-bottom:7px">바베큐</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <sc-for list="{{ nrBbq }}" as="v" hint-placeholder-count="3">
+              <sc-if value="{{ v.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ v.pick }}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--color-accent);background:var(--color-accent-100);cursor:pointer"><span style="width:14px;height:14px;border-radius:50%;border:4px solid var(--color-accent);background:var(--color-bg)"></span><span style="font-size:12.5px;font-weight:700;color:var(--color-accent-800)">{{ v.label }}</span></div></sc-if>
+              <sc-if value="{{ v.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ v.pick }}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--color-divider);cursor:pointer" style-hover="background:var(--color-surface)"><span style="width:14px;height:14px;border-radius:50%;border:1px solid var(--color-neutral-300)"></span><span style="font-size:12.5px;color:var(--color-neutral-800)">{{ v.label }}</span></div></sc-if>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:13px 18px;border-top:1px solid var(--color-divider);background:var(--color-surface)">
+          <div style="flex:1;font-size:11px;color:var(--color-neutral-600)">등록 시 블록 문구·객실 수·채널 상품이 함께 생성됩니다.</div>
+          <button class="btn btn-secondary" onClick="{{ closeNewRoom }}" style="height:32px">취소</button>
+          <button class="btn btn-primary" onClick="{{ previewNewRoom }}" style="height:32px">연쇄 갱신 미리보기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ casOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(16,18,22,.34);display:flex;align-items:center;justify-content:center;z-index:50;animation:fin .14s ease">
+      <div class="blueprint elev-lg" style="width:760px;max-height:86vh;background:var(--color-bg);display:flex;flex-direction:column;animation:tin .18s ease"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="padding:15px 18px;border-bottom:1px solid var(--color-divider)">
+          <div style="display:flex;align-items:center;gap:9px">
+            <span style="font-family:var(--font-heading);font-size:19px;font-weight:600">연쇄 갱신 미리보기</span>
+            <span style="font-size:11px;font-weight:700;color:var(--color-accent-800);background:var(--color-accent-100);padding:3px 8px;border-radius:0">대상 {{ casCheckedN }} / {{ casTotalN }}</span>
+          </div>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px;font-size:12.5px">
+            <span style="font-weight:700">{{ casField }}</span>
+            <span style="color:var(--color-neutral-500);text-decoration:line-through">{{ casFrom }}</span>
+            <span style="color:var(--color-neutral-400)">→</span>
+            <span style="font-weight:700;color:var(--color-accent-700)">{{ casTo }}</span>
+          </div>
+        </div>
+        <sc-if value="{{ casHasWarn }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:10px 18px;background:var(--color-accent-100);border-bottom:1px solid var(--color-accent-300);font-size:11.5px;color:var(--color-accent-900);line-height:1.6">{{ casWarn }}</div>
+        </sc-if>
+        <div style="flex:1;overflow-y:auto">
+          <sc-for list="{{ casGroups }}" as="g" hint-placeholder-count="3">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--color-surface);border-bottom:1px solid var(--color-divider)">
+                <span style="font-size:11px;font-weight:700;color:var(--color-neutral-700)">{{ g.title }}</span>
+                <span style="font-size:10.5px;color:var(--color-neutral-500)">{{ g.desc }}</span>
+              </div>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:11px;padding:9px 18px;border-bottom:1px solid var(--color-bg)">
+                  <sc-if value="{{ it.pickable }}" hint-placeholder-val="{{ true }}"><input type="checkbox" checked="{{ it.on }}" onChange="{{ it.toggle }}" style="cursor:pointer"/></sc-if>
+                  <sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span style="width:13px;height:13px;flex:none;border:1px solid var(--color-accent);background:var(--color-accent);position:relative" title="자동 산출 — 해제할 수 없습니다"></span></sc-if>
+                  <span style="width:190px;flex:none;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.label }}</span>
+                  <span style="flex:1;min-width:0;font-size:11.5px;color:var(--color-neutral-500);text-decoration:line-through;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.before }}</span>
+                  <span style="color:var(--color-neutral-400);flex:none">→</span>
+                  <span style="flex:1;min-width:0;font-size:11.5px;font-weight:600;color:var(--color-accent-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.after }}</span>
+                  <sc-if value="{{ it.isOv }}" hint-placeholder-val="{{ false }}"><span style="flex:none;font-size:10px;font-weight:700;color:var(--color-accent-800);background:var(--color-accent-200);padding:2px 7px;border-radius:0">오버라이드 덮어씀</span></sc-if>
+                  <sc-if value="{{ it.locked }}" hint-placeholder-val="{{ false }}"><span class="tag tag-outline" style="flex:none;font-size:10px">자동 산출</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:13px 18px;border-top:1px solid var(--color-divider);background:var(--color-surface)">
+          <div style="flex:1;font-size:11px;color:var(--color-neutral-600)">적용 즉시 변경 이력에 기록되고, 되돌리기가 가능합니다.</div>
+          <button class="btn btn-secondary" onClick="{{ closeCas }}" style="height:32px">취소</button>
+          <button class="btn btn-primary" onClick="{{ applyCas }}" style="height:32px">{{ casCta }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ editOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(16,18,22,.34);display:flex;align-items:center;justify-content:center;z-index:45;animation:fin .14s ease">
+      <div class="blueprint elev-lg" style="width:460px;background:var(--color-bg);animation:tin .18s ease"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="padding:15px 18px;border-bottom:1px solid var(--color-divider)">
+          <div style="font-family:var(--font-heading);font-size:19px;font-weight:600">{{ editTitle }}</div>
+          <div style="margin-top:3px;font-size:11.5px;color:var(--color-neutral-600)">{{ editSub }}</div>
+        </div>
+        <div style="padding:16px 18px">
+          <div style="font-size:11px;font-weight:700;color:var(--color-neutral-700);margin-bottom:7px">{{ editK }}</div>
+
+          <sc-if value="{{ edTime }}" hint-placeholder-val="{{ false }}">
+            <input class="input" type="time" value="{{ edT1 }}" onChange="{{ onEdT1 }}" style="width:150px;min-height:34px;font-size:13px"/>
+          </sc-if>
+
+          <sc-if value="{{ edRange }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:6px">시작 기준</div>
+              <div style="display:flex;border:1px solid var(--color-divider);margin-bottom:11px">
+                <sc-if value="{{ edStartCheckin }}" hint-placeholder-val="{{ false }}"><div onClick="{{ pickCheckin }}" style="padding:7px 13px;background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer">입실 시각</div></sc-if>
+                <sc-if value="{{ edStartTime }}" hint-placeholder-val="{{ true }}"><div onClick="{{ pickCheckin }}" style="padding:7px 13px;font-size:12px;color:var(--color-neutral-700);cursor:pointer" style-hover="background:var(--color-neutral-200)">입실 시각</div></sc-if>
+                <sc-if value="{{ edStartTime }}" hint-placeholder-val="{{ true }}"><div onClick="{{ pickStartTime }}" style="padding:7px 13px;background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer;border-left:1px solid var(--color-divider)">시각 지정</div></sc-if>
+                <sc-if value="{{ edStartCheckin }}" hint-placeholder-val="{{ false }}"><div onClick="{{ pickStartTime }}" style="padding:7px 13px;font-size:12px;color:var(--color-neutral-700);cursor:pointer;border-left:1px solid var(--color-divider)" style-hover="background:var(--color-neutral-200)">시각 지정</div></sc-if>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px">
+                <sc-if value="{{ edStartTime }}" hint-placeholder-val="{{ true }}"><input class="input" type="time" value="{{ edT1 }}" onChange="{{ onEdT1 }}" style="width:140px;min-height:34px;font-size:13px"/></sc-if>
+                <sc-if value="{{ edStartCheckin }}" hint-placeholder-val="{{ false }}"><span style="width:140px;padding:8px 10px;border:1px dashed var(--color-neutral-400);font-size:12.5px;color:var(--color-neutral-700);text-align:center">입실</span></sc-if>
+                <span style="font-size:14px;color:var(--color-neutral-500)">~</span>
+                <input class="input" type="time" value="{{ edT2 }}" onChange="{{ onEdT2 }}" style="width:140px;min-height:34px;font-size:13px"/>
+              </div>
+              <div style="font-size:11px;color:var(--color-neutral-600);margin:12px 0 6px">부가 조건</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ edTails }}" as="t" hint-placeholder-count="5">
+                  <sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ t.pick }}" style="padding:6px 11px;border:1px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer">{{ t.label }}</div></sc-if>
+                  <sc-if value="{{ t.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ t.pick }}" style="padding:6px 11px;border:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-800);cursor:pointer" style-hover="background:var(--color-neutral-200)">{{ t.label }}</div></sc-if>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ edDateRange }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:9px">
+              <input class="input" type="date" value="{{ edFrom }}" onChange="{{ onEdFrom }}" style="width:170px;min-height:34px;font-size:13px"/>
+              <span style="font-size:14px;color:var(--color-neutral-500)">~</span>
+              <input class="input" type="date" value="{{ edTo }}" onChange="{{ onEdTo }}" style="width:170px;min-height:34px;font-size:13px"/>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ edDec }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;color:var(--color-neutral-700)">수심</span>
+              <input class="input" type="number" step="0.1" value="{{ edD }}" onChange="{{ onEdD }}" style="width:120px;min-height:34px;font-size:13px;text-align:right"/>
+              <span style="font-size:13px;color:var(--color-neutral-600)">{{ edDecUnit }}</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ edMoney }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="input" type="number" value="{{ edAmt }}" onChange="{{ onEdAmt }}" style="width:180px;min-height:34px;font-size:13px;text-align:right"/>
+              <span style="font-size:13px;color:var(--color-neutral-600)">원</span>
+              <span style="font-size:11px;color:var(--color-neutral-500)">0 = 무료</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ edTier }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;border:1px solid var(--color-divider);margin-bottom:12px">
+                <sc-if value="{{ edModeFlat.on }}" hint-placeholder-val="{{ true }}"><div onClick="{{ edModeFlat.pick }}" style="padding:7px 13px;background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer">1세트 정액</div></sc-if>
+                <sc-if value="{{ edFlat }}" hint-placeholder-val="{{ false }}"><div onClick="{{ edModeTier.pick }}" style="padding:7px 13px;font-size:12px;color:var(--color-neutral-700);cursor:pointer;border-left:1px solid var(--color-divider)" style-hover="background:var(--color-neutral-200)">인원 구간별</div></sc-if>
+                <sc-if value="{{ edTiered }}" hint-placeholder-val="{{ false }}"><div onClick="{{ edModeFlat.pick }}" style="padding:7px 13px;font-size:12px;color:var(--color-neutral-700);cursor:pointer" style-hover="background:var(--color-neutral-200)">1세트 정액</div></sc-if>
+                <sc-if value="{{ edModeTier.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ edModeTier.pick }}" style="padding:7px 13px;background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer;border-left:1px solid var(--color-divider)">인원 구간별</div></sc-if>
+              </div>
+              <sc-if value="{{ edFlat }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:12px;color:var(--color-neutral-700);width:56px">1세트</span>
+                  <input class="input" type="number" value="{{ edAmt }}" onChange="{{ onEdAmt }}" style="width:160px;min-height:34px;font-size:13px;text-align:right"/>
+                  <span style="font-size:13px;color:var(--color-neutral-600)">원</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ edTiered }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <sc-for list="{{ edTiers }}" as="t" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <input class="input" type="number" value="{{ t.a }}" onChange="{{ t.onA }}" style="width:62px;min-height:32px;font-size:13px;text-align:right"/>
+                      <span style="font-size:13px;color:var(--color-neutral-500)">~</span>
+                      <input class="input" type="number" value="{{ t.b }}" onChange="{{ t.onB }}" style="width:62px;min-height:32px;font-size:13px;text-align:right"/>
+                      <span style="font-size:12px;color:var(--color-neutral-700)">인</span>
+                      <input class="input" type="number" value="{{ t.amt }}" onChange="{{ t.onAmt }}" style="flex:1;min-height:32px;font-size:13px;text-align:right"/>
+                      <span style="font-size:12px;color:var(--color-neutral-700)">원</span>
+                      <button class="btn btn-secondary" onClick="{{ t.del }}" style="flex:none;height:26px;padding:0 8px;font-size:11px">삭제</button>
+                    </div>
+                  </sc-for>
+                  <button class="btn btn-secondary" onClick="{{ addTier }}" style="align-self:flex-start;height:28px;font-size:12px">+ 구간 추가</button>
+                </div>
+              </sc-if>
+              <div style="font-size:11px;color:var(--color-neutral-600);margin:13px 0 6px">과금 기준</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ edUnits }}" as="u" hint-placeholder-count="3">
+                  <sc-if value="{{ u.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ u.pick }}" style="padding:6px 11px;border:1px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer">{{ u.label }}</div></sc-if>
+                  <sc-if value="{{ u.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ u.pick }}" style="padding:6px 11px;border:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-800);cursor:pointer" style-hover="background:var(--color-neutral-200)">{{ u.label }}</div></sc-if>
+                </sc-for>
+              </div>
+              <div style="font-size:11px;color:var(--color-neutral-600);margin:11px 0 6px">결제 방식</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ edPays }}" as="p" hint-placeholder-count="3">
+                  <sc-if value="{{ p.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ p.pick }}" style="padding:6px 11px;border:1px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer">{{ p.label }}</div></sc-if>
+                  <sc-if value="{{ p.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ p.pick }}" style="padding:6px 11px;border:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-800);cursor:pointer" style-hover="background:var(--color-neutral-200)">{{ p.label }}</div></sc-if>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ edOpt }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ edOptions }}" as="o" hint-placeholder-count="4">
+                <sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--color-accent);background:var(--color-accent-100);cursor:pointer"><span style="width:14px;height:14px;border-radius:50%;border:4px solid var(--color-accent);background:var(--color-bg)"></span><span style="font-size:12.5px;font-weight:700;color:var(--color-accent-800)">{{ o.label }}</span></div></sc-if>
+                <sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--color-divider);cursor:pointer" style-hover="background:var(--color-surface)"><span style="width:14px;height:14px;border-radius:50%;border:1px solid var(--color-neutral-300)"></span><span style="font-size:12.5px;color:var(--color-neutral-800)">{{ o.label }}</span></div></sc-if>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ edInt }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="input" type="number" value="{{ edN }}" onChange="{{ onEdN }}" style="width:120px;min-height:34px;font-size:13px;text-align:right"/>
+              <span style="font-size:13px;color:var(--color-neutral-600)">{{ edUnit }}</span>
+              <div style="display:flex;gap:6px;margin-left:6px">
+                <sc-for list="{{ edCmps }}" as="c" hint-placeholder-count="5">
+                  <sc-if value="{{ c.on }}" hint-placeholder-val="{{ false }}"><div onClick="{{ c.pick }}" style="padding:6px 10px;border:1px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);font-size:12px;font-weight:700;cursor:pointer">{{ c.label }}</div></sc-if>
+                  <sc-if value="{{ c.off }}" hint-placeholder-val="{{ true }}"><div onClick="{{ c.pick }}" style="padding:6px 10px;border:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-800);cursor:pointer" style-hover="background:var(--color-neutral-200)">{{ c.label }}</div></sc-if>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ edText }}" hint-placeholder-val="{{ true }}">
+            <textarea class="input" value="{{ edV }}" onChange="{{ onEdit }}" style="min-height:90px;font-size:13px;line-height:1.6"></textarea>
+            <div style="margin-top:6px;font-size:11px;color:var(--color-neutral-500)">주의사항·안내 문구만 자유 입력입니다. 나머지 값은 모두 시간·금액·옵션 형식으로 관리됩니다.</div>
+          </sc-if>
+
+          <div style="margin-top:13px;padding:9px 11px;background:var(--color-surface);font-size:12px">
+            <span style="color:var(--color-neutral-600);font-size:11px">저장될 값 </span><b>{{ editPreview }}</b>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:13px 18px;border-top:1px solid var(--color-divider);background:var(--color-surface)">
+          <div style="flex:1"></div>
+          <button class="btn btn-secondary" onClick="{{ closeEdit }}" style="height:32px">취소</button>
+          <button class="btn btn-primary" onClick="{{ previewEdit }}" style="height:32px">연쇄 갱신 미리보기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--color-accent-900);color:var(--color-bg);border-radius:0;box-shadow:0 12px 32px rgba(0,0,0,.28);animation:tin .18s ease">
+      <span style="font-size:12.5px;font-weight:600">{{ toastText }}</span>
+      <button class="btn" onClick="{{ undoLast }}" style="height:26px;padding:0 10px;font-size:12px;color:var(--color-bg);border-color:rgba(255,255,255,.32)">되돌리기</button>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;inheritanceViz&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;marker&quot;,&quot;ghost&quot;],&quot;default&quot;:&quot;marker&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;상속 표현&quot;},&quot;cascadeMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;preview&quot;,&quot;instant&quot;],&quot;default&quot;:&quot;preview&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;연쇄 갱신&quot;},&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;3panel&quot;,&quot;2panel&quot;],&quot;default&quot;:&quot;3panel&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;레이아웃&quot;}}">
+class Component extends DCLogic {
+  state = Component.initial();
+
+  static initial() {
+    const NO_TERRACE = ['A402', 'B402', 'A501', 'B501', 'A602', 'A603', 'B602', 'B603'];
+    const seq = [
+      ['27758', 'A701'], ['27759', 'A702'], ['27760', 'B701'], ['27761', 'B702'],
+      ['27734', 'A301'], ['27735', 'A302'], ['27736', 'A303'], ['27737', 'B301'], ['27738', 'B302'], ['27739', 'B303'],
+      ['27740', 'A401'], ['27741', 'A402'], ['27742', 'A403'], ['27743', 'B401'], ['27744', 'B402'], ['27745', 'B403'],
+      ['27746', 'A501'], ['27747', 'A502'], ['27748', 'A503'], ['27749', 'B501'], ['27750', 'B502'], ['27751', 'B503'],
+      ['27752', 'A601'], ['27753', 'A602'], ['27754', 'A603'], ['27755', 'B601'], ['27756', 'B602'], ['27757', 'B603']
+    ];
+    const rooms = seq.map(function (p) {
+      const code = p[0], nm = p[1], fl = Number(nm[1]);
+      const seven = fl === 7, three = fl === 3, noTer = NO_TERRACE.indexOf(nm) >= 0;
+      const tag = three ? '개별BBQ,와이드테라스,오션뷰' : (noTer ? '오션뷰' : '개별테라스,오션뷰');
+      const facil = seven ? '변형1' : (nm === 'A301' ? '변형2' : (noTer ? '변형4' : '변형3'));
+      return {
+        code: code, short: nm, tag: tag, floor: fl,
+        area: seven ? '92.56㎡ (28평)' : three ? '66.12㎡ (20평)' : '59.50㎡ (18평)',
+        form: seven ? '분리형' : '원룸형',
+        bed: seven ? '킹침대 2' : '킹침대 1',
+        facil: facil,
+        baseP: seven ? 4 : 2, maxP: seven ? 6 : 4, paxOv: seven,
+        extra: 30000, extraOv: false,
+        bbq: three ? '개별BBQ · 전기그릴' : '공용BBQ · 가스그릴', bbqOv: three,
+        bbqOpt: three ? 'private_electric' : 'shared_gas',
+        bbqFee: three ? '1세트 20,000원 (1박기준/현장결제)' : '2~4인 30,000원 / 5~6인 40,000원 (1박기준/현장결제)', // = optFees 초기값
+        spa: seven ? '제트스파 4인용' : '제트스파 2인용', spaOv: seven
+      };
+    });
+
+    const blocks = [
+      { key: 'shared_bbq', label: '공용 BBQ', use: true, rooms: 24, chanN: 3, faqN: 3,
+        fields: [['이용 객실', '4~7층객실 · 24객실'], ['이용 장소', '루프탑'], ['바베큐 형태', '가스그릴'], ['제공 구성', '그릴+집게+가위'], ['이용 요금', '2인-4인 30,000원 / 5인-6인 40,000원 (1박기준/현장결제)'], ['이용 시간', '17:00~21:00']],
+        note: '※ 동계·강풍 이용불가 ※ 준비소요시간 없음 ※ 선착순 예약제, 이용 전날까지 사전 신청 필수 ※ 객실 내 프라이팬 고기 조리 금지 ※ 하절기 운영' },
+      { key: 'private_bbq', label: '개별 BBQ', use: true, rooms: 6, chanN: 3, faqN: 2,
+        fields: [['이용 객실', '3층 객실 · 6객실'], ['이용 장소', '개별 테라스'], ['바베큐 형태', '전기그릴'], ['제공 구성', '그릴+집게+가위'], ['이용 요금', '1세트 20,000원 (1박기준/현장결제)'], ['이용 시간', '15:00~22:00']],
+        note: '※ 하절기(2월 중순~10월) 운영 ※ 2월 이용 시 실외 방한 준비 필요 ※ 이용 전날까지 사전 신청 필수 ※ 전기그릴만 사용 가능(숯·개인 그릴 불가) ※ 우천·강풍 시 이용불가' },
+      { key: 'shared_pool', label: '공용 수영장', use: true, rooms: 28, chanN: 3, faqN: 8,
+        fields: [['이용 객실', '숙박객 전체'], ['운영 기간', '26년 7월 11일 ~ 8월 17일'], ['온도', '냉수'], ['이용 요금', '무료'], ['이용 시간', '15:30 ~ 21:00'], ['크기', '수심 1.2m 이상 · 7층 옥상']],
+        note: '※ 수영복 필수(면티·트레이닝복 금지) ※ 음주 수영 금지 / 타월 지참(대여 1장 2,000원) ※ 무인 운영 ※ 14세 이하 보호자 동반 ※ 36개월 이하 물놀이용 기저귀' },
+      { key: 'spa', label: '스파', use: true, rooms: 28, chanN: 3, faqN: 2,
+        fields: [['이용 객실', '전 객실'], ['스파 형태', '제트스파'], ['수용인원', '7층 4인용 / 3~6층 2인용'], ['이용 요금', '무료'], ['이용 시간', '입실~23시 (오전 이용 불가)']],
+        note: '※ 수영복 필수 ※ 입욕제 사용 불가 ※ 온도 직접 조절 가능 ※ 기계 고장 시 변상 및 청소비 청구' },
+      { key: 'checkin_checkout', label: '체크인 / 체크아웃', use: true, rooms: 28, chanN: 3, faqN: 2,
+        fields: [['체크인', '15:30'], ['체크인 마감', '22:00'], ['체크아웃', '11:00']], note: '',
+        rules: [
+          { tpl: '{time} 이후 입실 시 사전 연락 필수', slots: [{ k: 'time', type: 'time', v: '21:00' }] },
+          { tpl: '퇴실 지연 시 사전 요청 · {n} 초과 시 {amt} 추가', slots: [{ k: 'n', type: 'int:시간', v: 1 }, { k: 'amt', type: 'money', v: 50000 }] }
+        ] },
+      { key: 'extra_person', label: '추가 인원', use: true, rooms: 28, chanN: 3, faqN: 3,
+        fields: [['추가요금', '30,000원'], ['성인 연령', '8세 이상'], ['아동 연령', '8세'], ['유아 연령', '36개월']], note: '',
+        rules: [
+          { tpl: '{n} 이상 {amt}', slots: [{ k: 'n', type: 'int:개월', v: 36 }, { k: 'amt', type: 'money', v: 30000 }] },
+          { tpl: '이불 미추가 시 {amt}', slots: [{ k: 'amt', type: 'money', v: 20000 }] },
+          { tpl: '카드키 분실 시 {amt} 부과', slots: [{ k: 'amt', type: 'money', v: 20000 }] },
+          { tpl: '최대 인원 초과 시 입실 불가', slots: [] }
+        ] },
+      { key: 'parking', label: '주차', use: true, rooms: 28, chanN: 3, faqN: 2,
+        fields: [['주차장', '보유'], ['주차 대수', '객실당 1대'], ['전기차 충전', '불가']], note: '' },
+      { key: 'private_pool', label: '개별 수영장', use: false, rooms: 0, chanN: 3, faqN: 8,
+        fields: [['사용 여부', '사용안함']], note: '' },
+      { key: 'pet_friendly', label: '반려동물', use: false, rooms: 0, chanN: 3, faqN: 3,
+        fields: [['사용 여부', '입실불가']], note: '' },
+      { key: 'pickup', label: '픽업', use: false, rooms: 0, chanN: 3, faqN: 0,
+        fields: [['사용 여부', '사용안함']], note: '' }
+    ];
+
+    const faqSrc = [
+      ['공통', 'Q-0001', '체크인 전, 체크아웃 후 짐 보관이 가능한가요?', '짐 보관 및 음식 보관(냉장 보관) 가능합니다.'],
+      ['공통', 'Q-0002', '펜션으로 택배를 보낼 경우, 대리 수령이 가능한가요?', '가능합니다.'],
+      ['공통', 'Q-0003', '카드 단말기가 있나요?', '구비되어 있습니다.'],
+      ['공통', 'Q-0004', '현금 지불 또는 계좌 이체한 경우에 현금영수증 발급 가능한가요?', '가능합니다.'],
+      ['공통', 'Q-0005', '객실 내 선풍기가 구비되어 있나요?', '구비되어 있지 않습니다.'],
+      ['공통', 'Q-0006', '객실 내 전기장판이 구비되어 있나요?', '구비되어 있지 않습니다.'],
+      ['공통', 'Q-0007', '휠체어 이용이 가능한가요?', '가능합니다.'],
+      ['공통', 'Q-0008', '휠체어나 노약자 사용에 있어 참고 할만한 주의 사항이 있나요?', '객실 내 스파 이용 시 미끄럼 주의 필요합니다.'],
+      ['오션뷰', 'Q-0009', '객실 안에서 일출 조망이 가능한가요?', '가능합니다.'],
+      ['난방', 'Q-0010', '객실 난방 시설은 어떻게 되어 있나요?', '개별난방입니다.'],
+      ['초과입실', 'Q-0011', '예외로 객실 최대 인원수보다 초과해서 입실할 수 있나요?', '최대 인원 초과입실 불가합니다.'],
+      ['초과입실', 'Q-0012', '객실 최대 인원 초과 입실은 어떤 경우에 가능한가요?', '최대 인원 초과입실 불가합니다.'],
+      ['초과입실', 'Q-0013', '객실 최대 인원 초과 입실은 몇 명까지 가능한가요?', '최대 인원 초과입실 불가합니다.'],
+      ['바베큐', 'Q-0014', '예외로 바비큐 신청 마감 시간 이후에도 이용이 가능한가요?', '입실일 1일전까지 사전 신청 해주셔야 합니다.'],
+      ['바베큐', 'Q-0015', '예외로 바비큐 이용 마감 시간 이후에도 이용이 가능한가요?', '오후 5시~9시에 이용 가능합니다.'],
+      ['바베큐', 'Q-0016', '야외바베큐일 경우, 천막이 설치되어 있나요?', '우천 및 기상 악화 시 이용 불가합니다.'],
+      ['바베큐', 'Q-0017', '바베큐 이용 시에 조개구이를 해도 되나요?', '불가합니다.'],
+      ['바베큐', 'Q-0018', '바베큐를 사용하지 않는 영유아 바비큐 비용이 발생하나요?', '36개월 이하는 무료입니다.'],
+      ['개별바베큐', 'Q-0019', '객실을 두 개 이상 예약하신 경우, 한 공간에서 바베큐를 함께 이용할 수 있나요?', '최대인원까지 가능합니다.'],
+      ['공용수영장', 'Q-0020', '공용수영장 미온수 운영 중인가요?', '냉수로만 운영합니다.'],
+      ['공용수영장', 'Q-0021', '공용수영장 수질 관리는 어떻게 하나요?', '여과기 사용합니다.'],
+      ['공용수영장', 'Q-0022', '공용수영장 청소 시 약품을 사용하나요?', '소독약 사용합니다.'],
+      ['공용수영장', 'Q-0023', '펜션 내 에어펌프가 구비되어 있나요?', '구비되어 있습니다.'],
+      ['공용수영장', 'Q-0024', '튜브를 대여할 수 있나요?', '구비되어 있습니다.'],
+      ['공용수영장', 'Q-0025', '공용수영장 물은 얼마나 자주 교체하나요?', '3~4일 주기로 교체합니다.'],
+      ['공용수영장', 'Q-0026', '공용수영장 이용 시간 마감 후에 이용할 수 있나요?', '21시까지 가능합니다.'],
+      ['공용수영장', 'Q-0027', '공용수영장 퇴실일 오전에도 이용할 수 있나요?', '퇴실 오전에는 불가하고, 연박의 경우 사전 문의가 필요합니다.'],
+      ['개별수영장', 'Q-0028', '개별수영장 미온수 운영 중인가요?', ''],
+      ['개별수영장', 'Q-0029', '개별수영장 수질 관리는 어떻게 하나요?', ''],
+      ['개별수영장', 'Q-0030', '개별수영장 청소 시 약품을 사용하나요?', ''],
+      ['개별수영장', 'Q-0031', '객실 내 에어펌프가 구비되어 있나요?', ''],
+      ['개별수영장', 'Q-0032', '객실 내 튜브를 제공하나요?', ''],
+      ['개별수영장', 'Q-0033', '개별수영장 물은 얼마나 자주 교체하나요?', ''],
+      ['개별수영장', 'Q-0034', '개별수영장 이용 시간 마감 후에 이용할 수 있나요?', ''],
+      ['개별수영장', 'Q-0035', '개별수영장 퇴실일 오전에도 이용할 수 있나요?', ''],
+      ['애견동반', 'Q-0036', '예외로 애견 마릿수를 초과하여 동반할 수 있나요?', ''],
+      ['애견동반', 'Q-0037', '예외로 애견이 무게 제한을 초과해도 동반할 수 있나요?', ''],
+      ['애견동반', 'Q-0038', '애견 동반 가능 객실에 제한이 있거나 예외 사항이 있나요?', ''],
+      ['스파', 'Q-0039', '예외로 스파 이용 시간 마감 후에 이용할 수 있나요?', '23시까지 가능합니다.'],
+      ['스파', 'Q-0040', '스파 퇴실일 오전에도 이용할 수 있나요?', '불가합니다.'],
+      ['캠핑,오토캠핑', 'Q-0041', '캠핑장에서 릴선을 사용할 수 있나요?', ''],
+      ['캠핑,오토캠핑', 'Q-0042', '캠핑장 이용 시 전기 와트(W) 제한이 있나요?', ''],
+      ['캠핑,오토캠핑', 'Q-0043', '캠핑장에서 전기 난방기구를 사용할 수 있나요?', ''],
+      ['캠핑,오토캠핑', 'Q-0044', '캠핑장 전기 난방 기구 사용 시 비용이 발생하나요?', ''],
+      ['캠핑,오토캠핑', 'Q-0045', '텐트 외 숙박 시설 사용이 가능한가요?', ''],
+      ['주차장', 'Q-0046', '부지 내 주차 가능 대수를 초과하면 어떻게 해야 하나요?', '주차장 있습니다.'],
+      ['주차장', 'Q-0047', '주차 위치는 어디인가요?', '인근 공영주차장 있습니다.'],
+      ['공통', 'Q-0048', '숙소에서 현재 진행하고 있는 이벤트가 있나요?', ''],
+      ['공통', 'Q-0049', '인원 추가 시 침구는 함께 제공되나요?', '네, 추가로 제공됩니다.'],
+      ['공통', 'Q-0050', '추가 제공되는 침구는 어떤 종류인가요?', '토퍼(요) + 베개 + 이불'],
+      ['공통', 'Q-0051', '체크인은 어떤 방식으로 진행되나요?', '프론트/대면 체크인'],
+      ['공통', 'Q-0052', '당일 예약 시, 입실은 언제까지 가능한가요?', '24:00(자정)까지 가능합니다.'],
+      ['공통', 'Q-0053', '현장에 관리자나 직원분이 계신가요?', '24시간 상주합니다.'],
+      ['기타', 'Q-0076', '개별 FAQ (시설·비품·정책 16문항)', '[스파] 2021년 신축 · 직수 운영 · 유색 의류 불가 / [비품] 호텔식 침구, 1일 1회 전체 교체 / [객실] 3층 테라스 불투명 벽, 4~7층 완전 차단, A301 장애인 겸용']
+    ];
+    const TPL = {
+      'Q-0015': '{shared_bbq.이용 시간}에 이용 가능합니다.',
+      'Q-0019': '{private_bbq.이용 장소}에서 최대인원까지 가능합니다.',
+      'Q-0020': '{shared_pool.온도}로만 운영합니다.',
+      'Q-0026': '{shared_pool.이용 시간} 까지 가능합니다.',
+      'Q-0039': '{spa.이용 시간}까지 가능합니다.',
+      'Q-0018': '{extra_person.유아 연령} 이하는 무료입니다.',
+      'Q-0046': '주차장 {parking.주차장} · {parking.주차 대수}입니다.'
+    };
+    const faqs = faqSrc.map(function (f) { return { cate: f[0], qid: f[1], q: f[2], a: f[3], tpl: TPL[f[1]] || '' }; });
+
+    const catalogExtra = [
+      { key: 'camping', label: '캠핑 · 오토캠핑', st: 'none', rooms: 0, chanN: 3, faqN: 5, fields: [], note: '' },
+      { key: 'rooftop_bar', label: '루프탑 바', st: 'none', rooms: 0, chanN: 2, faqN: 0, fields: [], note: '' },
+      { key: 'playground', label: '어린이 놀이터', st: 'none', rooms: 0, chanN: 3, faqN: 2, fields: [], note: '' },
+      { key: 'karaoke', label: '노래방', st: 'none', rooms: 0, chanN: 2, faqN: 1, fields: [], note: '' },
+      { key: 'seminar_room', label: '세미나실', st: 'none', rooms: 0, chanN: 2, faqN: 0, fields: [], note: '' },
+      { key: 'ev_charger', label: '전기차 충전', st: 'none', rooms: 0, chanN: 3, faqN: 1, fields: [], note: '' }
+    ];
+    const allBlocks = blocks.map(function (b) { return Object.assign({}, b, { st: b.use ? 'used' : 'off' }); }).concat(catalogExtra);
+
+    return {
+      tab: 'rooms', q: '', sel: [], bfilter: 'all',
+      optFees: {
+        shared_gas: '2~4인 30,000원 / 5~6인 40,000원 (1박기준/현장결제)',
+        shared_charcoal: '1세트 35,000원 (1박기준/현장결제)',
+        shared_lid: '1세트 40,000원 (1박기준/현장결제)',
+        private_electric: '1세트 20,000원 (1박기준/현장결제)',
+        private_charcoal: '1세트 30,000원 (1박기준/현장결제)',
+        none: '—'
+      },
+      rooms: rooms, blocks: allBlocks, faqs: faqs,
+      catalogN: allBlocks.length + 22,
+      channels: {
+        theme: { a: '가족실, 2인실, 수영장', b: '가족추천, 커플, 온수풀', c: '패밀리, 커플, 야외수영장(미온수)' },
+        maxpax: { a: '7층 6인 / 그 외 4인', b: '7층 6인 / 그 외 4인', c: '전 객실 4인' },
+        bbq: { a: '개별 6실 / 공용 24실', b: '개별 6실 / 공용 24실', c: '개별 6실 / 공용 24실' },
+        checkin: { a: '15:30 / 11:00', b: '15:30 / 11:00', c: '15:30 / 11:00' }
+      },
+      bulk: null, cas: null, edit: null, toast: '', snapshot: null,
+      savedAt: '2026-07-26 09:12',
+      history: [
+        { title: '공용 BBQ · 이용 시간 변경', before: '17:00~20:00', after: '17:00~21:00', n: 27, who: '김지현', at: '07-24 16:40', chips: ['객실 24', '채널 3', 'FAQ Q-0015'] },
+        { title: '스파 수용인원 · 7층 오버라이드', before: '2인용 제트스파', after: '4인용 제트스파', n: 7, who: '박도현', at: '07-22 11:05', chips: ['객실 4', '채널 3'] },
+        { title: '공용 수영장 · 운영 기간 등록', before: '미설정', after: '26.07.11 ~ 08.17', n: 34, who: '김지현', at: '07-18 14:22', chips: ['객실 28', '채널 3', 'FAQ 3'] },
+        { title: '객실 A303 추가 등록', before: '—', after: '개별BBQ 상속 · 변형3', n: 12, who: '이수민', at: '07-11 10:03', chips: ['블록 2', '채널 3', 'FAQ 7'] }
+      ]
+    };
+  }
+
+  FIELDS = [
+    { id: 'maxP', label: '최대 인원', values: [['4', '최대 4명 (숙소 기본값)'], ['6', '최대 6명'], ['8', '최대 8명']] },
+    { id: 'extra', label: '추가인원 요금', values: [['30000', '30,000원 (숙소 기본값)'], ['35000', '35,000원'], ['40000', '40,000원']] },
+    { id: 'bbq', label: '바베큐 유형', values: [] },
+    { id: 'spa', label: '스파 유형', values: [['제트스파 2인용', '제트스파 2인용 (숙소 기본값)'], ['제트스파 4인용', '제트스파 4인용']] },
+    { id: 'facil', label: '객실내 시설 변형', values: [['변형3', '변형3 · 19항목'], ['변형4', '변형4 · 테라스 없음'], ['변형1', '변형1 · 7층 구성']] }
+  ];
+  BASEVAL = { maxP: '4', extra: '30000', bbq: '공용BBQ · 가스그릴', spa: '제트스파 2인용', facil: '변형3' };
+  CHANKEYS = [['a', '네이버'], ['b', '여기어때'], ['c', '야놀자']];
+  RULES = {
+    theme: { a: '가족실, 2인실, 수영장', b: '가족추천, 커플, 실외수영장', c: '패밀리, 커플, 야외수영장(냉수)' },
+    maxpax: { a: '7층 6인 / 그 외 4인', b: '7층 6인 / 그 외 4인', c: '7층 6인 / 그 외 4인' },
+    bbq: { a: '개별 6실 / 공용 24실', b: '개별 6실 / 공용 24실', c: '개별 6실 / 공용 24실' },
+    checkin: { a: '15:30 / 11:00', b: '15:30 / 11:00', c: '15:30 / 11:00' }
+  };
+
+  fmtNum = (v) => Number(v).toLocaleString('ko-KR');
+  addHistory = (h) => this.setState(s => ({ history: [h].concat(s.history), savedAt: '2026-07-26 09:41' }));
+  curVal = (r, f) => f === 'maxP' ? String(r.maxP) : f === 'extra' ? String(r.extra) : f === 'bbq' ? r.bbq : f === 'spa' ? r.spa : r.facil;
+  dispVal = (f, v) => f === 'extra' ? this.fmtNum(v) + '원' : f === 'maxP' ? '최대 ' + v + '명' : v;
+
+  roomsLabel = (list, all) => {
+    if (!list.length) return '이용 객실 없음';
+    const floors = [];
+    list.forEach(r => { if (floors.indexOf(r.floor) < 0) floors.push(r.floor); });
+    floors.sort();
+    const contiguous = floors[floors.length - 1] - floors[0] === floors.length - 1 && floors.length > 1;
+    const fl = contiguous ? floors[0] + '~' + floors[floors.length - 1] + '층' : floors.map(f => f + '층').join(',');
+    const codes = list.map(r => r.code);
+    const excluded = all.filter(r => floors.indexOf(r.floor) >= 0 && codes.indexOf(r.code) < 0).map(r => r.short);
+    return fl + '객실 · ' + list.length + '객실' + (excluded.length ? ' (' + excluded.join(',') + ' 제외)' : '');
+  };
+
+  deriveBlocks = (rooms, blocks) => blocks.map(b => {
+    if (b.key === 'shared_bbq' || b.key === 'private_bbq') {
+      const want = b.key === 'shared_bbq' ? '공용BBQ' : '개별BBQ';
+      const list = rooms.filter(r => r.bbq.indexOf(want) >= 0);
+      const fees = [], types = [];
+      list.forEach(r => {
+        if (fees.indexOf(r.bbqFee) < 0) fees.push(r.bbqFee);
+        const t = r.bbq.split(' · ')[1] || r.bbq;
+        if (types.indexOf(t) < 0) types.push(t);
+      });
+      return Object.assign({}, b, {
+        rooms: list.length,
+        st: b.st === 'none' ? 'none' : (list.length === 0 ? 'off' : 'used'),
+        fields: b.fields.map(f => {
+          if (f[0] === '이용 객실') return [f[0], this.roomsLabel(list, rooms)];
+          if (f[0] === '이용 요금') return [f[0], fees.length ? fees.join(' / ') : '—'];
+          if (f[0] === '바베큐 형태') return [f[0], types.length ? types.join(', ') : '—'];
+          return f;
+        })
+      });
+    }
+    if (b.key === 'spa') {
+      const four = rooms.filter(r => r.spa.indexOf('4인') >= 0), two = rooms.filter(r => r.spa.indexOf('2인') >= 0);
+      const txt = (four.length ? four.length + '객실 4인용' : '') + (four.length && two.length ? ' / ' : '') + (two.length ? two.length + '객실 2인용' : '');
+      return Object.assign({}, b, { rooms: four.length + two.length, fields: b.fields.map(f => f[0] === '수용인원' ? [f[0], txt] : f) });
+    }
+    return b;
+  });
+
+  simulate = (rooms, codes, field, value) => rooms.map(r => {
+    if (codes.indexOf(r.code) < 0) return r;
+    if (field === 'bbq') return Object.assign({}, r, { bbq: value, bbqFee: value.indexOf('개별') >= 0 ? '1세트 20,000원' : value === '이용 불가' ? '—' : '2~4인 30,000 / 5~6인 40,000' });
+    if (field === 'spa') return Object.assign({}, r, { spa: value });
+    return r;
+  });
+
+  derivedDiff = (nextRooms, nextBlocks) => {
+    const st = this.state;
+    const now = this.deriveBlocks(st.rooms, st.blocks), nx = this.deriveBlocks(nextRooms, nextBlocks || st.blocks);
+    const out = [];
+    now.forEach((nb, idx) => {
+      const n2 = nx[idx];
+      nb.fields.forEach((f, fi) => {
+        if (n2.fields[fi] && f[1] !== n2.fields[fi][1]) out.push({ key: 'drv:' + nb.key + ':' + f[0], label: nb.label + ' · ' + f[0], before: f[1], after: n2.fields[fi][1], on: true, locked: true, isOv: false });
+      });
+      if (nb.rooms !== n2.rooms) out.push({ key: 'drv:' + nb.key + ':rooms', label: nb.label + ' · 적용 객실 수', before: nb.rooms + '객실', after: n2.rooms + '객실', on: true, locked: true, isOv: false });
+      if (nb.st !== n2.st) out.push({ key: 'drv:' + nb.key + ':st', label: nb.label + ' · 사용 여부', before: this.stName(nb.st), after: this.stName(n2.st), on: true, locked: true, isOv: false });
+    });
+    return out;
+  };
+  stName = (s) => s === 'used' ? '사용중' : s === 'off' ? '보유·사용안함' : '미보유';
+  grp = (derived, extra) => (derived.length ? [{ title: '숙소 블록 · 자동 재생성 ' + derived.length, desc: '객실 값에서 다시 계산됩니다 — 선택 불가', items: derived }] : []).concat(extra || []);
+
+  openNewRoom = () => this.setState({ nr: { name: 'A404', floor: '4', bbq: '공용BBQ · 가스그릴', pax: '2/4' } });
+  closeNewRoom = () => this.setState({ nr: null });
+  setNR = (k, v) => this.setState(s => { const o = Object.assign({}, s.nr); o[k] = v; return { nr: o }; });
+
+  buildRoom = (nr) => {
+    const big = nr.pax === '4/6';
+    return {
+      code: String(27762 + Math.floor(Math.random() * 40)), short: nr.name || '신규객실', tag: '오션뷰', floor: Number(nr.floor),
+      area: big ? '92.56㎡ (28평)' : '59.50㎡ (18평)', form: big ? '분리형' : '원룸형', bed: big ? '킹침대 2' : '킹침대 1',
+      facil: '변형3', baseP: big ? 4 : 2, maxP: big ? 6 : 4, paxOv: big, extra: 30000, extraOv: false,
+      bbq: nr.bbq, bbqOv: nr.bbq !== '공용BBQ · 가스그릴',
+      bbqOpt: this.optByLabel(nr.bbq).code, bbqFee: this.feeOf(this.optByLabel(nr.bbq).code),
+      spa: big ? '제트스파 4인용' : '제트스파 2인용', spaOv: big
+    };
+  };
+
+  previewNewRoom = () => {
+    const st = this.state, room = this.buildRoom(st.nr);
+    const next = st.rooms.concat([room]);
+    const derived = this.derivedDiff(next);
+    this.setState({
+      nr: null,
+      cas: {
+        kind: 'roomadd', room: room,
+        field: '객실 신규 등록 · ' + room.short, from: '없음', to: room.short + ' (' + room.floor + '층 · ' + room.bbq + ')',
+        warn: '객실이 하나 늘면 이 객실을 참조하는 숙소 블록 문구와 객실 수가 모두 다시 계산됩니다.',
+        groups: [{ title: '객실 1', desc: '신규 등록', items: [{ key: 'room:' + room.code, label: room.short + ' · ' + room.code, before: '—', after: '기준 ' + room.baseP + '/최대 ' + room.maxP + ' · ' + room.bbq, on: true, isOv: false }] }]
+          .concat(this.grp(derived))
+          .concat([{ title: '판매 채널 3', desc: '신규 객실 상품 생성 + 부대시설 문구', items: this.CHANKEYS.map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + room.short + ' 상품', before: '없음', after: '생성 · 전송 대기', on: true, isOv: false })) }])
+      }
+    });
+  };
+
+  previewDelete = () => {
+    const st = this.state;
+    const gone = st.rooms.filter(r => st.sel.indexOf(r.code) >= 0);
+    const next = st.rooms.filter(r => st.sel.indexOf(r.code) < 0);
+    const derived = this.derivedDiff(next);
+    this.setState({
+      cas: {
+        kind: 'roomdel', codes: st.sel,
+        field: '객실 삭제 · ' + gone.length + '객실', from: gone.map(r => r.short).join(','), to: '삭제',
+        warn: '삭제된 객실을 참조하던 블록 문구·객실 수는 자동으로 줄어듭니다. 마지막 객실이 빠진 시설은 사용안함으로 내려갑니다.',
+        groups: [{ title: '객실 ' + gone.length, desc: '삭제 대상', items: gone.map(r => ({ key: 'room:' + r.code, label: r.short + ' · ' + r.code, before: r.bbq + ' · ' + r.spa, after: '삭제', on: true, isOv: false })) }]
+          .concat(this.grp(derived))
+          .concat([{ title: '판매 채널 3', desc: '채널 상품 판매중지', items: this.CHANKEYS.map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · 상품 ' + gone.length + '건', before: '판매중', after: '판매중지', on: true, isOv: false })) }])
+      }
+    });
+  };
+
+  previewBlockState = (bk, nextSt) => {
+    const st = this.state;
+    const isBbq = bk.key.indexOf('bbq') >= 0;
+    const want = bk.key === 'shared_bbq' ? '공용BBQ' : '개별BBQ';
+    const hit = isBbq ? st.rooms.filter(r => r.bbq.indexOf(want) >= 0) : [];
+    const nextRooms = isBbq ? st.rooms.map(r => hit.indexOf(r) < 0 ? r : Object.assign({}, r, { bbq: '이용 불가', bbqOpt: 'none', bbqFee: '—', bbqOv: true })) : st.rooms;
+    const nextBlocks = st.blocks.map(b => b.key === bk.key ? Object.assign({}, b, { st: nextSt }) : b);
+    const derived = this.derivedDiff(nextRooms, nextBlocks).filter(d => d.key.indexOf('drv:' + bk.key + ':st') < 0);
+    const faq = st.faqs.filter(f => (isBbq && f.cate.indexOf('바베큐') >= 0) || (bk.key === 'shared_pool' && f.cate === '공용수영장') || (bk.key === 'spa' && f.cate === '스파')).slice(0, 6)
+      .map(f => ({ key: 'faq:' + f.qid, label: 'FAQ ' + f.qid, before: '활성', after: '자동 비활성', on: true, locked: true, isOv: false }));
+    this.setState({
+      cas: {
+        kind: 'blockstate', blockKey: bk.key, nextSt: nextSt, killRooms: isBbq ? hit.map(r => r.code) : [],
+        field: bk.label + (nextSt === 'none' ? ' · 항목 제거' : ' · 사용 중지'),
+        from: this.stName(bk.st), to: this.stName(nextSt),
+        warn: nextSt === 'none'
+          ? '항목 자체를 이 숙소에서 제거합니다. 이 시설을 쓰던 객실 값도 함께 비워지고, 관련 FAQ는 비활성됩니다.'
+          : '판매 노출만 끕니다. 값과 필드는 남아 있어 언제든 다시 켤 수 있습니다.',
+        groups: [{ title: '숙소 블록 1', desc: nextSt === 'none' ? '카탈로그 항목 제거' : '사용 여부 전환', items: [{ key: 'blk:' + bk.key, label: bk.label, before: this.stName(bk.st), after: this.stName(nextSt), on: true, isOv: false }] }]
+          .concat(hit.length ? [{ title: '객실 ' + hit.length, desc: '이 시설을 참조하던 객실 값', items: hit.map(r => ({ key: 'room:' + r.code, label: r.short + ' · ' + r.code, before: r.bbq, after: '이용 불가', on: true, locked: true, isOv: false })) }] : [])
+          .concat(derived.length ? this.grp(derived) : [])
+          .concat([{ title: '판매 채널 ' + bk.chanN, desc: '채널 부대시설 항목', items: this.CHANKEYS.slice(0, bk.chanN).map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + bk.label, before: '노출', after: '미노출', on: true, isOv: false })) }])
+          .concat(faq.length ? [{ title: 'FAQ ' + faq.length, desc: '연결 문항 자동 비활성', items: faq }] : [])
+      }
+    });
+  };
+
+  editRoomField = (code, field) => this.setState(s => ({
+    sel: [code], bulk: { field: field, value: this.curVal(s.rooms.filter(r => r.code === code)[0], field) }
+  }));
+
+  toggleRoom = (code) => this.setState(s => ({ sel: s.sel.indexOf(code) >= 0 ? s.sel.filter(c => c !== code) : s.sel.concat([code]) }));
+  toggleAll = () => this.setState(s => ({ sel: s.sel.length === s.rooms.length ? [] : s.rooms.map(r => r.code) }));
+  openBulk = () => this.setState({ bulk: { field: 'bbq', value: '개별BBQ · 전기그릴' } });
+  closeBulk = () => this.setState({ bulk: null });
+  pickField = (id) => this.setState({ bulk: { field: id, value: id === 'bbq' ? this.OPTIONS[0].label : this.FIELDS.filter(f => f.id === id)[0].values[0][0] } });
+  pickValue = (v) => this.setState(s => ({ bulk: { field: s.bulk.field, value: v } }));
+
+  previewBulk = () => {
+    const st = this.state, b = st.bulk;
+    const fd = this.FIELDS.filter(f => f.id === b.field)[0];
+    const items = st.rooms.filter(r => st.sel.indexOf(r.code) >= 0).map(r => ({
+      key: 'room:' + r.code, label: r.short + ' · ' + r.code,
+      before: this.dispVal(b.field, this.curVal(r, b.field)), after: this.dispVal(b.field, b.value),
+      on: this.curVal(r, b.field) !== b.value,
+      isOv: b.field === 'bbq' ? r.bbqOv : b.field === 'spa' ? r.spaOv : b.field === 'maxP' ? r.paxOv : r.extraOv
+    }));
+    const side = this.CHANKEYS.map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + fd.label, before: '이전 값', after: this.dispVal(b.field, b.value), on: true, isOv: false }));
+    const faq = b.field === 'bbq' ? [
+      { key: 'faq:Q-0019', label: 'FAQ Q-0019 · 개별바베큐', before: '기존 답변', after: '바베큐 이용 객실 문구 자동 반영', on: true, isOv: false },
+      { key: 'faq:Q-0014', label: 'FAQ Q-0014 · 바베큐 신청', before: '기존 답변', after: '이용 가능 객실 목록 자동 반영', on: true, isOv: false }
+    ] : [];
+
+    const derived = this.derivedDiff(this.simulate(st.rooms, st.sel, b.field, b.value));
+
+    this.setState({
+      bulk: null,
+      cas: {
+        kind: 'bulk', field: fd.label, from: '객실별 현재값', to: this.dispVal(b.field, b.value),
+        target: b.field, value: b.value,
+        warn: items.some(i => i.isOv)
+          ? '선택 객실 중 일부는 이미 개별 오버라이드가 있습니다. 체크를 해제하면 그 객실의 기존 값은 유지됩니다.'
+          : (derived.length ? '숙소 블록의 자동 산출 필드 ' + derived.length + '건은 객실 값에서 다시 계산됩니다 — 따로 수정할 필요가 없습니다.' : ''),
+        groups: [
+          { title: '객실 ' + items.length, desc: '선택한 객실에 값 쓰기', items: items }
+        ].concat(derived.length ? [{ title: '숙소 블록 · 자동 재생성 ' + derived.length, desc: '객실 값에서 다시 계산됩니다 — 선택 불가', items: derived }] : [])
+          .concat([{ title: '판매 채널 3', desc: '매핑 사전을 통해 채널 표현으로 변환', items: side }])
+          .concat(faq.length ? [{ title: 'FAQ ' + faq.length, desc: '시설 값을 인용하는 답변', items: faq }] : [])
+      }
+    });
+  };
+
+  BBQVAL = { shared_bbq: '공용BBQ · 가스그릴', private_bbq: '개별BBQ · 전기그릴' };
+
+  OPTIONS = [
+    { code: 'shared_gas', label: '공용BBQ · 가스그릴', scope: 'shared', ch: { a: '가스그릴', b: '가스BBQ', c: '가스그릴' } },
+    { code: 'shared_charcoal', label: '공용BBQ · 숯불', scope: 'shared', ch: { a: '숯불그릴', b: '참숯BBQ', c: '숯불BBQ' } },
+    { code: 'shared_lid', label: '공용BBQ · 솥뚜껑', scope: 'shared', ch: { a: '솥뚜껑', b: '솥뚜껑BBQ', c: '가마솥BBQ' } },
+    { code: 'private_electric', label: '개별BBQ · 전기그릴', scope: 'private', ch: { a: '전기그릴', b: '전기BBQ', c: '전기그릴' } },
+    { code: 'private_charcoal', label: '개별BBQ · 숯불', scope: 'private', ch: { a: '숯불그릴', b: '참숯BBQ', c: '숯불BBQ' } },
+    { code: 'none', label: '이용 불가', scope: 'none', ch: { a: '미제공', b: '미제공', c: '미제공' } }
+  ];
+  optByLabel = (label) => this.OPTIONS.filter(o => o.label === label)[0] || this.OPTIONS[0];
+  feeOf = (code) => this.state.optFees[code] || '—';
+
+  FTYPE = {
+    'checkin_checkout|체크인': 'time', 'checkin_checkout|체크인 마감': 'time', 'checkin_checkout|체크아웃': 'time',
+    'extra_person|추가요금': 'money', 'extra_person|성인 연령': 'int:세', 'extra_person|아동 연령': 'int:세', 'extra_person|유아 연령': 'int:개월',
+    'shared_bbq|이용 장소': 'opt:place', 'shared_bbq|제공 구성': 'opt:kit', 'shared_bbq|이용 시간': 'range',
+    'private_bbq|이용 장소': 'opt:place', 'private_bbq|제공 구성': 'opt:kit', 'private_bbq|이용 시간': 'range',
+    'shared_pool|온도': 'opt:temp', 'shared_pool|이용 요금': 'money', 'shared_pool|이용 시간': 'range', 'shared_pool|이용 객실': 'opt:scope',
+    'shared_pool|운영 기간': 'daterange', 'shared_pool|크기': 'dec:m 이상',
+    'spa|스파 형태': 'opt:spa', 'spa|이용 요금': 'money', 'spa|이용 시간': 'range', 'spa|이용 객실': 'opt:scope',
+    'parking|주차장': 'opt:parking', 'parking|주차 대수': 'opt:parkcnt', 'parking|전기차 충전': 'opt:yn'
+  };
+  OPTLIST = {
+    place: ['루프탑', '개별 테라스', '1층 정원', '전용 데크', '실내 바베큐장'],
+    kit: ['그릴+집게+가위', '그릴+집게+가위+숯', '그릴만 제공', '숯·토치 별도 판매'],
+    temp: ['냉수', '미온수', '온수'],
+    spa: ['제트스파', '월풀', '반신욕조', '노천탕'],
+    bbqform: ['숯불', '가스그릴', '전기그릴', '솥뚜껑'],
+    form: ['원룸형', '분리형', '복층형'],
+    onoff: ['사용', '사용안함'],
+    wear: ['수영복 필수', '래시가드 허용', '자유 복장'],
+    scope: ['전 객실', '숙박객 전체', '3층 객실', '4~7층 객실', '7층 객실'],
+    parking: ['보유', '없음', '인근 공영주차장'],
+    parkcnt: ['객실당 1대', '객실당 2대', '선착순', '제한 없음'],
+    yn: ['가능', '불가']
+  };
+  NAMETYPE = {
+    '이용 객실': 'opt:scope', '이용 장소': 'opt:place', '제공 구성': 'opt:kit', '사용 여부': 'opt:onoff',
+    '이용 복장': 'opt:wear', '온도': 'opt:temp', '바베큐 형태': 'opt:bbqform', '스파 형태': 'opt:spa',
+    '형태': 'opt:form', '주차장': 'opt:parking', '주차 대수': 'opt:parkcnt', '전기차 충전': 'opt:yn',
+    '운영 기간': 'daterange', '크기': 'dec:m 이상', '대상': 'opt:scope', '조식 서비스': 'opt:onoff'
+  };
+  FREETEXT = ['주의사항', '특이사항', '안내', '기타', '설명', '교통', '시설'];
+  typeOf = (bkey, k) => {
+    if (this.FTYPE[bkey + '|' + k]) return this.FTYPE[bkey + '|' + k];
+    if (this.NAMETYPE[k]) return this.NAMETYPE[k];
+    if (k.indexOf('시간') >= 0) return 'range';
+    if (k.indexOf('요금') >= 0 || k.indexOf('비용') >= 0 || k.indexOf('가격') >= 0) return 'money';
+    if (k.indexOf('연령') >= 0) return k.indexOf('유아') >= 0 ? 'int:개월' : 'int:세';
+    if (k.indexOf('인원') >= 0 || k.indexOf('대수') >= 0 || k.indexOf('개수') >= 0) return 'int:개';
+    if (k.indexOf('기간') >= 0 || k.indexOf('일자') >= 0) return 'daterange';
+    if (this.FREETEXT.some(t => k.indexOf(t) >= 0)) return 'text';
+    return 'opt:onoff';
+  };
+  typeName = (t) => t === 'time' ? '시간' : t === 'range' ? '시간대' : t === 'money' ? '금액' : t === 'tier' ? '금액 구간'
+    : t === 'daterange' ? '날짜' : t.indexOf('int:') === 0 ? '정수' : t.indexOf('dec:') === 0 ? '수치' : t.indexOf('opt:') === 0 ? '옵션' : '자유 텍스트';
+  digits = (s) => Number(String(s).replace(/[^0-9]/g, '')) || 0;
+
+  parseVal = (type, v) => {
+    const s = String(v || '');
+    if (type === 'time') { const m = s.match(/(\d{1,2}):(\d{2})/); return { h: m ? ('0' + m[1]).slice(-2) : '15', m: m ? m[2] : '00' }; }
+    if (type === 'range') {
+      const checkin = /입실/.test(s);
+      const q = s.match(/\(([^)]+)\)\s*$/);
+      const tail = q ? q[1] : '';
+      const m = s.match(/(\d{1,2}):(\d{2})\s*~\s*(\d{1,2}):(\d{2})/);
+      if (m) return { sm: 'time', h: ('0' + m[1]).slice(-2), m: m[2], h2: ('0' + m[3]).slice(-2), m2: m[4], tail: tail };
+      const e = s.match(/~\s*(\d{1,2})\s*(?::(\d{2}))?\s*시?/);
+      return { sm: checkin ? 'checkin' : 'time', h: '17', m: '00', h2: e ? ('0' + e[1]).slice(-2) : '21', m2: e && e[2] ? e[2] : '00', tail: tail };
+    }
+    if (type === 'daterange') {
+      const d = s.match(/(\d{2,4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*~\s*(?:(\d{2,4})년\s*)?(\d{1,2})월\s*(\d{1,2})일/);
+      const p2 = (n) => ('0' + n).slice(-2);
+      if (d) {
+        const y1 = d[1].length === 2 ? '20' + d[1] : d[1], y2 = d[4] ? (d[4].length === 2 ? '20' + d[4] : d[4]) : y1;
+        return { from: y1 + '-' + p2(d[2]) + '-' + p2(d[3]), to: y2 + '-' + p2(d[5]) + '-' + p2(d[6]) };
+      }
+      return { from: '2026-07-11', to: '2026-08-17' };
+    }
+    if (type.indexOf('dec:') === 0) { const m = s.match(/(\d+(?:\.\d+)?)/); return { d: m ? Number(m[1]) : 0 }; }
+    if (type === 'money') return { amt: /무료/.test(s) ? 0 : this.digits(s) };
+    if (type === 'tier') {
+      const q = s.match(/\(([^)]+)\)\s*$/);
+      const parts = q ? q[1].split('/') : [];
+      const unit = parts[0] ? parts[0].trim() : '1박기준';
+      const pay = parts[1] ? parts[1].trim() : '현장결제';
+      const body = s.replace(/\([^)]*\)\s*$/, '');
+      const tiers = [];
+      const re = /(\d+)\s*[인명]?\s*[-~]\s*(\d+)\s*[인명]\s*([0-9,]+)/g;
+      let m;
+      while ((m = re.exec(body))) tiers.push({ a: Number(m[1]), b: Number(m[2]), amt: this.digits(m[3]) });
+      if (tiers.length) return { mode: 'tier', amt: 0, tiers: tiers, unit: unit, pay: pay };
+      return { mode: 'flat', amt: this.digits(body), tiers: [{ a: 2, b: 4, amt: 30000 }, { a: 5, b: 6, amt: 40000 }], unit: unit, pay: pay };
+    }
+    if (type.indexOf('int:') === 0) {
+      const c = s.match(/(이상|이하|미만|초과)/);
+      return { n: this.digits(s), cmp: c ? c[1] : '' };
+    }
+    if (type.indexOf('opt:') === 0) return { v: s };
+    return { v: s };
+  };
+
+  composeVal = (type, p) => {
+    if (type === 'time') return p.h + ':' + p.m;
+    if (type === 'range') return (p.sm === 'checkin' ? '입실' : p.h + ':' + p.m) + '~' + p.h2 + ':' + p.m2 + (p.tail ? ' (' + p.tail + ')' : '');
+    if (type === 'daterange') {
+      const f = (iso) => { const a = iso.split('-'); return Number(a[1]) + '월 ' + Number(a[2]) + '일'; };
+      return p.from.slice(2, 4) + '년 ' + f(p.from) + ' ~ ' + f(p.to);
+    }
+    if (type.indexOf('dec:') === 0) return '수심 ' + p.d + type.split(':')[1];
+    if (type === 'money') return p.amt === 0 ? '무료' : this.fmtNum(p.amt) + '원';
+    if (type === 'tier') {
+      const body = p.mode === 'flat' ? '1세트 ' + this.fmtNum(p.amt) + '원' : p.tiers.map(t => t.a + '~' + t.b + '인 ' + this.fmtNum(t.amt) + '원').join(' / ');
+      const q = [p.unit, p.pay].filter(x => x && x !== '없음');
+      return body + (q.length ? ' (' + q.join('/') + ')' : '');
+    }
+    if (type.indexOf('int:') === 0) return p.n + type.split(':')[1] + (p.cmp ? ' ' + p.cmp : '');
+    return p.v;
+  };
+
+  setPart = (k, v) => this.setState(s => { const p = Object.assign({}, s.edit.p); p[k] = v; return { edit: Object.assign({}, s.edit, { p: p }) }; });
+  setTier = (i, k, v) => this.setState(s => {
+    const tiers = s.edit.p.tiers.map((t, idx) => idx !== i ? t : Object.assign({}, t, { [k]: Number(v) || 0 }));
+    return { edit: Object.assign({}, s.edit, { p: Object.assign({}, s.edit.p, { tiers: tiers }) }) };
+  });
+  addTier = () => this.setState(s => {
+    const last = s.edit.p.tiers[s.edit.p.tiers.length - 1] || { b: 4, amt: 30000 };
+    const tiers = s.edit.p.tiers.concat([{ a: last.b + 1, b: last.b + 2, amt: last.amt + 10000 }]);
+    return { edit: Object.assign({}, s.edit, { p: Object.assign({}, s.edit.p, { tiers: tiers }) }) };
+  });
+  delTier = (i) => this.setState(s => {
+    const tiers = s.edit.p.tiers.filter((t, idx) => idx !== i);
+    return { edit: Object.assign({}, s.edit, { p: Object.assign({}, s.edit.p, { tiers: tiers.length ? tiers : s.edit.p.tiers }) }) };
+  });
+
+  openOptFee = (o) => this.setState({ edit: { kind: 'optfee', o: o, k: '이용요금', type: 'tier', p: this.parseVal('tier', this.feeOf(o.code)) } });
+  previewOptFee = () => {
+    const st = this.state, e0 = st.edit;
+    const ed = { code: e0.o.code, label: e0.o.label, v: this.composeVal('tier', e0.p) };
+    const hit = st.rooms.filter(r => r.bbqOpt === ed.code);
+    const nextRooms = st.rooms.map(r => r.bbqOpt === ed.code ? Object.assign({}, r, { bbqFee: ed.v }) : r);
+    const nextFees = Object.assign({}, st.optFees); nextFees[ed.code] = ed.v;
+    this.setState({
+      edit: null,
+      cas: {
+        kind: 'optfee', code: ed.code, value: ed.v,
+        field: ed.label + ' · 이용요금', from: this.feeOf(ed.code), to: ed.v,
+        warn: '요금은 옵션에 붙습니다. 이 옵션을 쓰는 객실 ' + hit.length + '개와 숙소 블록 요금 문구, 채널 요금이 한 번에 갱신됩니다.',
+        groups: [{ title: '옵션 1', desc: '전사 옵션의 이 숙소 요금', items: [{ key: 'opt:' + ed.code, label: ed.label, before: this.feeOf(ed.code), after: ed.v, on: true, locked: true, isOv: false }] }]
+          .concat(hit.length ? [{ title: '객실 ' + hit.length, desc: '이 옵션을 쓰는 객실', items: hit.map(r => ({ key: 'room:' + r.code, label: r.short + ' · ' + r.code, before: r.bbqFee, after: ed.v, on: true, locked: true, isOv: false })) }] : [])
+          .concat(this.grp(this.derivedDiff(nextRooms, null, nextFees)))
+          .concat([{ title: '판매 채널 3', desc: '채널 요금 표기', items: this.CHANKEYS.map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + ed.label + ' 요금', before: this.feeOf(ed.code), after: ed.v, on: true, isOv: false })) }])
+      }
+    });
+  };
+
+  toggleBlockUse = (bk) => {
+    const st = this.state;
+    const isBbq = !!this.BBQVAL[bk.key];
+    const val = this.BBQVAL[bk.key];
+    const freed = st.rooms.filter(r => r.bbq === '이용 불가');
+    const suggest = freed.length ? freed : st.rooms;
+    const pick = isBbq ? st.rooms.map(r => ({
+      key: 'apply:' + r.code, label: r.short + ' · ' + r.code + ' (' + r.floor + '층)',
+      before: r.bbq, after: val, on: suggest.indexOf(r) >= 0, isOv: r.bbqOv
+    })) : [];
+    const faq = st.faqs.filter(f => (isBbq && f.cate.indexOf('바베큐') >= 0) || (bk.key === 'private_pool' && f.cate === '개별수영장') || (bk.key === 'pet_friendly' && f.cate === '애견동반')).slice(0, 8)
+      .map(f => ({ key: 'faq:' + f.qid, label: 'FAQ ' + f.qid, before: '자동 비활성', after: '활성 · 답변 입력 필요', on: true, locked: true, isOv: false }));
+    this.setState({
+      cas: {
+        kind: 'blockstate', blockKey: bk.key, nextSt: 'used', applyVal: val,
+        field: bk.label + ' · 사용 여부', from: '보유 · 사용안함', to: '사용중',
+        warn: isBbq
+          ? '적용 객실을 여기서 바로 고르세요 — 체크한 객실에 오버라이드로 기록되고, 블록의 이용 객실 문구·객실 수는 그 결과에서 자동 산출됩니다. (기본 선택: 이용 불가 상태였던 객실)'
+          : (faq.length ? '연결된 FAQ ' + faq.length + '건이 함께 활성화됩니다. 답변이 빈 문항은 채널 전송 전에 채워야 합니다.' : ''),
+        groups: [{ title: '숙소 블록 1', desc: '사용 여부 전환', items: [{ key: 'blk:' + bk.key, label: bk.label, before: '보유·사용안함', after: '사용중', on: true, locked: true, isOv: false }] }]
+          .concat(pick.length ? [{ title: '적용 객실 선택 ' + pick.length, desc: '체크한 객실에만 이 시설을 붙입니다', items: pick }] : [])
+          .concat([{ title: '판매 채널 ' + bk.chanN, desc: '채널 부대시설 항목에 노출', items: this.CHANKEYS.slice(0, bk.chanN).map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + bk.label, before: '미노출', after: '노출', on: true, isOv: false })) }])
+          .concat(faq.length ? [{ title: 'FAQ ' + faq.length, desc: '자동 비활성 해제', items: faq }] : [])
+      }
+    });
+  };
+
+  addBlockItem = (bk) => {
+    const st = this.state;
+    const faq = st.faqs.filter(f => f.cate.indexOf('캠핑') >= 0 && bk.key === 'camping').slice(0, 5)
+      .map(f => ({ key: 'faq:' + f.qid, label: 'FAQ ' + f.qid, before: '항목 없음 · 비활성', after: '활성 · 답변 입력 필요', on: true, isOv: false }));
+    this.setState({
+      cas: {
+        kind: 'blockstate', blockKey: bk.key, nextSt: 'off',
+        field: bk.label + ' · 항목 보유', from: '이 숙소에 없음', to: '보유 (사용 여부 별도 설정)',
+        warn: '항목만 추가됩니다. 실제 판매 노출은 값 입력 후 "사용으로 전환"에서 켜세요.',
+        groups: [
+          { title: '숙소 블록 1', desc: '전사 카탈로그에서 이 숙소로 항목 추가', items: [{ key: 'blk:' + bk.key, label: bk.label, before: '미보유', after: '보유 · 사용안함', on: true, isOv: false }] },
+          { title: '입력 필요 필드', desc: '카탈로그가 정의한 필수 필드', items: [['이용 객실', '미입력'], ['이용 요금', '미입력'], ['이용 시간', '미입력']].map(f => ({ key: 'fld:' + f[0], label: bk.label + ' · ' + f[0], before: '—', after: f[1], on: true, isOv: false })) }
+        ].concat(faq.length ? [{ title: 'FAQ ' + faq.length, desc: '이 시설을 묻는 문항', items: faq }] : [])
+      }
+    });
+  };
+
+  RULECAT = [
+    { tpl: '{time} 이후 입실 시 사전 연락 필수', slots: [{ k: 'time', type: 'time', v: '21:00' }] },
+    { tpl: '퇴실 지연 시 사전 요청 · {n} 초과 시 {amt} 추가', slots: [{ k: 'n', type: 'int:시간', v: 1 }, { k: 'amt', type: 'money', v: 50000 }] },
+    { tpl: '{n} 이상 {amt}', slots: [{ k: 'n', type: 'int:개월', v: 36 }, { k: 'amt', type: 'money', v: 30000 }] },
+    { tpl: '카드키 분실 시 {amt} 부과', slots: [{ k: 'amt', type: 'money', v: 20000 }] },
+    { tpl: '{time} 이후 고성방가 자제', slots: [{ k: 'time', type: 'time', v: '22:00' }] },
+    { tpl: '최대 인원 초과 시 입실 불가', slots: [] },
+    { tpl: '전 구역 금연 · 지정 외부구역만 흡연 가능', slots: [] }
+  ];
+  slotText = (s) => s.type === 'money' ? this.fmtNum(s.v) + '원' : s.type.indexOf('int:') === 0 ? s.v + s.type.split(':')[1] : String(s.v);
+  ruleText = (r) => r.tpl.replace(/\{(\w+)\}/g, (m, k) => {
+    const s = r.slots.filter(x => x.k === k)[0];
+    return s ? this.slotText(s) : m;
+  });
+
+  openRuleSlot = (bk, ri, si) => {
+    const s = bk.rules[ri].slots[si];
+    this.setState({ edit: { kind: 'rule', bk: bk, ri: ri, si: si, k: bk.label + ' 규칙', type: s.type, p: this.parseVal(s.type, this.slotText(s)) } });
+  };
+
+  previewRule = () => {
+    const st = this.state, e0 = st.edit, bk = e0.bk;
+    const r = bk.rules[e0.ri];
+    const s = r.slots[e0.si];
+    const nv = s.type === 'money' ? e0.p.amt : s.type.indexOf('int:') === 0 ? e0.p.n : e0.p.h + ':' + e0.p.m;
+    const nextSlots = r.slots.map((x, i) => i === e0.si ? Object.assign({}, x, { v: nv }) : x);
+    const after = this.ruleText({ tpl: r.tpl, slots: nextSlots });
+    this.setState({
+      edit: null,
+      cas: {
+        kind: 'rule', blockKey: bk.key, ri: e0.ri, si: e0.si, value: nv,
+        field: bk.label + ' · 안내 규칙', from: this.ruleText(r), to: after,
+        warn: '안내 문장은 규칙 조각(시각·금액·수치)에서 생성됩니다. 문장을 직접 쓰는 곳이 없으므로 숫자와 문장이 어긋날 수 없습니다.',
+        groups: [
+          { title: '숙소 블록 1', desc: '규칙 값 변경 · 문장 재생성', items: [{ key: 'rule:' + bk.key + ':' + e0.ri, label: bk.label + ' 규칙 ' + (e0.ri + 1), before: this.ruleText(r), after: after, on: true, locked: true, isOv: false }] },
+          { title: '판매 채널 3', desc: '채널 안내 문구 재생성', items: this.CHANKEYS.map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + bk.label + ' 안내', before: '이전 문장', after: after, on: true, isOv: false })) }
+        ]
+      }
+    });
+  };
+
+  addRule = (bk, idx) => {
+    const cat = this.RULECAT[idx];
+    this.setState({
+      cas: {
+        kind: 'ruleadd', blockKey: bk.key, ruleIdx: idx,
+        field: bk.label + ' · 안내 규칙 추가', from: '없음', to: this.ruleText(cat),
+        warn: '전사 규칙 카탈로그에서 고릅니다 — 자유 문장 입력은 없습니다.',
+        groups: [
+          { title: '숙소 블록 1', desc: '규칙 추가', items: [{ key: 'ruleadd:' + idx, label: bk.label, before: '—', after: this.ruleText(cat), on: true, locked: true, isOv: false }] },
+          { title: '판매 채널 3', desc: '채널 안내 문구에 추가', items: this.CHANKEYS.map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + bk.label + ' 안내', before: '이전 문장', after: '규칙 1건 추가', on: true, isOv: false })) }
+        ]
+      }
+    });
+  };
+
+  delRule = (bk, ri) => this.setState({
+    cas: {
+      kind: 'ruledel', blockKey: bk.key, ri: ri,
+      field: bk.label + ' · 안내 규칙 삭제', from: this.ruleText(bk.rules[ri]), to: '삭제',
+      warn: '', groups: [{ title: '숙소 블록 1', desc: '규칙 삭제', items: [{ key: 'ruledel:' + ri, label: bk.label, before: this.ruleText(bk.rules[ri]), after: '삭제', on: true, locked: true, isOv: false }] }]
+    }
+  });
+
+  openBlockEdit = (bk, k, v) => {
+    const type = this.typeOf(bk.key, k);
+    this.setState({ edit: { kind: 'block', bk: bk, k: k, type: type, p: this.parseVal(type, v) } });
+  };
+  closeEdit = () => this.setState({ edit: null });
+  onEdit = (e) => this.setPart('v', e.target.value);
+
+  previewEdit = () => {
+    const st = this.state;
+    if (st.edit.kind === 'optfee') return this.previewOptFee();
+    if (st.edit.kind === 'rule') return this.previewRule();
+    const bk = st.edit.bk, ed = { k: st.edit.k, v: this.composeVal(st.edit.type, st.edit.p) };
+    const scope = bk.key === 'private_bbq' ? st.rooms.filter(r => r.floor === 3) : bk.key === 'shared_bbq' ? st.rooms.filter(r => r.floor !== 3) : st.rooms;
+    const items = scope.map(r => ({ key: 'room:' + r.code, label: r.short + ' · ' + r.code, before: '숙소값 상속', after: ed.v, on: true, locked: true, isOv: false }));
+    const side = this.CHANKEYS.map(c => ({ key: 'ch:' + c[0], label: c[1] + ' · ' + bk.label, before: '이전 값', after: ed.v, on: true, isOv: false }));
+    const faq = st.faqs.filter(f => (bk.key.indexOf('bbq') >= 0 && f.cate.indexOf('바베큐') >= 0) || (bk.key === 'shared_pool' && f.cate === '공용수영장') || (bk.key === 'spa' && f.cate === '스파')).slice(0, 4)
+      .map(f => ({ key: 'faq:' + f.qid, label: 'FAQ ' + f.qid, before: f.tpl ? '시설 값에서 생성' : (f.a || '(공백)'), after: '새 값으로 재생성', on: true, locked: true, isOv: false }));
+    this.setState({
+      edit: null,
+      cas: {
+        kind: 'block', field: bk.label + ' · ' + ed.k, from: '기존 값', to: ed.v, blockKey: bk.key, fieldKey: ed.k, value: ed.v, warn: '',
+        groups: [
+          { title: '상속 객실 ' + items.length, desc: '이 블록을 이용하는 객실', items: items },
+          { title: '판매 채널 3', desc: '채널 상세 설명 문구', items: side }
+        ].concat(faq.length ? [{ title: 'FAQ ' + faq.length, desc: '이 시설을 인용하는 답변', items: faq }] : [])
+      }
+    });
+  };
+
+  syncChannel = (rowId, ck, label, chName, to) => this.setState(s => ({
+    cas: {
+      kind: 'chan', field: label + ' · ' + chName, from: s.channels[rowId][ck], to: to, rowId: rowId, ck: ck, value: to,
+      warn: '채널이 마스터와 다른 값을 갖고 있습니다. 교정하면 채널 쪽 수동 편집분은 사라집니다.',
+      groups: [
+        { title: '채널 값 1', desc: '매핑 사전 규칙으로 교정', items: [{ key: 'ch:' + ck, label: chName + ' · ' + label, before: s.channels[rowId][ck], after: to, on: true, isOv: false }] },
+        { title: '연동 재전송', desc: '교정 후 자동 재전송 큐에 등록', items: [{ key: 'q:' + ck, label: chName + ' 상품 재전송', before: '대기', after: '즉시 전송', on: true, isOv: false }] }
+      ]
+    }
+  }));
+
+  toggleTarget = (key) => this.setState(s => ({
+    cas: Object.assign({}, s.cas, {
+      groups: s.cas.groups.map(g => Object.assign({}, g, { items: g.items.map(i => i.key === key ? Object.assign({}, i, { on: !i.on }) : i) }))
+    })
+  }));
+  closeCas = () => this.setState({ cas: null });
+
+  applyCas = () => {
+    const st = this.state, c = st.cas;
+    const checked = c.groups.reduce((a, g) => a.concat(g.items.filter(i => i.on)), []);
+    const roomKeys = checked.filter(i => i.key.indexOf('room:') === 0).map(i => i.key.slice(5));
+    const snapshot = { rooms: st.rooms, channels: st.channels, blocks: st.blocks, optFees: st.optFees, faqs: st.faqs };
+    let rooms = st.rooms, channels = st.channels, blocks = st.blocks;
+
+
+    if (c.kind === 'bulk') {
+      const isOv = c.value !== this.BASEVAL[c.target];
+      rooms = rooms.map(r => {
+        if (roomKeys.indexOf(r.code) < 0) return r;
+        const nr = Object.assign({}, r);
+        if (c.target === 'maxP') { nr.maxP = Number(c.value); nr.paxOv = isOv; }
+        if (c.target === 'extra') { nr.extra = Number(c.value); nr.extraOv = isOv; }
+        if (c.target === 'bbq') {
+          const o = this.optByLabel(c.value);
+          nr.bbq = c.value; nr.bbqOv = isOv; nr.bbqOpt = o.code; nr.bbqFee = this.feeOf(o.code);
+        }
+        if (c.target === 'spa') { nr.spa = c.value; nr.spaOv = isOv; }
+        if (c.target === 'facil') { nr.facil = c.value; }
+        return nr;
+      });
+      blocks = this.deriveBlocks(rooms, blocks);
+    }
+    if (c.kind === 'block') {
+      blocks = blocks.map(b => b.key !== c.blockKey ? b : Object.assign({}, b, {
+        fields: b.fields.map(f => f[0] === c.fieldKey ? [f[0], c.value] : f)
+      }));
+    }
+    if (c.kind === 'roomadd') {
+      rooms = rooms.concat([c.room]);
+      blocks = this.deriveBlocks(rooms, blocks);
+    }
+    if (c.kind === 'roomdel') {
+      rooms = rooms.filter(r => c.codes.indexOf(r.code) < 0);
+      blocks = this.deriveBlocks(rooms, blocks);
+    }
+    if (c.kind === 'blockstate') {
+      if (c.applyVal) {
+        const applyCodes = checked.filter(i => i.key.indexOf('apply:') === 0).map(i => i.key.slice(6));
+        const opt = this.optByLabel(c.applyVal);
+        rooms = rooms.map(r => applyCodes.indexOf(r.code) < 0 ? r : Object.assign({}, r, { bbq: c.applyVal, bbqOpt: opt.code, bbqFee: this.feeOf(opt.code), bbqOv: c.applyVal !== this.BASEVAL.bbq }));
+      }
+      if (c.killRooms && c.killRooms.length) {
+        rooms = rooms.map(r => c.killRooms.indexOf(r.code) < 0 ? r : Object.assign({}, r, { bbq: '이용 불가', bbqOpt: 'none', bbqFee: '—', bbqOv: true }));
+      }
+      blocks = blocks.map(b => {
+        if (b.key !== c.blockKey) return b;
+        const nb = Object.assign({}, b, { st: c.nextSt });
+        if (c.nextSt === 'off' && !nb.fields.length) nb.fields = [['이용 객실', '미입력'], ['이용 요금', '미입력'], ['이용 시간', '미입력']];
+        if (c.nextSt === 'used' && nb.rooms === 0) nb.rooms = 28;
+        if (c.nextSt === 'none') { nb.fields = []; nb.rooms = 0; nb.note = ''; }
+        return nb;
+      });
+      blocks = this.deriveBlocks(rooms, blocks).map(b => b.key === c.blockKey ? Object.assign({}, b, { st: c.nextSt }) : b);
+    }
+    if (c.kind === 'rule' || c.kind === 'ruleadd' || c.kind === 'ruledel') {
+      blocks = blocks.map(b => {
+        if (b.key !== c.blockKey) return b;
+        let rules = (b.rules || []).slice();
+        if (c.kind === 'rule') {
+          rules = rules.map((r, i) => i !== c.ri ? r : Object.assign({}, r, { slots: r.slots.map((s, j) => j !== c.si ? s : Object.assign({}, s, { v: c.value })) }));
+        }
+        if (c.kind === 'ruleadd') {
+          const cat = this.RULECAT[c.ruleIdx];
+          rules = rules.concat([{ tpl: cat.tpl, slots: cat.slots.map(s => Object.assign({}, s)) }]);
+        }
+        if (c.kind === 'ruledel') rules = rules.filter((r, i) => i !== c.ri);
+        return Object.assign({}, b, { rules: rules });
+      });
+    }
+    if (c.kind === 'optfee') {
+      const nf = Object.assign({}, st.optFees); nf[c.code] = c.value;
+      rooms = rooms.map(r => r.bbqOpt === c.code ? Object.assign({}, r, { bbqFee: c.value }) : r);
+      blocks = this.deriveBlocks(rooms, blocks);
+      this.setState({ optFees: nf });
+    }
+    if (c.kind === 'chan') {
+      channels = Object.assign({}, channels);
+      channels[c.rowId] = Object.assign({}, channels[c.rowId]);
+      channels[c.rowId][c.ck] = c.value;
+    }
+
+    this.setState({ rooms: rooms, channels: channels, blocks: blocks, cas: null, sel: [], snapshot: snapshot, toast: '연쇄 갱신 ' + checked.length + '건 적용됨 · ' + c.field });
+    this.addHistory({ title: c.field + ' 변경', before: c.from, after: c.to, n: checked.length, who: '김지현', at: '방금', chips: c.groups.map(g => g.title) });
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => this.setState({ toast: '' }), 8000);
+  };
+
+  undoLast = () => {
+    const sn = this.state.snapshot;
+    this.setState(s => ({
+      rooms: sn ? sn.rooms : s.rooms, channels: sn ? sn.channels : s.channels, blocks: sn ? sn.blocks : s.blocks,
+      optFees: sn && sn.optFees ? sn.optFees : s.optFees,
+      faqs: sn && sn.faqs ? sn.faqs : s.faqs,
+      snapshot: null, toast: '', history: s.history.slice(1)
+    }));
+  };
+
+  renderVals() {
+    const st = this.state;
+    const ghost = (this.props.inheritanceViz || 'marker') === 'ghost';
+    const query = st.q.trim();
+    const filtered = query ? st.rooms.filter(r => (r.short + r.code + r.tag).indexOf(query) >= 0) : st.rooms;
+
+    const rows = filtered.map(r => ({
+      code: r.code, short: r.short, tag: r.tag, area: r.area, form: r.form, bed: r.bed, facil: r.facil,
+      sel: st.sel.indexOf(r.code) >= 0, toggle: () => this.toggleRoom(r.code),
+      pax: '기준 ' + r.baseP + ' / 최대 ' + r.maxP, paxBase: '기준 2 / 최대 4',
+      paxOv: r.paxOv, paxInh: !r.paxOv, ghostPax: ghost && !r.paxOv,
+      extra: this.fmtNum(r.extra) + '원', extraOv: r.extraOv, extraInh: !r.extraOv,
+      bbq: r.bbq, bbqBase: '공용BBQ · 가스그릴', bbqOv: r.bbqOv, bbqInh: !r.bbqOv, ghostBbq: ghost && !r.bbqOv, bbqFee: r.bbqFee,
+      editBbq: () => this.editRoomField(r.code, 'bbq'),
+      spa: r.spa, spaBase: '제트스파 2인용', spaOv: r.spaOv, spaInh: !r.spaOv, ghostSpa: ghost && !r.spaOv,
+      cnOk: true, cnBad: false,
+      cyOk: r.floor === 3, cyBad: r.floor !== 3,
+      cjOk: !r.paxOv, cjBad: r.paxOv
+    }));
+
+    const tabDef = [['rooms', '객실', st.rooms.length], ['blocks', '시설·블록정보', st.blocks.length], ['options', '옵션·요금', this.OPTIONS.length], ['channels', '채널 매핑', 3], ['faq', 'FAQ', st.faqs.length], ['history', '변경 이력', st.history.length]];
+    const tabs = tabDef.map(t => ({ label: t[1], count: t[2], on: st.tab === t[0], off: st.tab !== t[0], go: () => this.setState({ tab: t[0] }) }));
+
+    const bf = st.bfilter;
+    const blocks = st.blocks.filter(b => bf === 'all' || b.st === bf).map(b => ({
+      key: b.key, label: b.label, rooms: b.rooms, chanN: b.chanN, faqN: b.faqN,
+      isUsed: b.st === 'used', isOff: b.st === 'off', isNone: b.st === 'none', hasFields: b.st !== 'none',
+      roomOk: b.rooms > 0, roomWarn: b.rooms === 0,
+      faqOk: b.st === 'used' || b.faqN === 0, faqWarn: b.st !== 'used' && b.faqN > 0,
+      hasNote: !!b.note, note: b.note,
+      hasRules: !!(b.rules && b.rules.length),
+      rules: (b.rules || []).map((r, ri) => ({
+        text: this.ruleText(r),
+        slots: r.slots.map((s, si) => ({ label: this.slotText(s), edit: () => this.openRuleSlot(b, ri, si) })),
+        hasSlots: r.slots.length > 0, fixed: r.slots.length === 0,
+        del: () => this.delRule(b, ri)
+      })),
+      ruleCat: this.RULECAT.map((c, i) => ({ label: this.ruleText(c), add: () => this.addRule(b, i) })),
+      turnOn: () => this.toggleBlockUse(b),
+      add: () => this.addBlockItem(b),
+      turnOff: () => this.previewBlockState(b, 'off'),
+      remove: () => this.previewBlockState(b, 'none'),
+      fields: b.fields.map(f => {
+        const calc = (b.key.indexOf('bbq') >= 0 && (f[0] === '이용 객실' || f[0] === '이용 요금' || f[0] === '바베큐 형태')) || (f[0] === '수용인원' && b.key === 'spa');
+        const t = this.typeOf(b.key, f[0]);
+        return {
+          k: f[0], v: f[1], calc: calc, editable: b.st === 'used' && !calc,
+          tName: this.typeName(t), isFree: !calc && t === 'text', isTyped: !calc && t !== 'text',
+          edit: () => this.openBlockEdit(b, f[0], f[1])
+        };
+      })
+    }));
+    const derivedBlocks = this.deriveBlocks(st.rooms, st.blocks);
+    const bCount = (k) => st.blocks.filter(b => b.st === k).length;
+    const bfDef = [['all', '전체'], ['used', '사용중'], ['off', '보유·사용안함'], ['none', '미보유']];
+    const bfilters = bfDef.map(f => ({
+      label: f[1], n: f[0] === 'all' ? st.blocks.length : bCount(f[0]),
+      on: bf === f[0], off: bf !== f[0], pick: () => this.setState({ bfilter: f[0] })
+    }));
+
+    const masterDef = [
+      ['theme', '테마', '오션뷰 · 가족 · 커플 · 스파 · 공용수영장(냉수)'],
+      ['maxpax', '최대 인원', '7층 6명 / 그 외 4명'],
+      ['bbq', '바베큐', '개별BBQ 6실(전기그릴) / 공용BBQ 24실(가스그릴)'],
+      ['checkin', '체크인/아웃', '15:30 / 11:00 (마감 22:00)']
+    ];
+    const chanRows = masterDef.map(m => {
+      const id = m[0], label = m[1];
+      const cell = (ck, chName) => {
+        const v = st.channels[id][ck], rule = this.RULES[id][ck], bad = v !== rule;
+        return { v: v, ok: !bad, bad: bad, why: bad ? '매핑 규칙: ' + rule : '', sync: () => this.syncChannel(id, ck, label, chName, rule) };
+      };
+      return { label: label, master: m[2], a: cell('a', '네이버'), b: cell('b', '여기어때'), c: cell('c', '야놀자') };
+    });
+    const mismatchN = chanRows.filter(r => r.a.bad).length + chanRows.filter(r => r.b.bad).length + chanRows.filter(r => r.c.bad).length;
+
+    const fd = st.bulk ? this.FIELDS.filter(f => f.id === st.bulk.field)[0] : null;
+    const cas = st.cas;
+    const casGroups = cas ? cas.groups.map(g => ({
+      title: g.title, desc: g.desc,
+      items: g.items.map(i => ({
+        key: i.key, label: i.label, before: i.before, after: i.after, on: i.on, isOv: i.isOv,
+        locked: !!i.locked, pickable: !i.locked, toggle: () => this.toggleTarget(i.key)
+      }))
+    })) : [];
+
+    return {
+      savedAt: st.savedAt, q: st.q, onQ: (e) => this.setState({ q: e.target.value }),
+      goChannels: () => this.setState({ tab: 'channels' }),
+      pensions: [
+        ['속초 더샵 스파 펜션', '2656 · 28객실 · 강원 속초', true, false],
+        ['가평 리버뷰 풀빌라', '1042 · 12객실 · 경기 가평', false, true],
+        ['제주 애월 스테이', '3318 · 8객실 · 제주 애월', false, false],
+        ['양평 숲속의아침', '0774 · 16객실 · 경기 양평', false, false],
+        ['태안 오션가든', '2190 · 21객실 · 충남 태안', false, true],
+        ['평창 알펜하우스', '1855 · 9객실 · 강원 평창', false, false],
+        ['거제 블루비치', '2903 · 14객실 · 경남 거제', false, false],
+        ['홍천 카라반파크', '3471 · 24객실 · 강원 홍천', false, false]
+      ].map(p => ({ name: p[0], meta: p[1], active: p[2], inactive: !p[2], warn: p[3] })),
+      tabs: tabs,
+      isRooms: st.tab === 'rooms', isBlocks: st.tab === 'blocks', isChannels: st.tab === 'channels', isFaq: st.tab === 'faq', isHistory: st.tab === 'history',
+      isOptions: st.tab === 'options',
+      optRows: this.OPTIONS.map(o => {
+        const used = st.rooms.filter(r => r.bbqOpt === o.code);
+        return {
+          code: o.code, label: o.label, fee: this.feeOf(o.code),
+          chA: o.ch.a, chB: o.ch.b, chC: o.ch.c,
+          usedN: used.length, inUse: used.length > 0, unused: used.length === 0,
+          rooms: used.length ? this.roomsLabel(used, st.rooms) : '사용 객실 없음',
+          edit: () => this.openOptFee(o)
+        };
+      }),
+
+      rows: rows, blocks: blocks, chanRows: chanRows, mismatchN: mismatchN,
+      bfilters: bfilters, catalogN: st.catalogN,
+      ownedN: st.blocks.filter(b => b.st !== 'none').length,
+      usedN: bCount('used'), offN: bCount('off'), noneN: bCount('none'),
+      dict: [
+        { master: '공용수영장(냉수)', rows: [{ k: 'N', v: '수영장' }, { k: '여', v: '실외수영장' }, { k: '야', v: '야외수영장(냉수)' }] },
+        { master: '가족', rows: [{ k: 'N', v: '가족실' }, { k: '여', v: '가족추천' }, { k: '야', v: '패밀리' }] },
+        { master: '스파', rows: [{ k: 'N', v: '스파/월풀' }, { k: '여', v: '스파' }, { k: '야', v: '스파(제트)' }] }
+      ],
+      faqs: st.faqs.map(f => {
+        if (!f.tpl) return { cate: f.cate, qid: f.qid, q: f.q, a: f.a, answered: !!f.a, blank: !f.a, derived: false, src: '' };
+        const srcs = [];
+        let off = false;
+        const a = f.tpl.replace(/\{([a-z_]+)\.([^}]+)\}/g, (m, k, fn) => {
+          const b = derivedBlocks.filter(x => x.key === k)[0];
+          if (!b || b.st !== 'used') { off = true; return '(미사용)'; }
+          srcs.push(b.label + ' · ' + fn);
+          const fld = b.fields.filter(x => x[0] === fn)[0];
+          return fld ? fld[1] : '—';
+        });
+        return {
+          cate: f.cate, qid: f.qid, q: f.q, a: off ? '' : a,
+          answered: !off, blank: off, derived: !off, src: srcs.join(' + ')
+        };
+      }),
+      derivedFaqN: st.faqs.filter(f => !!f.tpl).length,
+      ovCount: st.rooms.filter(r => r.bbqOv || r.spaOv || r.paxOv || r.extraOv).length,
+      allSel: st.sel.length === st.rooms.length, toggleAll: this.toggleAll,
+      hasSel: st.sel.length > 0, noSel: st.sel.length === 0, selCount: st.sel.length,
+      clearSel: () => this.setState({ sel: [] }),
+      openBulk: this.openBulk, closeBulk: this.closeBulk, bulkOpen: !!st.bulk,
+      previewDelete: this.previewDelete,
+      openNewRoom: this.openNewRoom, closeNewRoom: this.closeNewRoom, previewNewRoom: this.previewNewRoom,
+      nrOpen: !!st.nr, nrName: st.nr ? st.nr.name : '',
+      onNrName: (e) => this.setNR('name', e.target.value),
+      nrFloors: ['3', '4', '5', '6', '7'].map(f => ({ label: f + '층', on: !!st.nr && st.nr.floor === f, off: !(!!st.nr && st.nr.floor === f), pick: () => this.setNR('floor', f) })),
+      nrPax: [['2/4', '기준 2 / 최대 4 (숙소 기본값)'], ['4/6', '기준 4 / 최대 6 (오버라이드)']].map(p => ({ label: p[1], on: !!st.nr && st.nr.pax === p[0], off: !(!!st.nr && st.nr.pax === p[0]), pick: () => this.setNR('pax', p[0]) })),
+      nrBbq: this.OPTIONS.map(o => [o.label, o.label + ' · ' + this.feeOf(o.code)]).map(v => ({ label: v[1], on: !!st.nr && st.nr.bbq === v[0], off: !(!!st.nr && st.nr.bbq === v[0]), pick: () => this.setNR('bbq', v[0]) })),
+      bulkFields: this.FIELDS.map(f => ({ label: f.label, on: !!st.bulk && st.bulk.field === f.id, off: !(!!st.bulk && st.bulk.field === f.id), pick: () => this.pickField(f.id) })),
+      bulkValues: fd ? (fd.id === 'bbq' ? this.OPTIONS.map(o => [o.label, o.label + ' · ' + this.feeOf(o.code)]) : fd.values)
+        .map(v => ({ label: v[1], on: st.bulk.value === v[0], off: st.bulk.value !== v[0], pick: () => this.pickValue(v[0]) })) : [],
+      bulkHint: fd ? (st.bulk.value === this.BASEVAL[fd.id] ? '숙소 기본값과 같습니다 — 오버라이드가 해제되고 상속으로 돌아갑니다.' : '숙소 기본값과 달라 객실 오버라이드로 기록됩니다.') : '',
+      previewBulk: this.previewBulk,
+      casOpen: !!cas, casGroups: casGroups,
+      casField: cas ? cas.field : '', casFrom: cas ? cas.from : '', casTo: cas ? cas.to : '',
+      casWarn: cas ? cas.warn : '', casHasWarn: !!(cas && cas.warn),
+      casTotalN: cas ? cas.groups.reduce((a, g) => a + g.items.length, 0) : 0,
+      casCheckedN: cas ? cas.groups.reduce((a, g) => a + g.items.filter(i => i.on).length, 0) : 0,
+      casCta: (this.props.cascadeMode === 'instant') ? '즉시 적용' : '적용하고 저장',
+      closeCas: this.closeCas, applyCas: this.applyCas,
+      editOpen: !!st.edit,
+      editTitle: st.edit ? (st.edit.kind === 'optfee' ? st.edit.o.label + ' · 이용요금' : st.edit.bk.label + ' · ' + st.edit.k) : '',
+      editSub: st.edit ? (st.edit.kind === 'optfee' ? '옵션 단위 요금 — 이 옵션을 쓰는 모든 객실에 적용됩니다' : '숙소 단위 원본값 · 상속 객실 ' + st.edit.bk.rooms + '개') : '',
+      editK: st.edit ? st.edit.k : '',
+      editPreview: st.edit ? this.composeVal(st.edit.type, st.edit.p) : '',
+      edTime: !!st.edit && st.edit.type === 'time',
+      edRange: !!st.edit && st.edit.type === 'range',
+      edDateRange: !!st.edit && st.edit.type === 'daterange',
+      edDec: !!st.edit && st.edit.type.indexOf('dec:') === 0,
+      edDecUnit: st.edit && st.edit.type.indexOf('dec:') === 0 ? st.edit.type.split(':')[1] : '',
+      edD: st.edit && st.edit.p.d, onEdD: (e) => this.setPart('d', Number(e.target.value) || 0),
+      edCmps: st.edit && st.edit.type.indexOf('int:') === 0
+        ? ['', '이상', '이하', '미만', '초과'].map(c => ({ label: c || '정확히', on: (st.edit.p.cmp || '') === c, off: (st.edit.p.cmp || '') !== c, pick: () => this.setPart('cmp', c) }))
+        : [],
+      edUnits: st.edit && st.edit.type === 'tier'
+        ? ['1박기준', '1회기준', '인원기준'].map(u => ({ label: u, on: st.edit.p.unit === u, off: st.edit.p.unit !== u, pick: () => this.setPart('unit', u) }))
+        : [],
+      edPays: st.edit && st.edit.type === 'tier'
+        ? ['현장결제', '사전결제', '없음'].map(u => ({ label: u, on: st.edit.p.pay === u, off: st.edit.p.pay !== u, pick: () => this.setPart('pay', u) }))
+        : [],
+      edFrom: st.edit && st.edit.p.from, edTo: st.edit && st.edit.p.to,
+      onEdFrom: (e) => this.setPart('from', e.target.value), onEdTo: (e) => this.setPart('to', e.target.value),
+      edT1: st.edit && st.edit.p.h ? st.edit.p.h + ':' + st.edit.p.m : '15:30',
+      edT2: st.edit && st.edit.p.h2 ? st.edit.p.h2 + ':' + st.edit.p.m2 : '21:00',
+      onEdT1: (e) => { const a = String(e.target.value || '00:00').split(':'); this.setPart('h', a[0]); this.setPart('m', a[1]); },
+      onEdT2: (e) => { const a = String(e.target.value || '00:00').split(':'); this.setPart('h2', a[0]); this.setPart('m2', a[1]); },
+      edTails: st.edit && st.edit.type === 'range'
+        ? ['', '오전 이용 불가', '퇴실일 이용 불가', '연박 시 별도 문의', '우천 시 이용 불가']
+          .concat(st.edit.p.tail && ['오전 이용 불가', '퇴실일 이용 불가', '연박 시 별도 문의', '우천 시 이용 불가'].indexOf(st.edit.p.tail) < 0 ? [st.edit.p.tail] : [])
+          .map(t => ({
+          label: t || '부가 조건 없음', on: (st.edit.p.tail || '') === t, off: (st.edit.p.tail || '') !== t, pick: () => this.setPart('tail', t)
+        }))
+        : [],
+      edStartCheckin: !!st.edit && st.edit.type === 'range' && st.edit.p.sm === 'checkin',
+      edStartTime: !!st.edit && st.edit.type === 'range' && st.edit.p.sm !== 'checkin',
+      pickCheckin: () => this.setPart('sm', 'checkin'), pickStartTime: () => this.setPart('sm', 'time'),
+      edMoney: !!st.edit && st.edit.type === 'money',
+      edTier: !!st.edit && st.edit.type === 'tier',
+      edOpt: !!st.edit && st.edit.type.indexOf('opt:') === 0,
+      edInt: !!st.edit && st.edit.type.indexOf('int:') === 0,
+      edText: !!st.edit && st.edit.type === 'text',
+      edH: st.edit && st.edit.p.h, edM: st.edit && st.edit.p.m, edH2: st.edit && st.edit.p.h2, edM2: st.edit && st.edit.p.m2,
+      edAmt: st.edit && st.edit.p.amt, edN: st.edit && st.edit.p.n, edV: st.edit && st.edit.p.v,
+      edUnit: st.edit && st.edit.type.indexOf('int:') === 0 ? st.edit.type.split(':')[1] : '',
+      edFlat: !!st.edit && st.edit.type === 'tier' && st.edit.p.mode === 'flat',
+      edTiered: !!st.edit && st.edit.type === 'tier' && st.edit.p.mode === 'tier',
+      edModeFlat: { on: !!st.edit && st.edit.type === 'tier' && st.edit.p.mode === 'flat', pick: () => this.setPart('mode', 'flat') },
+      edModeTier: { on: !!st.edit && st.edit.type === 'tier' && st.edit.p.mode === 'tier', pick: () => this.setPart('mode', 'tier') },
+      edTiers: st.edit && st.edit.type === 'tier' ? st.edit.p.tiers.map((t, i) => ({
+        a: t.a, b: t.b, amt: t.amt,
+        onA: (e) => this.setTier(i, 'a', e.target.value), onB: (e) => this.setTier(i, 'b', e.target.value), onAmt: (e) => this.setTier(i, 'amt', e.target.value),
+        del: () => this.delTier(i)
+      })) : [],
+      addTier: this.addTier,
+      edOptions: st.edit && st.edit.type.indexOf('opt:') === 0
+        ? (this.OPTLIST[st.edit.type.split(':')[1]] || []).map(o => ({ label: o, on: st.edit.p.v === o, off: st.edit.p.v !== o, pick: () => this.setPart('v', o) }))
+        : [],
+      onEdAmt: (e) => this.setPart('amt', this.digits(e.target.value)),
+      onEdN: (e) => this.setPart('n', this.digits(e.target.value)),
+      onEdit: this.onEdit, closeEdit: this.closeEdit, previewEdit: this.previewEdit,
+      toastOpen: !!st.toast, toastText: st.toast, undoLast: this.undoLast,
+      showRight: (this.props.layout || '3panel') === '3panel',
+      scope: [{ n: 24, t: '상속 객실' }, { n: 6, t: '오버라이드' }, { n: 3, t: '채널 항목' }, { n: 5, t: 'FAQ 문항' }],
+      history: st.history.map(h => ({ title: h.title, before: h.before, after: h.after, n: h.n, who: h.who, at: h.at, chips: (h.chips || []).map(t => ({ t: t })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>
