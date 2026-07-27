@@ -27,7 +27,7 @@ export const Toast = () => {
         padding: '11px 14px',
         background: 'var(--color-accent-900)',
         color: 'var(--color-bg)',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-sm)',
         boxShadow: '0 12px 32px rgba(0,0,0,.28)',
         animation: 'tin .18s ease',
       }}

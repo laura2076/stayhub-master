@@ -1,43 +1,73 @@
 const NAV = ['숙소·객실', '요금·재고', '판매 사이트', '예약', '정산'];
 
+/** 흰 바탕에 파란 강조 하나 — 파트너센터 톤에서는 위쪽 띠가 어둡지 않습니다.
+ *  어두운 띠는 화면을 두 덩어리로 갈라 놓아, 아래 작업 영역이 좁아 보입니다. */
 export const TopBar = () => (
   <div
     style={{
-      height: 48,
+      height: 52,
       flex: 'none',
       display: 'flex',
       alignItems: 'center',
-      gap: 16,
-      padding: '0 18px',
-      background: 'var(--color-accent-900)',
-      color: 'var(--color-bg)',
+      gap: 18,
+      padding: '0 20px',
+      background: 'var(--color-bg)',
+      borderBottom: '1px solid var(--color-divider)',
+      color: 'var(--color-text)',
     }}
   >
-    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-      <div style={{ width: 18, height: 18, borderRadius: 0, background: 'var(--color-accent-400)' }} />
-      <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-0.2px' }}>STAYHUB 마스터</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 'var(--radius-sm)',
+          background: 'var(--color-accent)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#fff',
+          fontSize: 12,
+          fontWeight: 800,
+        }}
+      >
+        S
+      </div>
+      <span style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '-0.3px' }}>STAYHUB 마스터</span>
     </div>
-    <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,.16)' }} />
-    <div style={{ display: 'flex', gap: 2, fontSize: 12.5 }}>
+
+    <div style={{ display: 'flex', gap: 2, fontSize: 13 }}>
       {NAV.map((label, i) => (
         <span
           key={label}
+          className={i === 0 ? undefined : 'hov-neutral'}
           style={{
-            padding: '5px 10px',
-            borderRadius: 0,
-            background: i === 0 ? 'rgba(255,255,255,.13)' : undefined,
-            fontWeight: i === 0 ? 600 : undefined,
-            color: i === 0 ? undefined : 'rgba(255,255,255,.55)',
+            padding: '6px 11px',
+            borderRadius: 'var(--radius-md)',
+            background: i === 0 ? 'var(--color-accent-100)' : undefined,
+            fontWeight: i === 0 ? 700 : 500,
+            color: i === 0 ? 'var(--color-accent-700)' : 'var(--color-neutral-600)',
+            cursor: 'pointer',
           }}
         >
           {label}
         </span>
       ))}
     </div>
+
     <div style={{ flex: 1 }} />
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11.5, color: 'rgba(255,255,255,.55)' }}>
-      <span>연동 대기 3건</span>
-      <span style={{ width: 1, height: 12, background: 'rgba(255,255,255,.16)' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'var(--color-neutral-600)' }}>
+      <span
+        style={{
+          background: 'var(--color-accent-100)',
+          color: 'var(--color-accent-700)',
+          fontWeight: 700,
+          padding: '3px 9px',
+          borderRadius: 999,
+        }}
+      >
+        연동 대기 3건
+      </span>
       <span>운영팀 · 김지현</span>
     </div>
   </div>

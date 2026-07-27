@@ -10,7 +10,7 @@ const QUICK: Record<string, number[]> = {
   extra_fee: [0, 20000, 30000, 50000],
 };
 
-const head = { fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)', marginBottom: 7 } as const;
+const head = { fontSize: 13.5, fontWeight: 800, color: 'var(--color-text)', marginBottom: 8, letterSpacing: '-0.01em' } as const;
 const panel = { border: '1px solid var(--color-divider)', background: 'var(--color-bg)', minHeight: 0 } as const;
 
 /** 값 하나를 넣는 칸. 일괄값과 객실별 값이 같은 모양이어야 헷갈리지 않습니다. */

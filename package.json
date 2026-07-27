@@ -10,7 +10,7 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "simulate": "vitest run src/__tests__/simulation.test.ts",
-    "bundle": "npm run build && node scripts/bundle-single-file.mjs dist/single-file.html scripts/fonts-inline.css"
+    "bundle": "npm run build && node scripts/bundle-single-file.mjs dist/single-file.html"
   },
   "dependencies": {
     "react": "^19.2.0",

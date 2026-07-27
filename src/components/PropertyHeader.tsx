@@ -44,12 +44,12 @@ export const PropertyHeader = () => {
                 color: 'var(--color-neutral-700)',
                 background: 'var(--color-neutral-200)',
                 padding: '2px 6px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-sm)',
               }}
             >
               {p.code}
             </span>
-            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em' }}>
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 23, fontWeight: 800, letterSpacing: '-0.02em' }}>
               {p.name}
             </span>
             <span
@@ -59,7 +59,7 @@ export const PropertyHeader = () => {
                 color: 'var(--color-accent-700)',
                 background: 'var(--color-accent-100)',
                 padding: '3px 7px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-sm)',
               }}
             >
               {p.status}
@@ -114,8 +114,8 @@ export const PropertyHeader = () => {
                 padding: '8px 13px',
                 fontSize: 12.5,
                 fontWeight: on ? 700 : 500,
-                color: on ? 'var(--color-accent-900)' : 'var(--color-neutral-600)',
-                borderBottom: `2px solid ${on ? 'var(--color-accent-900)' : 'transparent'}`,
+                color: on ? 'var(--color-accent-700)' : 'var(--color-neutral-600)',
+                borderBottom: `2px solid ${on ? 'var(--color-accent)' : 'transparent'}`,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -131,7 +131,7 @@ export const PropertyHeader = () => {
                     color: 'var(--color-neutral-700)',
                     background: 'var(--color-neutral-200)',
                     padding: '1px 5px',
-                    borderRadius: 0,
+                    borderRadius: 'var(--radius-sm)',
                   }}
                 >
                   {count}

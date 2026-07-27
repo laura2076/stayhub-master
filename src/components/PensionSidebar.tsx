@@ -56,7 +56,7 @@ export const PensionSidebar = () => {
               className={on ? undefined : 'hov-neutral'}
               style={{
                 padding: '9px 10px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-sm)',
                 marginBottom: 3,
                 cursor: 'pointer',
                 background: on ? 'var(--color-accent-100)' : undefined,

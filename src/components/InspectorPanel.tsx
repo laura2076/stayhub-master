@@ -88,9 +88,7 @@ export const InspectorPanel = () => {
       }}
     >
       <div style={{ flex: 'none', padding: '12px 14px', borderBottom: '1px solid var(--color-divider)' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)', letterSpacing: '.04em' }}>
-          이 숙소의 전체값
-        </div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>이 숙소의 전체값</div>
         <div style={{ marginTop: 3, fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6 }}>
           숙소 전체값을 정해 두고, 객실마다 다른 것만 따로 정합니다. <b>값을 누르면 전체값을 바꿉니다</b> — 따로 정한
           객실은 그대로 두고 나머지만 같이 바뀝니다.
@@ -109,7 +107,7 @@ export const InspectorPanel = () => {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 7 }}>
           {scope.map(([n, t]) => (
-            <div key={t} style={{ padding: '8px 10px', background: 'var(--color-bg)', border: '1px solid var(--color-divider)', borderRadius: 0 }}>
+            <div key={t} style={{ padding: '8px 10px', background: 'var(--color-bg)', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-sm)' }}>
               <div style={{ fontFamily: 'var(--font-heading)', fontSize: 21, fontWeight: 600 }}>{n}</div>
               <div style={{ fontSize: 10.5, color: 'var(--color-neutral-600)', marginTop: 1 }}>{t}</div>
             </div>
@@ -139,7 +137,7 @@ export const InspectorPanel = () => {
                   color: 'var(--color-accent-800)',
                   background: 'var(--color-accent-100)',
                   padding: '2px 6px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-sm)',
                 }}
               >
                 같이 바뀐 것 {h.n}개

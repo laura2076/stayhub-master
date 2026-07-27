@@ -56,9 +56,9 @@ export const Modal = ({
 };
 
 export const ModalHead = ({ title, sub }: { title: string; sub?: string }) => (
-  <div style={{ padding: '15px 18px', borderBottom: '1px solid var(--color-divider)' }}>
-    <div style={{ fontFamily: 'var(--font-heading)', fontSize: 19, fontWeight: 600 }}>{title}</div>
-    {sub ? <div style={{ marginTop: 3, fontSize: 11.5, color: 'var(--color-neutral-600)' }}>{sub}</div> : null}
+  <div style={{ padding: '18px 20px 16px', borderBottom: '1px solid var(--color-divider)' }}>
+    <div style={{ fontFamily: 'var(--font-heading)', fontSize: 20.5, fontWeight: 800, letterSpacing: '-0.02em' }}>{title}</div>
+    {sub ? <div style={{ marginTop: 5, fontSize: 12.5, color: 'var(--color-neutral-600)' }}>{sub}</div> : null}
   </div>
 );
 
@@ -100,7 +100,7 @@ export const RadioRow = ({
       padding,
       border: `1px solid ${on ? 'var(--color-accent)' : 'var(--color-divider)'}`,
       background: on ? 'var(--color-accent-100)' : 'var(--color-bg)',
-      borderRadius: 0,
+      borderRadius: 'var(--radius-sm)',
       cursor: 'pointer',
     }}
   >
@@ -150,7 +150,7 @@ export const Chip = ({
         border: `1px solid ${on ? fill : 'var(--color-divider)'}`,
         background: on ? fill : 'var(--color-bg)',
         color: on ? 'var(--color-bg)' : 'var(--color-neutral-800)',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-sm)',
         fontSize: 12,
         fontWeight: on ? 700 : tone === 'ink' ? 600 : 400,
         cursor: 'pointer',
@@ -232,7 +232,18 @@ export const NumberField = ({
 };
 
 export const Seg = ({ children, style }: { children: ReactNode; style?: CSSProperties }) => (
-  <div style={{ display: 'flex', border: '1px solid var(--color-divider)', ...style }}>{children}</div>
+  <div
+    style={{
+      display: 'flex',
+      border: '1px solid var(--color-divider)',
+      borderRadius: 'var(--radius-md)',
+      overflow: 'hidden',
+      background: 'var(--color-bg)',
+      ...style,
+    }}
+  >
+    {children}
+  </div>
 );
 
 export const SegItem = ({
@@ -276,7 +287,7 @@ export const ChannelBadge = ({ k, bad }: { k: string; bad: boolean }) => (
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 0,
+      borderRadius: 'var(--radius-sm)',
       background: bad ? 'var(--color-accent-200)' : 'var(--color-neutral-200)',
       color: bad ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
     }}
@@ -293,7 +304,7 @@ export const CountChip = ({ children, tone = 'neutral' }: { children: ReactNode;
       color: tone === 'accent' ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
       background: tone === 'accent' ? 'var(--color-accent-200)' : 'var(--color-neutral-200)',
       padding: '2px 7px',
-      borderRadius: 0,
+      borderRadius: 'var(--radius-sm)',
     }}
   >
     {children}

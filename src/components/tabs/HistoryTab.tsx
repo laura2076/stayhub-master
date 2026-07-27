@@ -11,7 +11,7 @@ export const HistoryTab = () => {
           style={{
             background: 'var(--color-bg)',
             border: '1px solid var(--color-divider)',
-            borderRadius: 0,
+            borderRadius: 'var(--radius-sm)',
             padding: '12px 14px',
             marginBottom: 9,
           }}
@@ -25,7 +25,7 @@ export const HistoryTab = () => {
                 color: 'var(--color-accent-800)',
                 background: 'var(--color-accent-100)',
                 padding: '2px 7px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-sm)',
               }}
             >
               같이 바뀐 것 {h.n}개
@@ -50,7 +50,7 @@ export const HistoryTab = () => {
                   color: 'var(--color-neutral-700)',
                   background: 'var(--color-neutral-200)',
                   padding: '3px 8px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-sm)',
                 }}
               >
                 {c}

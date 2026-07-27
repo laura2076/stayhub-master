@@ -21,14 +21,14 @@ export const ChannelsTab = () => {
         style={{
           background: 'var(--color-bg)',
           border: '1px solid var(--color-divider)',
-          borderRadius: 0,
+          borderRadius: 'var(--radius-sm)',
           overflow: 'hidden',
           marginBottom: 14,
           minWidth: 900,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 14px', borderBottom: '1px solid var(--color-divider)' }}>
-          <span style={{ fontSize: 12.5, fontWeight: 700 }}>판매 사이트에 나가는 값</span>
+          <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em' }}>판매 사이트에 나가는 값</span>
           <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>
             우리 값 하나를 사이트마다 쓰는 말로 바꿔서 내보냅니다.
           </span>
@@ -40,7 +40,7 @@ export const ChannelsTab = () => {
               color: mismatchN ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
               background: mismatchN ? 'var(--color-accent-200)' : 'var(--color-neutral-200)',
               padding: '3px 8px',
-              borderRadius: 0,
+              borderRadius: 'var(--radius-sm)',
             }}
           >
             다른 값 {mismatchN}개
@@ -69,7 +69,7 @@ export const ChannelsTab = () => {
             {row.cells.map((c) => (
               <div key={c.ck} style={{ padding: '11px 14px' }}>
                 {c.bad ? (
-                  <div style={{ padding: '7px 9px', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', borderRadius: 0 }}>
+                  <div style={{ padding: '7px 9px', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', borderRadius: 'var(--radius-sm)' }}>
                     <div style={{ color: 'var(--color-accent-900)', fontWeight: 600, lineHeight: 1.5 }}>{c.v || '(비어 있음)'}</div>
                     <div style={{ marginTop: 3, fontSize: 10.5, color: 'var(--color-accent-800)', lineHeight: 1.5 }}>
                       기준대로면: {c.expected}
@@ -93,8 +93,8 @@ export const ChannelsTab = () => {
         ))}
       </div>
 
-      <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-divider)', borderRadius: 0, padding: '13px 14px', minWidth: 900 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 3 }}>사이트마다 다른 말</div>
+      <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-sm)', padding: '13px 14px', minWidth: 900 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em', marginBottom: 4 }}>사이트마다 다른 말</div>
         <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', marginBottom: 11 }}>
           같은 것을 사이트마다 다르게 부릅니다. 사전은 값 옆에 붙어 있어서, 숙소가 어떤 시설을 갖든 같은 방식으로 바뀝니다.
         </div>
@@ -104,7 +104,7 @@ export const ChannelsTab = () => {
               ? d.options
                   .filter((o) => o.code !== 'none' && p.rooms.some((r) => (r.values[d.key] ?? p.defaults[d.key]) === o.code))
                   .map((o) => (
-                    <div key={`${d.key}:${o.code}`} style={{ border: '1px solid var(--color-divider)', borderRadius: 0, padding: '10px 11px' }}>
+                    <div key={`${d.key}:${o.code}`} style={{ border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-sm)', padding: '10px 11px' }}>
                       <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 7 }}>{o.label}</div>
                       {([['N', o.ch.a], ['여', o.ch.b], ['야', o.ch.c]] as [string, string][]).map(([k, v]) => (
                         <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '3px 0' }}>
@@ -118,7 +118,7 @@ export const ChannelsTab = () => {
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              borderRadius: 0,
+                              borderRadius: 'var(--radius-sm)',
                               background: 'var(--color-neutral-200)',
                               color: 'var(--color-neutral-700)',
                             }}

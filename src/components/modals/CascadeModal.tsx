@@ -131,7 +131,7 @@ export const CascadeModal = () => {
                       color: 'var(--color-accent-800)',
                       background: 'var(--color-accent-200)',
                       padding: '2px 7px',
-                      borderRadius: 0,
+                      borderRadius: 'var(--radius-sm)',
                     }}
                   >
                     원래 따로 정해둔 값

@@ -71,7 +71,7 @@ export const FaqTab = () => {
                 color: 'var(--color-neutral-700)',
                 background: 'var(--color-neutral-200)',
                 padding: '2px 7px',
-                borderRadius: 0,
+                borderRadius: 'var(--radius-sm)',
               }}
             >
               {f.cate}
@@ -98,7 +98,7 @@ export const FaqTab = () => {
                   color: 'var(--color-neutral-600)',
                   background: 'var(--color-neutral-200)',
                   padding: '2px 7px',
-                  borderRadius: 0,
+                  borderRadius: 'var(--radius-sm)',
                 }}
               >
                 {f.reason}

@@ -399,7 +399,7 @@ export const BlocksTab = () => {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 40px', background: 'var(--color-bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 700 }}>이 숙소가 가진 시설</span>
+        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em' }}>이 숙소가 가진 시설</span>
         <input
           className="input"
           value={state.bq}
