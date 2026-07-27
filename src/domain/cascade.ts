@@ -95,7 +95,7 @@ export const previewBulk = (
     warn: items.some((i) => i.isOv)
       ? '고른 객실 중 몇 개는 따로 정해둔 값이 있어요. 체크를 풀면 그 객실은 지금 값 그대로 둡니다.'
       : derived.length
-        ? `시설 안내문 ${derived.length}곳은 객실 값에서 자동으로 다시 만들어집니다 — 따로 고칠 필요가 없어요.`
+        ? `시설 안내문 ${derived.length}곳은 객실 값에서 자동으로 다시 만들어집니다 — 따로 수정할 필요가 없어요.`
         : '',
     groups: [
       { title: `객실 ${items.length}`, desc: '고른 객실에 적용', items },
@@ -188,7 +188,7 @@ export const previewDefault = (p: Property, attr: string, value: AttrValue): Cas
   };
 };
 
-/** 객실 정보(이름·층·면적·구조·침구·태그) 고치기. 층이 바뀌면 시설 문구가 다시 계산됩니다. */
+/** 객실 정보(이름·층·면적·구조·침구·태그) 수정. 층이 바뀌면 시설 문구가 다시 계산됩니다. */
 export const previewRoomInfo = (p: Property, code: string, patch: RoomInfo): Cascade => {
   const r = p.rooms.find((x) => x.code === code)!;
   const next: Property = { ...p, rooms: p.rooms.map((x) => (x.code === code ? { ...x, ...patch } : x)) };
@@ -429,7 +429,7 @@ export const previewBlockUse = (p: Property, bk: Block, reviving = bk.st !== 'us
     nextSt: 'used',
     applyAttr: attr,
     applyCode: code,
-    field: reviving ? `${bk.label} · 쓰기 시작` : `${bk.label} · 쓰는 객실 고치기`,
+    field: reviving ? `${bk.label} · 쓰기 시작` : `${bk.label} · 쓰는 객실 수정`,
     from: reviving ? '있지만 안 씀' : `${current.length}객실`,
     to: reviving ? '쓰는 중' : '고른 객실',
     warn: pick.length
@@ -536,7 +536,7 @@ export const previewAddBlockItem = (p: Property, bk: Block): Cascade => {
   };
 };
 
-/* ── 시설 항목 넣고 빼기 ────────────────────────────────────────────────── */
+/* ── 시설 항목 넣고 제외 ────────────────────────────────────────────────── */
 
 export const previewFieldAdd = (bk: Block, fieldKey: string): Cascade => {
   const type = typeOf(bk.key, fieldKey);
@@ -547,7 +547,7 @@ export const previewFieldAdd = (bk: Block, fieldKey: string): Cascade => {
     field: `${bk.label} · ${fieldKey} 넣기`,
     from: '없음',
     to: '미입력',
-    warn: `${typeName(type)} 형식으로 들어갑니다. 넣은 뒤 "고치기"로 값을 채우세요.`,
+    warn: `${typeName(type)} 형식으로 들어갑니다. 넣은 뒤 "수정"으로 값을 채우세요.`,
     groups: [
       {
         title: '시설 1',
@@ -565,14 +565,14 @@ export const previewFieldDel = (p: Property, bk: Block, fieldKey: string): Casca
     kind: 'fielddel',
     blockKey: bk.key,
     fieldKey,
-    field: `${bk.label} · ${fieldKey} 빼기`,
+    field: `${bk.label} · ${fieldKey} 제외`,
     from: cur?.[1] ?? '—',
     to: '삭제',
     warn: '이 항목을 인용하는 질문·답변이 있으면 답이 비게 됩니다.',
     groups: [
       {
         title: '시설 1',
-        desc: '항목 빼기',
+        desc: '항목 제외',
         items: [{ key: `fld:${fieldKey}`, label: `${bk.label} · ${fieldKey}`, before: cur?.[1] ?? '—', after: '삭제', on: true, isOv: false }],
       },
       ...(faqItemsFor(p, [bk.key], '지금 답변', '값이 없어져 비게 됨').length
@@ -711,14 +711,14 @@ export const previewRuleDel = (bk: Block, ri: number): Cascade => ({
   kind: 'ruledel',
   blockKey: bk.key,
   ri,
-  field: `${bk.label} · 안내 문구 빼기`,
+  field: `${bk.label} · 안내 문구 제외`,
   from: ruleText(bk.rules![ri]),
   to: '삭제',
   warn: '',
   groups: [
     {
       title: '시설 1',
-      desc: '안내 문구 빼기',
+      desc: '안내 문구 제외',
       items: [{ key: `ruledel:${ri}`, label: bk.label, before: ruleText(bk.rules![ri]), after: '삭제', on: true, locked: true, isOv: false }],
     },
   ],

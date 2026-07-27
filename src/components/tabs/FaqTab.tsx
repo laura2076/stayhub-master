@@ -25,7 +25,7 @@ export const FaqTab = () => {
         }}
       >
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-accent-900)' }}>
-          시설 정보를 그대로 옮겨 적는 답변 {derivedN}개는 자동으로 만들어집니다. 따로 고칠 곳이 없으니 시설 정보와
+          시설 정보를 그대로 옮겨 적는 답변 {derivedN}개는 자동으로 만들어집니다. 따로 수정할 곳이 없으니 시설 정보와
           어긋날 일이 없습니다.
         </div>
         {dropped.length ? (

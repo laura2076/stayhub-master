@@ -16,7 +16,7 @@ export const RoomEditModal = () => {
       panelStyle={{ maxHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' }}
       onClose={() => dispatch({ type: 'CLOSE_ROOM_EDIT' })}
     >
-      <ModalHead title={`${re.name} 정보 고치기`} sub={`객실코드 ${re.code} · 인원·시설 값은 객실 표에서 바로 고칩니다.`} />
+      <ModalHead title={`${re.name} 정보 수정`} sub={`객실코드 ${re.code} · 인원·시설 값은 객실 표에서 바로 고칩니다.`} />
 
       <div style={{ padding: '16px 18px', overflowY: 'auto', minHeight: 0 }}>
         <RoomInfoFields
@@ -41,7 +41,7 @@ export const RoomEditModal = () => {
           그만두기
         </button>
         <button className="btn btn-primary" onClick={() => dispatch({ type: 'PREVIEW_ROOM_EDIT' })} style={{ height: 32 }}>
-          고치기
+          수정
         </button>
       </ModalFoot>
     </Modal>

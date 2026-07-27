@@ -15,7 +15,7 @@ export const OptionsTab = () => {
         <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.01em', marginBottom: 4 }}>요금이 붙는 값</div>
         <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6 }}>
           <b>요금은 객실이 아니라 값에 붙어 있습니다.</b> 여기서 요금을 한 번 고치면 그 값을 쓰는 모든 객실과 안내문, 판매
-          사이트 요금이 같이 바뀝니다. 객실마다 따로 고칠 필요가 없습니다.
+          사이트 요금이 같이 바뀝니다. 객실마다 따로 수정할 필요가 없습니다.
         </div>
       </div>
 

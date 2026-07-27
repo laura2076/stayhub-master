@@ -79,7 +79,7 @@ describe('숙소마다 열이 달라진다', () => {
     const out = html();
     expect(out).toContain('기준 인원');
     expect(out).toContain('최대 인원');
-    expect(out).toContain('값을 누르면 바로 고칠 수 있어요');
+    expect(out).toContain('값을 누르면 바로 수정할 수 있어요');
   });
 });
 
@@ -91,7 +91,7 @@ describe('every tab renders', () => {
     expect(out).toContain('안내 문구');
     /** 문장이 조각 단위로 쪼개져 렌더됩니다 — 숫자만 누를 수 있게 하려고요. */
     expect(out).toContain('이후 입실 시 사전 연락 필수');
-    expect(out).toContain('눌러서 시간 고치기');
+    expect(out).toContain('눌러서 시간 수정');
     expect(out).toContain('없음');
   });
 
@@ -182,7 +182,7 @@ describe('every dialog renders', () => {
     expect(out).toContain('네, 바꿀게요');
   });
 
-  it('값 고치기 — 시간대', () => {
+  it('값 수정 — 시간대', () => {
     const out = onTabWith('blocks', {
       type: 'OPEN_BLOCK_EDIT',
       blockKey: 'shared_bbq',
@@ -195,9 +195,9 @@ describe('every dialog renders', () => {
     expect(out).toContain('이렇게 저장돼요');
   });
 
-  it('값 고치기 — 금액 구간', () => {
+  it('값 수정 — 금액 구간', () => {
     const out = onTabWith('options', { type: 'OPEN_OPT_FEE', attr: 'bbq', code: 'shared_gas' });
-    expect(out).toContain('공용BBQ · 가스그릴 요금 고치기');
+    expect(out).toContain('공용BBQ · 가스그릴 요금 수정');
     expect(out).toContain('얼마 기준');
     expect(out).toContain('어디서 냄');
     expect(out).toContain('+ 구간 넣기');

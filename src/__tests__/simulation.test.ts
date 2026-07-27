@@ -125,7 +125,7 @@ describe('직원 시나리오 — 객실 추가·삭제', () => {
   });
 });
 
-describe('직원 시나리오 — 인원을 숫자로 고치기', () => {
+describe('직원 시나리오 — 인원을 숫자로 수정', () => {
   it('목록에 없던 인원도 그대로 들어가고, 판매 사이트 값까지 따라온다', () => {
     const before = initialState();
     const after = run(before, { type: 'PICK_CELL', code: room(before, 'A701').code, attr: 'capacity_max', value: 9 });
@@ -299,7 +299,7 @@ describe('직원 시나리오 — 숙소 전체값 바꾸기', () => {
   });
 });
 
-describe('직원 시나리오 — 객실 정보 고치기 · 복제', () => {
+describe('직원 시나리오 — 객실 정보 수정 · 복제', () => {
   it('층을 바꾸면 그 객실을 쓰는 시설 문구가 다시 계산된다', () => {
     const before = initialState();
     const a401 = room(before, 'A401');
@@ -346,7 +346,7 @@ describe('직원 시나리오 — 객실 정보 고치기 · 복제', () => {
   });
 });
 
-describe('직원 시나리오 — 시설 항목 넣고 빼기 · 쓰는 객실 고치기', () => {
+describe('직원 시나리오 — 시설 항목 넣고 제외 · 쓰는 객실 수정', () => {
   it('전사 목록에서 항목을 넣으면 형식에 맞는 편집기가 붙는다', () => {
     const after = commit(initialState(), { type: 'PREVIEW_FIELD_ADD', blockKey: 'spa', fieldKey: '이용 복장' });
     expect(field(after, 'spa', '이용 복장')).toBe('미입력');
@@ -388,7 +388,7 @@ describe('직원 시나리오 — 시설 항목 넣고 빼기 · 쓰는 객실 �
     /** 나머지 객실은 원래 종류를 그대로 유지해야 합니다 — 체크가 종류를 덮어쓰면 안 됩니다. */
     expect(valueOf(p, p.rooms.find((r) => r.name === 'B401')!, 'bbq')).toBe('shared_gas');
 
-    const found = step('시설 · 공용 BBQ에서 A401 빼기 (쓰는 객실 고치기)', after, [
+    const found = step('시설 · 공용 BBQ에서 A401 제외 (쓰는 객실 수정)', after, [
       `공용 BBQ 이용 객실: ${field(before, 'shared_bbq', '이용 객실')} → ${field(after, 'shared_bbq', '이용 객실')}`,
       `A401 바베큐: ${showValue('bbq', valueOf(p, p.rooms.find((r) => r.code === a401)!, 'bbq'))}`,
     ]);

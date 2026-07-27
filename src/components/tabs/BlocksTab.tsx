@@ -51,7 +51,7 @@ const RuleSentence = ({ r, blockKey, ri }: { r: Rule; blockKey: string; ri: numb
           <EditableValue
             key={i}
             v={slotText(s)}
-            title={`눌러서 ${typeName(s.type)} 고치기`}
+            title={`눌러서 ${typeName(s.type)} 수정`}
             onClick={() => dispatch({ type: 'OPEN_RULE_SLOT', blockKey, ri, si })}
           />
         );
@@ -184,7 +184,7 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
             onClick={() => dispatch({ type: 'OPEN_PICK_ROOMS', blockKey: b.key })}
             style={smallBtn}
           >
-            쓰는 객실 고치기
+            쓰는 객실 수정
           </button>
         ) : null}
         {isUsed ? (
@@ -272,7 +272,7 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                   ) : (
                     <EditableValue
                       v={v}
-                      title={`눌러서 ${typeName(typeOf(b.key, k))} 고치기`}
+                      title={`눌러서 ${typeName(typeOf(b.key, k))} 수정`}
                       onClick={() => dispatch({ type: 'OPEN_BLOCK_EDIT', blockKey: b.key, k, v })}
                     />
                   )}
@@ -289,7 +289,7 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                       onClick={() => dispatch({ type: 'PREVIEW_FIELD_DEL', blockKey: b.key, fieldKey: k })}
                       style={{ ...smallBtn, height: 20, fontSize: 10.5 }}
                     >
-                      빼기
+                      제외
                     </button>
                   </span>
                 ) : null}
@@ -326,7 +326,7 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                       onClick={() => dispatch({ type: 'PREVIEW_RULE_DEL', blockKey: b.key, ri })}
                       style={{ ...smallBtn, height: 20, fontSize: 10.5 }}
                     >
-                      빼기
+                      제외
                     </button>
                   </span>
                 </div>
@@ -399,7 +399,7 @@ export const BlocksTab = () => {
       <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6, marginBottom: 12 }}>
         전체 시설 목록 {catalogN}개 중 이 숙소에 있는 것 <b>{mine}</b>개 — 쓰는 중 {count('used')} · 있지만 안 씀{' '}
         {count('off')} · 없음 {count('none')}. 없는 시설은 판매 사이트로 나가지 않고, 그 시설을 묻는 질문·답변도 자동으로
-        빠집니다. <b>값을 누르면 고칠 수 있습니다.</b>
+        빠집니다. <b>값을 누르면 수정할 수 있습니다.</b>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }}>

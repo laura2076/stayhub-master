@@ -35,7 +35,7 @@ export const ValueEditorModal = () => {
     }
   };
 
-  const title = edit.kind === 'optfee' ? `${edit.label} 요금 고치기` : `${edit.bk.label} · ${edit.k}`;
+  const title = edit.kind === 'optfee' ? `${edit.label} 요금 수정` : `${edit.bk.label} · ${edit.k}`;
   const sub =
     edit.kind === 'optfee'
       ? '이 값을 쓰는 모든 객실에 같이 적용됩니다'

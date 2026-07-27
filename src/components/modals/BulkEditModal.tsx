@@ -211,7 +211,7 @@ export const BulkEditModal = () => {
                   <span
                     onClick={() => dispatch({ type: 'BULK_TOGGLE_ROOM', code: r.code })}
                     style={{ cursor: 'pointer', fontSize: 15, color: 'var(--color-neutral-500)', padding: '0 4px' }}
-                    title="이 객실 빼기"
+                    title="이 객실 제외"
                   >
                     ×
                   </span>

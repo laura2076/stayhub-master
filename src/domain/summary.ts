@@ -82,7 +82,7 @@ export const doneSentence = (c: Cascade): string => {
     case 'fieldadd':
       return `${josa(c.field.replace(' 넣기', ''), '을', '를')} 넣었어요. 이제 값을 채우면 됩니다.`;
     case 'fielddel':
-      return `${josa(c.field.replace(' 빼기', ''), '을', '를')} 뺐어요.`;
+      return `${josa(c.field.replace(' 제외', ''), '을', '를')} 제외했어요.`;
     case 'blockstate':
       return `${josa(c.field, '을', '를')} ${ro(c.to)} 바꿨어요.${also}`;
     case 'chan':
@@ -112,7 +112,7 @@ export const willSentence = (c: Cascade): string => {
     case 'roomdel':
       return `객실 ${c.codes.length}개를 지웁니다. 지운 객실은 판매 사이트에서도 내려갑니다.${also}`;
     case 'fielddel':
-      return `${josa(c.field.replace(' 빼기', ''), '을', '를')} 뺍니다. 넣어둔 값도 함께 사라집니다.`;
+      return `${josa(c.field.replace(' 제외', ''), '을', '를')} 제외합니다. 넣어둔 값도 함께 사라집니다.`;
     case 'blockstate':
       return `${josa(c.field, '을', '를')} ${ro(c.to)} 바꿉니다.${also}`;
     case 'bulk': {

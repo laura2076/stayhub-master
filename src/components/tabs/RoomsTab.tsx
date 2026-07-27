@@ -168,7 +168,7 @@ export const RoomsTab = () => {
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>값을 누르면 바로 고칠 수 있어요</span>
+            <span style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>값을 누르면 바로 수정할 수 있어요</span>
             <button className="btn btn-secondary" onClick={() => dispatch({ type: 'OPEN_NEW_ROOM' })} style={{ height: 29, fontSize: 13 }}>
               + 객실 만들기
             </button>
@@ -288,7 +288,7 @@ export const RoomsTab = () => {
                       className="btn btn-secondary"
                       onClick={() => dispatch({ type: 'OPEN_ROOM_EDIT', code: r.code })}
                       style={{ height: 20, padding: '0 6px', fontSize: 10.5 }}
-                      title="객실명 · 층 · 면적 · 구조 · 침구 고치기"
+                      title="객실명 · 층 · 면적 · 구조 · 침구 수정"
                     >
                       정보
                     </button>
