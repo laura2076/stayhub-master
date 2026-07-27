@@ -1,13 +1,64 @@
-import { attrsOf, isOwn, showValue } from '../domain/attrs';
+import { attrsOf, feeOf, isOwn, showValue } from '../domain/attrs';
 import { floorSpan } from '../domain/derive';
 import type { AttrDef, Property } from '../domain/types';
 import { current, useStore } from '../state/store';
+import { CellPicker, type PickerMode } from './CellPicker';
 
 /** "3층 6실" — 이 속성을 따로 정한 객실이 어디에 몰려 있는지. */
 const ownSummary = (p: Property, d: AttrDef): string => {
   const ov = p.rooms.filter((r) => isOwn(r, d.key) && r.values[d.key] !== p.defaults[d.key]);
   if (!ov.length) return '따로 정한 객실 없음';
   return `${floorSpan(ov)} ${ov.length}실`;
+};
+
+const modeOf = (p: Property, d: AttrDef): PickerMode => {
+  if (d.kind === 'int') return { kind: 'number', unit: d.unit, min: d.min, max: d.max };
+  if (d.kind === 'money') return { kind: 'number', unit: '원', min: 0, money: true };
+  return {
+    kind: 'options',
+    options: d.options.map((o) => ({
+      value: o.code,
+      label: o.label,
+      note: d.feeBearing && feeOf(p, d.key, o.code) !== '—' ? feeOf(p, d.key, o.code) : undefined,
+    })),
+  };
+};
+
+/** 전체값 한 줄. 눌러서 바꾸면 따로 정하지 않은 객실이 전부 따라옵니다 —
+ *  상속 구조의 나머지 절반이고, 여기가 그것을 만지는 유일한 자리입니다. */
+const DefaultRow = ({ p, d }: { p: Property; d: AttrDef }) => {
+  const { dispatch } = useStore();
+  return (
+    <CellPicker
+      label={`숙소 전체 ${d.label}`}
+      className="hov-accent"
+      mode={modeOf(p, d)}
+      current={p.defaults[d.key]}
+      onPick={(value) => dispatch({ type: 'PICK_DEFAULT', attr: d.key, value })}
+      cellStyle={{
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 8,
+        padding: '9px 14px',
+        borderBottom: '1px solid var(--color-divider)',
+      }}
+    >
+      <span style={{ width: 74, flex: 'none', fontSize: 11, color: 'var(--color-neutral-600)' }}>{d.label}</span>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--color-neutral-800)',
+          minWidth: 0,
+          flex: 1,
+          borderBottom: '1px dashed var(--color-neutral-300)',
+        }}
+      >
+        {showValue(d.key, p.defaults[d.key])}
+      </span>
+      <span style={{ fontSize: 10.5, color: 'var(--color-accent-800)', whiteSpace: 'nowrap' }}>{ownSummary(p, d)}</span>
+    </CellPicker>
+  );
 };
 
 export const InspectorPanel = () => {
@@ -41,31 +92,14 @@ export const InspectorPanel = () => {
           이 숙소의 전체값
         </div>
         <div style={{ marginTop: 3, fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6 }}>
-          숙소 전체값을 정해 두고, 객실마다 다른 것만 따로 정합니다. 전체값을 바꾸면 따로 정한 객실은 그대로 두고 나머지만
-          같이 바뀝니다.
+          숙소 전체값을 정해 두고, 객실마다 다른 것만 따로 정합니다. <b>값을 누르면 전체값을 바꿉니다</b> — 따로 정한
+          객실은 그대로 두고 나머지만 같이 바뀝니다.
         </div>
       </div>
 
-      <div style={{ flex: 'none', maxHeight: 260, overflowY: 'auto', borderBottom: '1px solid var(--color-divider)' }}>
+      <div style={{ flex: 'none', maxHeight: 300, overflowY: 'auto', borderBottom: '1px solid var(--color-divider)' }}>
         {defs.map((d) => (
-          <div
-            key={d.key}
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 8,
-              padding: '9px 14px',
-              borderBottom: '1px solid var(--color-divider)',
-            }}
-          >
-            <span style={{ width: 74, flex: 'none', fontSize: 11, color: 'var(--color-neutral-600)' }}>{d.label}</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-neutral-800)', minWidth: 0, flex: 1 }}>
-              {showValue(d.key, p.defaults[d.key])}
-            </span>
-            <span style={{ fontSize: 10.5, color: 'var(--color-accent-800)', whiteSpace: 'nowrap' }}>
-              {ownSummary(p, d)}
-            </span>
-          </div>
+          <DefaultRow key={d.key} p={p} d={d} />
         ))}
       </div>
 

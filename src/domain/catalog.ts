@@ -1,4 +1,4 @@
-import type { ChannelKey, FieldType, Rule, RuleDef } from './types';
+import type { BlockField, ChannelKey, ComputedKind, FieldType, Rule, RuleDef } from './types';
 
 export const CHANKEYS: [ChannelKey, string][] = [
   ['a', '네이버'],
@@ -124,6 +124,107 @@ export const RULECAT: RuleDef[] = [
   { id: 'nearby_car', group: '주변·교통', tpl: '{name} 차량 약 {n}', repeatable: true, slots: [{ k: 'name', type: 'text', v: '주변 명소' }, { k: 'n', type: 'int:분', v: 10 }] },
   { id: 'nearby_walk', group: '주변·교통', tpl: '{name} 도보 약 {n}', repeatable: true, slots: [{ k: 'name', type: 'text', v: '편의점' }, { k: 'n', type: 'int:분', v: 1 }] },
   { id: 'bus_stop', group: '주변·교통', tpl: '{name} 하차 후 도보 {n}', repeatable: true, slots: [{ k: 'name', type: 'text', v: '정류장' }, { k: 'n', type: 'int:분', v: 2 }] },
+];
+
+/* ── 전사 시설 목록 ─────────────────────────────────────────────────────────
+   숙소에 시설을 새로 들일 때 쓰는 정의입니다. 시설이 **어느 속성으로 객실을
+   가려내는지**와 **어떤 필드가 자동 계산인지**를 여기서 함께 가져오지 않으면,
+   추가한 시설은 "미입력"이라고 적힌 자유 텍스트로 남아 영영 계산되지 않습니다.
+   attr이 이 숙소에 없으면 속성도 함께 붙습니다 — 그래야 객실 표에 열이 생깁니다. */
+
+export type BlockDef = {
+  label: string;
+  attr?: string;
+  codes?: string[];
+  /** 속성을 새로 붙일 때 쓸 숙소 전체값. */
+  base?: string;
+  computed?: Record<string, ComputedKind>;
+  fields: BlockField[];
+};
+
+const FEE_ROOMS: Record<string, ComputedKind> = { '이용 객실': 'rooms', '이용 요금': 'fee' };
+
+export const BLOCKCAT: Record<string, BlockDef> = {
+  shared_bbq: {
+    label: '공용 BBQ',
+    attr: 'bbq',
+    codes: ['shared_gas', 'shared_charcoal', 'shared_lid'],
+    base: 'shared_gas',
+    computed: { ...FEE_ROOMS, '바베큐 형태': 'optionLabel' },
+    fields: [['이용 객실', ''], ['이용 장소', '루프탑'], ['바베큐 형태', ''], ['제공 구성', '그릴+집게+가위'], ['이용 요금', ''], ['이용 시간', '17:00~21:00']],
+  },
+  private_bbq: {
+    label: '개별 BBQ',
+    attr: 'bbq',
+    codes: ['private_electric', 'private_charcoal'],
+    base: 'shared_gas',
+    computed: { ...FEE_ROOMS, '바베큐 형태': 'optionLabel' },
+    fields: [['이용 객실', ''], ['이용 장소', '개별 테라스'], ['바베큐 형태', ''], ['제공 구성', '그릴+집게+가위'], ['이용 요금', ''], ['이용 시간', '15:00~22:00']],
+  },
+  spa: {
+    label: '스파',
+    attr: 'spa',
+    codes: ['jet2', 'jet4', 'whirl'],
+    base: 'none',
+    computed: { '이용 객실': 'rooms', 수용인원: 'capacity' },
+    fields: [['이용 객실', ''], ['스파 형태', '제트스파'], ['수용인원', ''], ['이용 요금', '무료'], ['이용 시간', '입실~23시 (오전 이용 불가)']],
+  },
+  private_pool: {
+    label: '개별 수영장',
+    attr: 'private_pool',
+    codes: ['cold', 'warm'],
+    base: 'none',
+    computed: FEE_ROOMS,
+    fields: [['이용 객실', ''], ['이용 요금', ''], ['온도', '냉수'], ['크기', '수심 1.1m 이상'], ['이용 시간', '입실~22:00 (오전 이용 불가)']],
+  },
+  pet_friendly: {
+    label: '반려동물',
+    attr: 'pet',
+    codes: ['small', 'medium'],
+    base: 'none',
+    computed: FEE_ROOMS,
+    fields: [['이용 객실', ''], ['이용 요금', ''], ['동반 크기', '중형견']],
+  },
+  camping: {
+    label: '캠핑 · 오토캠핑',
+    attr: 'camp_site',
+    codes: ['auto', 'tent', 'caravan'],
+    base: 'none',
+    computed: FEE_ROOMS,
+    fields: [['이용 객실', ''], ['이용 요금', ''], ['이용 시간', '14:00~11:00']],
+  },
+  /* 객실을 가려내지 않고 숙소 전체를 덮는 시설 — 속성이 붙지 않습니다. */
+  shared_pool: { label: '공용 수영장', fields: [['이용 객실', '숙박객 전체'], ['온도', '냉수'], ['이용 요금', '무료'], ['이용 시간', '15:00 ~ 21:00']] },
+  playground: { label: '어린이 놀이터', fields: [['이용 시간', '09:00~18:00']] },
+  rooftop_bar: { label: '루프탑 바', fields: [['이용 장소', '루프탑'], ['이용 시간', '18:00~23:00']] },
+  karaoke: { label: '노래방', fields: [['이용 요금', '무료'], ['이용 시간', '18:00~23:00']] },
+  seminar_room: { label: '세미나실', fields: [['이용 요금', '무료'], ['이용 시간', '09:00~18:00']] },
+  ev_charger: { label: '전기차 충전', fields: [['전기차 충전', '가능'], ['이용 요금', '무료']] },
+  pickup: { label: '픽업', fields: [['이용 시간', '15:00~18:00'], ['이용 요금', '무료']] },
+  parking: { label: '주차', fields: [['주차장', '보유'], ['주차 대수', '객실당 1대'], ['전기차 충전', '불가']] },
+};
+
+/** 시설 카드에 넣을 수 있는 항목들. 자동 계산 필드는 여기 없습니다 — 사람이 넣는 게 아니라
+ *  시설 정의가 정하는 것이라서요. */
+export const FIELDCAT: string[] = [
+  '이용 장소',
+  '제공 구성',
+  '이용 시간',
+  '이용 요금',
+  '운영 기간',
+  '온도',
+  '크기',
+  '형태',
+  '대상',
+  '이용 복장',
+  '동반 크기',
+  '조식 서비스',
+  '사용 여부',
+  '주차장',
+  '주차 대수',
+  '전기차 충전',
+  '지번 주소',
+  '도로명 주소',
 ];
 
 export const ruleById = (id: string): RuleDef | undefined => RULECAT.find((r) => r.id === id);

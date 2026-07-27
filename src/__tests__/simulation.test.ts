@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attrsOf, cur, feeOf, valueOf } from '../domain/attrs';
+import { attrsOf, cur, feeOf, isOwn, showValue, valueOf } from '../domain/attrs';
 import { audit, errorsOf } from '../domain/audit';
 import { channelRows, deriveBlocks, roomCount, ruleText } from '../domain/derive';
 import { renderFaq } from '../domain/faq';
@@ -47,8 +47,7 @@ describe('직원 시나리오 — 객실 추가·삭제', () => {
     const after = commit(
       before,
       { type: 'OPEN_NEW_ROOM' },
-      { type: 'SET_NR_NAME', v: 'A404' },
-      { type: 'SET_NR_FLOOR', v: '4' },
+      { type: 'SET_NR', patch: { name: 'A404', floorText: '4' } },
       { type: 'PREVIEW_NEW_ROOM' },
     );
 
@@ -71,8 +70,7 @@ describe('직원 시나리오 — 객실 추가·삭제', () => {
     const after = commit(
       initialState(),
       { type: 'OPEN_NEW_ROOM' },
-      { type: 'SET_NR_NAME', v: 'C301' },
-      { type: 'SET_NR_FLOOR', v: '3' },
+      { type: 'SET_NR', patch: { name: 'C301', floorText: '3' } },
       { type: 'SET_NR_VALUE', attr: 'bbq', v: 'private_electric' },
       { type: 'PREVIEW_NEW_ROOM' },
     );
@@ -177,6 +175,188 @@ describe('직원 시나리오 — 인원을 숫자로 고치기', () => {
     const found = step('객실 · A301 추가인원 요금 30,000 → 45,000 (직접 입력)', after, [
       `A301 추가인원 요금: ${valueOf(P(after), room(after, 'A301'), 'extra_fee')}원`,
       `나머지 27실: 전체값 ${P(after).defaults.extra_fee}원 그대로`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+});
+
+describe('직원 시나리오 — 숙소 전체값 바꾸기', () => {
+  /** 상속 구조의 나머지 절반입니다. 전체값을 바꾸면 손대지 않은 객실만 따라오고,
+   *  따로 정해둔 객실은 그대로 남아야 합니다 — 그러라고 따로 정해둔 것이니까요. */
+  it('따로 정하지 않은 객실만 따라오고, 따로 정한 객실은 그대로 남는다', () => {
+    const before = initialState();
+    const p0 = P(before);
+    const ownRooms = p0.rooms.filter((r) => isOwn(r, 'spa')).map((r) => r.code);
+    expect(ownRooms.length).toBe(4); // 7층 4실이 제트스파 4인용
+
+    const after = commit(before, { type: 'PICK_DEFAULT', attr: 'spa', value: 'whirl' });
+    const p = P(after);
+
+    expect(p.defaults.spa).toBe('whirl');
+    expect(p.rooms.filter((r) => !ownRooms.includes(r.code)).every((r) => valueOf(p, r, 'spa') === 'whirl')).toBe(true);
+    /** 7층은 손대지 않습니다. */
+    expect(p.rooms.filter((r) => ownRooms.includes(r.code)).every((r) => valueOf(p, r, 'spa') === 'jet4')).toBe(true);
+
+    const found = step('숙소 전체값 · 스파 제트스파 2인용 → 월풀 2인용', after, [
+      `전체값: ${showValue('spa', p0.defaults.spa)} → ${showValue('spa', p.defaults.spa)}`,
+      `따라온 객실: ${p.rooms.length - ownRooms.length}실 · 그대로 둔 객실: ${ownRooms.length}실`,
+      `스파 시설 수용인원(자동 계산): ${field(after, 'spa', '수용인원')}`,
+      `알림: ${after.toast}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('전체값을 어떤 객실이 따로 정해둔 값으로 바꾸면 그 객실의 "따로 정함"이 풀린다', () => {
+    const before = initialState();
+    const after = commit(before, { type: 'PICK_DEFAULT', attr: 'spa', value: 'jet4' });
+    const p = P(after);
+    /** 7층은 이제 전체값과 같으므로 따로 정한 표시가 남아 있으면 안 됩니다. */
+    expect(p.rooms.filter((r) => r.floor === 7).every((r) => !isOwn(r, 'spa'))).toBe(true);
+    expect(errorsOf(after)).toEqual([]);
+
+    const found = step('숙소 전체값 · 스파 → 제트스파 4인용 (7층이 쓰던 값)', after, [
+      `전 객실 스파: ${showValue('spa', p.defaults.spa)}`,
+      `따로 정한 객실: ${p.rooms.filter((r) => isOwn(r, 'spa')).length}실`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('인원 전체값도 숫자로 바꾼다', () => {
+    const after = commit(initialState(), { type: 'PICK_DEFAULT', attr: 'capacity_max', value: 5 });
+    const p = P(after);
+    expect(p.defaults.capacity_max).toBe(5);
+    /** 7층은 6명을 따로 정해뒀으므로 그대로. */
+    expect(p.rooms.filter((r) => r.floor === 7).every((r) => valueOf(p, r, 'capacity_max') === 6)).toBe(true);
+    expect(field(after, 'extra_person', '최대 인원')).toBe('7층 6명 / 3~6층 5명');
+    expect(errorsOf(after)).toEqual([]);
+  });
+});
+
+describe('직원 시나리오 — 객실 정보 고치기 · 복제', () => {
+  it('층을 바꾸면 그 객실을 쓰는 시설 문구가 다시 계산된다', () => {
+    const before = initialState();
+    const a401 = room(before, 'A401');
+    const after = commit(
+      before,
+      { type: 'OPEN_ROOM_EDIT', code: a401.code },
+      { type: 'SET_RE', patch: { floorText: '8', name: 'A801' } },
+      { type: 'PREVIEW_ROOM_EDIT' },
+    );
+    const p = P(after);
+    expect(p.rooms.find((r) => r.code === a401.code)!.floor).toBe(8);
+    expect(p.rooms.find((r) => r.code === a401.code)!.name).toBe('A801');
+    expect(field(after, 'shared_bbq', '이용 객실')).toContain('8층');
+
+    const found = step('객실 정보 · A401 4층 → A801 8층', after, [
+      `공용 BBQ 이용 객실: ${field(before, 'shared_bbq', '이용 객실')} → ${field(after, 'shared_bbq', '이용 객실')}`,
+      `알림: ${after.toast}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('복제하면 값·구조·침구까지 그대로 오고 이름만 다르다', () => {
+    const before = initialState();
+    const src = room(before, 'A701');
+    const after = commit(
+      before,
+      { type: 'OPEN_NEW_ROOM', from: src.code },
+      { type: 'SET_NR', patch: { name: 'A703' } },
+      { type: 'PREVIEW_NEW_ROOM' },
+    );
+    const made = room(after, 'A703');
+    expect(made.floor).toBe(7);
+    expect(made.area).toBe(src.area);
+    expect(made.bed).toBe(src.bed);
+    expect(made.values).toEqual(src.values);
+    expect(valueOf(P(after), made, 'capacity_max')).toBe(6);
+
+    const found = step('객실 복제 · A701 → A703', after, [
+      `구조·침구: ${made.form} · ${made.bed}`,
+      `인원(따라옴): 기준 ${valueOf(P(after), made, 'capacity_base')}명 / 최대 ${valueOf(P(after), made, 'capacity_max')}명`,
+      `스파(따라옴): ${showValue('spa', valueOf(P(after), made, 'spa'))}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+});
+
+describe('직원 시나리오 — 시설 항목 넣고 빼기 · 쓰는 객실 고치기', () => {
+  it('전사 목록에서 항목을 넣으면 형식에 맞는 편집기가 붙는다', () => {
+    const after = commit(initialState(), { type: 'PREVIEW_FIELD_ADD', blockKey: 'spa', fieldKey: '이용 복장' });
+    expect(field(after, 'spa', '이용 복장')).toBe('미입력');
+
+    const filled = commit(
+      after,
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'spa', k: '이용 복장', v: '미입력' },
+      { type: 'SET_PART', k: 'v', v: '수영복 필수' },
+      { type: 'PREVIEW_EDIT' },
+    );
+    expect(field(filled, 'spa', '이용 복장')).toBe('수영복 필수');
+
+    const found = step('시설 · 스파에 "이용 복장" 넣고 값 채우기', filled, [
+      `넣은 항목: 이용 복장 = ${field(filled, 'spa', '이용 복장')}`,
+      `항목 수: ${block(after, 'spa').fields.length}개`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('자동 계산 항목은 뺄 수 없고, 사람이 쓴 항목만 빠진다', () => {
+    const before = initialState();
+    const after = commit(before, { type: 'PREVIEW_FIELD_DEL', blockKey: 'shared_bbq', fieldKey: '이용 장소' });
+    expect(block(after, 'shared_bbq').fields.some((f) => f[0] === '이용 장소')).toBe(false);
+    /** 자동 계산 항목은 그대로 있어야 합니다. */
+    expect(field(after, 'shared_bbq', '이용 객실')).toBe('4~7층 객실 · 22객실');
+    expect(errorsOf(after)).toEqual([]);
+  });
+
+  it('쓰는 중인 시설에서 객실 하나를 빼면 값이 비워지고 문구가 줄어든다', () => {
+    const before = initialState();
+    const a401 = room(before, 'A401').code;
+    const st = run(before, { type: 'OPEN_PICK_ROOMS', blockKey: 'shared_bbq' });
+    expect(st.cas).not.toBeNull();
+
+    const after = run(st, { type: 'TOGGLE_TARGET', key: `apply:${a401}` }, { type: 'APPLY_CAS' });
+    const p = P(after);
+    expect(valueOf(p, p.rooms.find((r) => r.code === a401)!, 'bbq')).toBe('none');
+    expect(field(after, 'shared_bbq', '이용 객실')).toBe('4~7층 객실 · 21객실 (A401 제외)');
+    /** 나머지 객실은 원래 종류를 그대로 유지해야 합니다 — 체크가 종류를 덮어쓰면 안 됩니다. */
+    expect(valueOf(p, p.rooms.find((r) => r.name === 'B401')!, 'bbq')).toBe('shared_gas');
+
+    const found = step('시설 · 공용 BBQ에서 A401 빼기 (쓰는 객실 고치기)', after, [
+      `공용 BBQ 이용 객실: ${field(before, 'shared_bbq', '이용 객실')} → ${field(after, 'shared_bbq', '이용 객실')}`,
+      `A401 바베큐: ${showValue('bbq', valueOf(p, p.rooms.find((r) => r.code === a401)!, 'bbq'))}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('전사 목록에서 시설을 가져오면 속성·가려내기 규칙·자동 계산이 함께 붙는다', () => {
+    const before = initialState();
+    expect(P(before).attrs).not.toContain('camp_site');
+
+    const added = commit(before, { type: 'PREVIEW_ADD_BLOCK_ITEM', blockKey: 'camping' });
+    const p = P(added);
+    /** 객실 표에 열이 생겨야 값을 넣을 수 있습니다. */
+    expect(p.attrs).toContain('camp_site');
+    expect(p.defaults.camp_site).toBe('none');
+    expect(p.blocks.find((b) => b.key === 'camping')!.memberOf).toEqual({
+      attr: 'camp_site',
+      codes: ['auto', 'tent', 'caravan'],
+    });
+
+    /** 값을 넣으면 문구가 저절로 계산됩니다 — 손으로 쓸 곳이 없습니다. */
+    const filled = commit(
+      added,
+      { type: 'TOGGLE_ROOM', code: room(added, 'A301').code },
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_ATTR', attr: 'camp_site' },
+      { type: 'PICK_BULK_VALUE', value: 'tent' },
+      { type: 'PREVIEW_BULK' },
+    );
+    expect(field(filled, 'camping', '이용 객실')).toBe('3층 객실 · 1객실 (A302,A303,B301,B302,B303 제외)');
+
+    const found = step('시설 · 전사 목록에서 "캠핑 · 오토캠핑" 가져오기', filled, [
+      `숙소가 쓰는 값: ${attrsOf(p).map((a) => a.label).join(', ')}`,
+      `캠핑 이용 객실(자동 계산): ${field(filled, 'camping', '이용 객실')}`,
+      `가려내기 규칙: ${JSON.stringify(p.blocks.find((b) => b.key === 'camping')!.memberOf)}`,
     ]);
     expect(found.filter((f) => f.severity === 'error')).toEqual([]);
   });
@@ -501,8 +681,7 @@ describe('연속 작업 — 한 직원이 하루에 하는 일 전부', () => {
     const s1 = commit(
       s0,
       { type: 'OPEN_NEW_ROOM' },
-      { type: 'SET_NR_NAME', v: 'A404' },
-      { type: 'SET_NR_FLOOR', v: '4' },
+      { type: 'SET_NR', patch: { name: 'A404', floorText: '4' } },
       { type: 'PREVIEW_NEW_ROOM' },
     );
     const s2 = run(s1, { type: 'PICK_CELL', code: room(s1, 'A404').code, attr: 'bbq', value: 'shared_charcoal' });

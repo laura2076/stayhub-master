@@ -29,7 +29,10 @@ const derivedCount = (c: Cascade) => on(c, 'drv:').length;
 /** 값 변경은 되돌릴 수 있으니 그냥 적용합니다. 만들고 지우는 것과, 남이 따로
  *  정해둔 값을 덮어쓰는 것만 한 번 묻습니다 — 되돌리기로 못 되살리는 판단이라서요. */
 export const needsConfirm = (c: Cascade): boolean => {
-  if (c.kind === 'roomadd' || c.kind === 'roomdel' || c.kind === 'blockstate') return true;
+  /** 전체값은 손대지 않은 객실 전부가 따라오므로, 몇 개가 따라오고 몇 개가 남는지
+   *  보여 주지 않으면 "왜 몇 개는 안 바뀌지"가 됩니다. 항상 한 번 묻습니다. */
+  if (c.kind === 'roomadd' || c.kind === 'roomdel' || c.kind === 'blockstate' || c.kind === 'default') return true;
+  if (c.kind === 'fielddel') return true;
   const rooms = on(c, 'room:');
   return c.kind === 'bulk' && rooms.length > 1 && rooms.some((i) => i.isOv);
 };
@@ -56,10 +59,25 @@ export const doneSentence = (c: Cascade): string => {
       return `안내 문구 "${c.to}"를 넣었어요.`;
     case 'ruledel':
       return `안내 문구 "${c.from}"를 지웠어요.`;
+    case 'default': {
+      const n = on(c, 'room:').length;
+      const kept = c.groups.flatMap((g) => g.items).filter((i) => i.key.startsWith('keep:')).length;
+      return (
+        `숙소 전체 ${josa(c.field.replace('숙소 전체값 · ', ''), '을', '를')} ${ro(c.to)} 바꿨어요. 객실 ${n}개가 따라왔어요.` +
+        (kept ? ` 따로 정해둔 ${kept}개는 그대로 뒀어요.` : '') +
+        also
+      );
+    }
     case 'roomadd':
       return `객실 ${josa(c.room.name, '을', '를')} 새로 만들었어요.${also}`;
+    case 'roominfo':
+      return `${c.field.replace('객실 정보 · ', '')} 객실 정보를 고쳤어요.${also}`;
     case 'roomdel':
       return `객실 ${c.codes.length}개를 지웠어요.${also}`;
+    case 'fieldadd':
+      return `${josa(c.field.replace(' 넣기', ''), '을', '를')} 넣었어요. 이제 값을 채우면 됩니다.`;
+    case 'fielddel':
+      return `${josa(c.field.replace(' 빼기', ''), '을', '를')} 뺐어요.`;
     case 'blockstate':
       return `${josa(c.field, '을', '를')} ${ro(c.to)} 바꿨어요.${also}`;
     case 'chan':
@@ -75,10 +93,21 @@ export const willSentence = (c: Cascade): string => {
   const also = alsoChanged ? ` 그러면 시설 안내문 ${alsoChanged}곳이 자동으로 같이 바뀝니다.` : '';
 
   switch (c.kind) {
+    case 'default': {
+      const n = on(c, 'room:').length;
+      const kept = c.groups.flatMap((g) => g.items).filter((i) => i.key.startsWith('keep:')).length;
+      return (
+        `숙소 전체값을 ${ro(c.to)} 바꿉니다. 전체값을 그대로 쓰던 객실 ${n}개가 따라옵니다.` +
+        (kept ? ` 따로 정해둔 ${kept}개는 그대로 둡니다.` : '') +
+        also
+      );
+    }
     case 'roomadd':
       return `객실 ${josa(c.room.name, '을', '를')} 새로 만듭니다.${also}`;
     case 'roomdel':
       return `객실 ${c.codes.length}개를 지웁니다. 지운 객실은 판매 사이트에서도 내려갑니다.${also}`;
+    case 'fielddel':
+      return `${josa(c.field.replace(' 빼기', ''), '을', '를')} 뺍니다. 넣어둔 값도 함께 사라집니다.`;
     case 'blockstate':
       return `${josa(c.field, '을', '를')} ${ro(c.to)} 바꿉니다.${also}`;
     case 'bulk': {

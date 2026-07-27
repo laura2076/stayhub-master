@@ -6,6 +6,7 @@ import { TopBar } from './components/TopBar';
 import { BulkEditModal } from './components/modals/BulkEditModal';
 import { CascadeModal } from './components/modals/CascadeModal';
 import { NewRoomModal } from './components/modals/NewRoomModal';
+import { RoomEditModal } from './components/modals/RoomEditModal';
 import { ValueEditorModal } from './components/modals/ValueEditorModal';
 import { BlocksTab } from './components/tabs/BlocksTab';
 import { ChannelsTab } from './components/tabs/ChannelsTab';
@@ -54,6 +55,7 @@ const App = () => {
 
       <BulkEditModal />
       <NewRoomModal />
+      <RoomEditModal />
       <CascadeModal />
       <ValueEditorModal />
       <Toast />

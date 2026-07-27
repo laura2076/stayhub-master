@@ -1,5 +1,5 @@
 import { attrDef, attrOption, feeOf, isOwn, showValue, valueOf } from './attrs';
-import { CHANKEYS, instantiateRule, ruleById } from './catalog';
+import { BLOCKCAT, CHANKEYS, instantiateRule, ruleById } from './catalog';
 import {
   deriveBlocks,
   derivedDiff,
@@ -10,6 +10,7 @@ import {
   simulate,
   stName,
 } from './derive';
+import { typeName, typeOf } from './fieldTypes';
 import type {
   AttrValue,
   Block,
@@ -22,8 +23,11 @@ import type {
   NewRoomDraft,
   Property,
   Room,
+  RoomInfo,
 } from './types';
 
+/** 판매 사이트로 나가는 것은 **고르는 것이 아니라 결과**입니다. 잠긴 줄로 두어야
+ *  "고를 게 하나도 없는 확인 창"이 접힌 상태로 열립니다 — 안 그러면 늘 펼쳐집니다. */
 const channelItems = (label: (chName: string) => string, before: string, after: string, n = 3): CascadeItem[] =>
   CHANKEYS.slice(0, n).map(([ck, chName]) => ({
     key: `ch:${ck}`,
@@ -31,6 +35,7 @@ const channelItems = (label: (chName: string) => string, before: string, after: 
     before,
     after,
     on: true,
+    locked: true,
     isOv: false,
   }));
 
@@ -86,19 +91,142 @@ export const previewBulk = (p: Property, sel: string[], attr: string, value: Att
   };
 };
 
-export const buildRoom = (p: Property, nr: NewRoomDraft): Room => {
-  const nextCode = String(Math.max(...p.rooms.map((r) => Number(r.code))) + 1);
+/** 숙소 전체값 바꾸기.
+ *
+ *  상속 모델의 나머지 절반입니다. 전체값을 바꾸면 **따로 정하지 않은 객실만** 따라오고,
+ *  따로 정해둔 객실은 그대로 남습니다 — 그러라고 따로 정해둔 것이니까요. 미리보기에서
+ *  두 무리를 갈라서 보여 주지 않으면 "왜 몇 개는 안 바뀌지"가 됩니다. */
+export const previewDefault = (p: Property, attr: string, value: AttrValue): Cascade => {
+  const def = attrDef(attr)!;
+  const follows = p.rooms.filter((r) => !isOwn(r, attr));
+  const stays = p.rooms.filter((r) => isOwn(r, attr));
+
+  const next: Property = {
+    ...p,
+    defaults: { ...p.defaults, [attr]: value },
+    /** 새 전체값과 같아진 객실은 따로 정한 표시를 뗍니다 — 표시와 실제가 어긋나지 않게. */
+    rooms: p.rooms.map((r) => {
+      if (r.values[attr] !== value) return r;
+      const values = { ...r.values };
+      delete values[attr];
+      return { ...r, values };
+    }),
+  };
+  const derived = derivedDiff(p, next);
+  const touched = p.blocks.filter((b) => b.memberOf?.attr === attr).map((b) => b.key);
+  const faq = faqItemsFor(p, touched, '지금 답변', '새 값으로 다시 만들어짐');
+
   return {
-    code: nextCode,
-    name: nr.name || '새 객실',
-    floor: Number(nr.floor),
-    area: '—',
-    form: '원룸형',
-    bed: '킹침대 1',
-    tag: '신규 등록',
-    values: { ...nr.values },
+    kind: 'default',
+    attr,
+    value,
+    field: `숙소 전체값 · ${def.label}`,
+    from: showValue(attr, p.defaults[attr]),
+    to: showValue(attr, value),
+    warn: stays.length
+      ? `따로 정해둔 객실 ${stays.length}개는 그대로 둡니다. 그 객실도 함께 바꾸려면 객실 표에서 골라 "한꺼번에 바꾸기"를 쓰세요.`
+      : '이 숙소의 모든 객실이 전체값을 그대로 쓰고 있어 전부 따라옵니다.',
+    groups: [
+      /** 놀라운 쪽을 먼저 보여 줍니다 — "왜 몇 개는 안 바뀌지"가 스크롤 아래에 있으면 안 됩니다. */
+      ...(stays.length
+        ? [
+            {
+              title: `그대로 두는 객실 ${stays.length}`,
+              desc: '이 객실만 따로 정해둔 값이 있음',
+              items: stays.map((r) => ({
+                key: `keep:${r.code}`,
+                label: `${r.name} · ${r.code}`,
+                before: showRoomValue(p, r, attr),
+                after: showRoomValue(p, r, attr),
+                on: true,
+                locked: true,
+                isOv: true,
+              })),
+            },
+          ]
+        : []),
+      {
+        title: `따라오는 객실 ${follows.length}`,
+        desc: '전체값을 그대로 쓰던 객실',
+        items: follows.map((r) => ({
+          key: `room:${r.code}`,
+          label: `${r.name} · ${r.code}`,
+          before: showValue(attr, p.defaults[attr]),
+          after: showValue(attr, value),
+          on: true,
+          locked: true,
+          isOv: false,
+        })),
+      },
+      ...derivedGroup(derived),
+      {
+        title: '판매 사이트 3',
+        desc: '사이트마다 쓰는 말로 바꿔서 나감',
+        items: channelItems((ch) => `${ch} · ${def.label}`, showValue(attr, p.defaults[attr]), showValue(attr, value)),
+      },
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '이 시설을 옮겨 적는 답변', items: faq }] : []),
+    ],
   };
 };
+
+/** 객실 정보(이름·층·면적·구조·침구·태그) 고치기. 층이 바뀌면 시설 문구가 다시 계산됩니다. */
+export const previewRoomInfo = (p: Property, code: string, patch: RoomInfo): Cascade => {
+  const r = p.rooms.find((x) => x.code === code)!;
+  const next: Property = { ...p, rooms: p.rooms.map((x) => (x.code === code ? { ...x, ...patch } : x)) };
+  const derived = derivedDiff(p, next);
+
+  const changed: [string, string, string][] = (
+    [
+      ['객실명', r.name, patch.name],
+      ['층', `${r.floor}층`, `${patch.floor}층`],
+      ['면적', r.area, patch.area],
+      ['구조', r.form, patch.form],
+      ['침구', r.bed, patch.bed],
+      ['특징', r.tag, patch.tag],
+    ] as [string, string, string][]
+  ).filter(([, a, b]) => a !== b);
+
+  return {
+    kind: 'roominfo',
+    code,
+    patch,
+    field: `객실 정보 · ${r.name}`,
+    from: changed.map(([, a]) => a).join(' · ') || '바뀐 것 없음',
+    to: changed.map(([, , b]) => b).join(' · ') || '바뀐 것 없음',
+    warn: r.floor !== patch.floor ? '층이 바뀌면 이 객실을 쓰는 시설의 "이용 객실" 문구가 다시 계산됩니다.' : '',
+    groups: [
+      {
+        title: `고치는 항목 ${changed.length}`,
+        desc: `${r.name} · ${r.code}`,
+        items: changed.map(([k, a, b]) => ({
+          key: `info:${k}`,
+          label: k,
+          before: a,
+          after: b,
+          on: true,
+          isOv: false,
+        })),
+      },
+      ...derivedGroup(derived),
+      {
+        title: '판매 사이트 3',
+        desc: '사이트 상품명·설명',
+        items: channelItems((ch) => `${ch} · ${r.name} 상품`, r.name, patch.name),
+      },
+    ],
+  };
+};
+
+export const buildRoom = (p: Property, nr: NewRoomDraft): Room => ({
+  code: String(Math.max(...p.rooms.map((r) => Number(r.code))) + 1),
+  name: nr.name || '새 객실',
+  floor: Number(nr.floorText),
+  area: nr.area,
+  form: nr.form,
+  bed: nr.bed,
+  tag: nr.tag,
+  values: { ...nr.values },
+});
 
 export const previewNewRoom = (p: Property, room: Room): Cascade => {
   const next: Property = { ...p, rooms: [...p.rooms, room] };
@@ -245,29 +373,36 @@ export const previewBlockState = (p: Property, bk: Block, nextSt: 'off' | 'none'
   };
 };
 
-/** 다시 켤 때는 어느 객실에 붙일지 그 자리에서 고릅니다. */
-export const previewBlockUse = (p: Property, bk: Block): Cascade => {
+/** 다시 켤 때, 그리고 쓰는 중에도 — 어느 객실에 붙일지 그 자리에서 고릅니다.
+ *  체크를 풀면 그 객실에서 시설이 빠지고, 새로 체크하면 붙습니다. */
+export const previewBlockUse = (p: Property, bk: Block, reviving = bk.st !== 'used'): Cascade => {
   const attr = bk.memberOf?.attr;
   const code = bk.memberOf?.codes[0];
   const def = attr ? attrDef(attr) : undefined;
 
-  /** 원래 그 시설을 쓰던(지금은 없음인) 객실을 미리 체크해 둡니다. */
+  /** 켤 때는 원래 쓰던(지금 "없음"인) 객실을, 쓰는 중일 때는 지금 붙어 있는 객실을 체크해 둡니다. */
+  const current = attr && !reviving ? membersOf(p, bk) : [];
   const candidates = attr ? p.rooms.filter((r) => String(valueOf(p, r, attr)) === 'none') : [];
-  const suggest = candidates.length ? candidates : p.rooms;
+  const suggest = reviving ? (candidates.length ? candidates : p.rooms) : current;
 
   const pick: CascadeItem[] =
     attr && code
-      ? p.rooms.map((r) => ({
-          key: `apply:${r.code}`,
-          label: `${r.name} · ${r.code} (${r.floor}층)`,
-          before: showRoomValue(p, r, attr),
-          after: attrOption(attr, code)?.label ?? String(code),
-          on: suggest.some((s) => s.code === r.code),
-          isOv: isOwn(r, attr),
-        }))
+      ? p.rooms.map((r) => {
+          const on = suggest.some((s) => s.code === r.code);
+          const now = showRoomValue(p, r, attr);
+          return {
+            key: `apply:${r.code}`,
+            label: `${r.name} · ${r.code} (${r.floor}층)`,
+            before: now,
+            /** 이미 이 시설을 쓰는 객실은 지금 값을 유지합니다 — 체크만으로 종류가 바뀌면 곤란합니다. */
+            after: on && current.some((c) => c.code === r.code) ? now : (attrOption(attr, code)?.label ?? String(code)),
+            on,
+            isOv: isOwn(r, attr),
+          };
+        })
       : [];
 
-  const faq = faqItemsFor(p, [bk.key], '빠져 있음', '다시 보임');
+  const faq = faqItemsFor(p, [bk.key], reviving ? '빠져 있음' : '지금 답변', reviving ? '다시 보임' : '다시 만들어짐');
 
   return {
     kind: 'blockstate',
@@ -275,24 +410,38 @@ export const previewBlockUse = (p: Property, bk: Block): Cascade => {
     nextSt: 'used',
     applyAttr: attr,
     applyCode: code,
-    field: `${bk.label} · 쓰기 시작`,
-    from: '있지만 안 씀',
-    to: '쓰는 중',
+    /** 체크가 풀린 객실에서는 값을 비웁니다 — 그래야 체크 해제가 "빼기"로 동작합니다. */
+    clearUnpicked: !!attr,
+    field: reviving ? `${bk.label} · 쓰기 시작` : `${bk.label} · 쓰는 객실 고치기`,
+    from: reviving ? '있지만 안 씀' : `${current.length}객실`,
+    to: reviving ? '쓰는 중' : '고른 객실',
     warn: pick.length
       ? `어느 객실에 붙일지 여기서 바로 고르세요. 체크한 객실에만 ${def?.label ?? ''} 값이 들어가고, 안내문과 객실 수는 그 결과대로 자동으로 만들어집니다.`
       : faq.length
         ? `딸린 질문·답변 ${faq.length}개가 같이 살아납니다. 답이 빈 것은 사이트에 보내기 전에 채워야 해요.`
         : '',
     groups: [
-      {
-        title: '시설 1',
-        desc: '쓸지 말지 바꿈',
-        items: [
-          { key: `blk:${bk.key}`, label: bk.label, before: '있지만 안 씀', after: '쓰는 중', on: true, locked: true, isOv: false },
-          ...useFieldItem(bk, 'used'),
-        ],
-      },
-      ...(pick.length ? [{ title: `어느 객실에 붙일까요 ${pick.length}`, desc: '체크한 객실에만 붙습니다', items: pick }] : []),
+      ...(reviving
+        ? [
+            {
+              title: '시설 1',
+              desc: '쓸지 말지 바꿈',
+              items: [
+                { key: `blk:${bk.key}`, label: bk.label, before: '있지만 안 씀', after: '쓰는 중', on: true, locked: true, isOv: false },
+                ...useFieldItem(bk, 'used'),
+              ],
+            },
+          ]
+        : []),
+      ...(pick.length
+        ? [
+            {
+              title: `어느 객실에 붙일까요 ${pick.length}`,
+              desc: '체크를 풀면 그 객실에서 빠집니다',
+              items: pick,
+            },
+          ]
+        : []),
       {
         title: `판매 사이트 ${bk.chanN}`,
         desc: '사이트 시설 목록에 나감',
@@ -303,35 +452,115 @@ export const previewBlockUse = (p: Property, bk: Block): Cascade => {
   };
 };
 
+/** 전사 목록에서 이 숙소로 시설을 가져옵니다.
+ *
+ *  정의(가려내기 규칙 · 자동 계산 필드 · 기본 항목)를 함께 가져오지 않으면, 추가한 시설은
+ *  "미입력"이라 적힌 자유 텍스트로 남아 영영 계산되지 않습니다. 그 시설이 쓰는 속성이
+ *  이 숙소에 없으면 속성도 함께 붙습니다 — 그래야 객실 표에 열이 생기고 값을 넣을 수 있습니다. */
 export const previewAddBlockItem = (p: Property, bk: Block): Cascade => {
+  const cat = BLOCKCAT[bk.key];
   const faq = faqItemsFor(p, [bk.key], '이 숙소에 없음', '답변 입력 필요');
+  const needsAttr = cat?.attr && !p.attrs.includes(cat.attr) ? cat.attr : undefined;
+  const attrLabel = needsAttr ? (attrDef(needsAttr)?.label ?? needsAttr) : '';
+  const fields = cat?.fields ?? [['이용 시간', '미입력']];
+
   return {
     kind: 'blockstate',
     blockKey: bk.key,
     nextSt: 'off',
+    addAttr: needsAttr,
+    addDefault: needsAttr ? (cat?.base ?? 'none') : undefined,
     field: `${bk.label} · 이 숙소에 추가`,
     from: '이 숙소에 없음',
     to: '있지만 안 씀',
-    warn: '항목만 생깁니다. 값을 채운 뒤 "쓰기 시작"을 눌러야 판매 사이트에 나갑니다.',
+    warn: needsAttr
+      ? `객실 표에 "${attrLabel}" 열이 함께 생깁니다. 객실마다 값을 정한 뒤 "쓰기 시작"을 누르면 판매 사이트에 나갑니다.`
+      : '항목만 생깁니다. 값을 채운 뒤 "쓰기 시작"을 눌러야 판매 사이트에 나갑니다.',
     groups: [
       {
         title: '시설 1',
         desc: '전체 목록에서 이 숙소로 가져옴',
         items: [{ key: `blk:${bk.key}`, label: bk.label, before: '없음', after: '있지만 안 씀', on: true, isOv: false }],
       },
+      ...(needsAttr
+        ? [
+            {
+              title: '객실 표에 생기는 열 1',
+              desc: '이 시설이 쓰는 값',
+              items: [
+                {
+                  key: `attr:${needsAttr}`,
+                  label: attrLabel,
+                  before: '이 숙소에 없음',
+                  after: `전체값 ${showValue(needsAttr, cat?.base ?? 'none')}`,
+                  on: true,
+                  locked: true,
+                  isOv: false,
+                },
+              ],
+            },
+          ]
+        : []),
       {
-        title: '채워야 할 항목',
-        desc: '이 시설에 꼭 필요한 항목',
-        items: (['이용 객실', '이용 요금', '이용 시간'] as const).map((k) => ({
+        title: `채워지는 항목 ${fields.length}`,
+        desc: cat?.computed ? '빈 칸은 객실에서 자동으로 계산됩니다' : '이 시설에 필요한 항목',
+        items: fields.map(([k, v]) => ({
           key: `fld:${k}`,
           label: `${bk.label} · ${k}`,
           before: '—',
-          after: '미입력',
+          after: cat?.computed?.[k] ? '자동 계산' : v || '미입력',
           on: true,
+          locked: true,
           isOv: false,
         })),
       },
       ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '이 시설을 묻는 질문', items: faq }] : []),
+    ],
+  };
+};
+
+/* ── 시설 항목 넣고 빼기 ────────────────────────────────────────────────── */
+
+export const previewFieldAdd = (bk: Block, fieldKey: string): Cascade => {
+  const type = typeOf(bk.key, fieldKey);
+  return {
+    kind: 'fieldadd',
+    blockKey: bk.key,
+    fieldKey,
+    field: `${bk.label} · ${fieldKey} 넣기`,
+    from: '없음',
+    to: '미입력',
+    warn: `${typeName(type)} 형식으로 들어갑니다. 넣은 뒤 "고치기"로 값을 채우세요.`,
+    groups: [
+      {
+        title: '시설 1',
+        desc: '항목 넣기',
+        items: [{ key: `fld:${fieldKey}`, label: `${bk.label} · ${fieldKey}`, before: '없음', after: '미입력', on: true, isOv: false }],
+      },
+      { title: '판매 사이트 3', desc: '사이트 설명에 항목이 늘어남', items: channelItems((ch) => `${ch} · ${bk.label}`, '이전 설명', `${fieldKey} 추가`) },
+    ],
+  };
+};
+
+export const previewFieldDel = (p: Property, bk: Block, fieldKey: string): Cascade => {
+  const cur = bk.fields.find((f) => f[0] === fieldKey);
+  return {
+    kind: 'fielddel',
+    blockKey: bk.key,
+    fieldKey,
+    field: `${bk.label} · ${fieldKey} 빼기`,
+    from: cur?.[1] ?? '—',
+    to: '삭제',
+    warn: '이 항목을 인용하는 질문·답변이 있으면 답이 비게 됩니다.',
+    groups: [
+      {
+        title: '시설 1',
+        desc: '항목 빼기',
+        items: [{ key: `fld:${fieldKey}`, label: `${bk.label} · ${fieldKey}`, before: cur?.[1] ?? '—', after: '삭제', on: true, isOv: false }],
+      },
+      ...(faqItemsFor(p, [bk.key], '지금 답변', '값이 없어져 비게 됨').length
+        ? [{ title: '질문·답변', desc: '이 시설을 옮겨 적는 답변', items: faqItemsFor(p, [bk.key], '지금 답변', '값이 없어져 비게 됨') }]
+        : []),
     ],
   };
 };
@@ -522,6 +751,32 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
   let blocks = p.blocks;
   let fees = p.fees;
   let channels = p.channels;
+  let attrs = p.attrs;
+  let defaults = p.defaults;
+
+  /** 숙소 전체값 바꾸기 — 따로 정한 객실은 손대지 않습니다. 새 전체값과 같아진 객실만
+   *  "따로 정함"을 떼어, 표시와 실제가 어긋나지 않게 합니다. */
+  if (c.kind === 'default') {
+    defaults = { ...defaults, [c.attr]: c.value };
+    rooms = rooms.map((r) => {
+      if (r.values[c.attr] !== c.value) return r;
+      const values = { ...r.values };
+      delete values[c.attr];
+      return { ...r, values };
+    });
+  }
+
+  if (c.kind === 'roominfo') {
+    rooms = rooms.map((r) => (r.code === c.code ? { ...r, ...c.patch } : r));
+  }
+
+  if (c.kind === 'fieldadd') {
+    blocks = blocks.map((b) => (b.key !== c.blockKey || b.fields.some((f) => f[0] === c.fieldKey) ? b : { ...b, fields: [...b.fields, [c.fieldKey, '미입력']] }));
+  }
+
+  if (c.kind === 'fielddel') {
+    blocks = blocks.map((b) => (b.key !== c.blockKey ? b : { ...b, fields: b.fields.filter((f) => f[0] !== c.fieldKey) }));
+  }
 
   if (c.kind === 'bulk') {
     rooms = rooms.map((r) => {
@@ -544,11 +799,30 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
   if (c.kind === 'roomdel') rooms = rooms.filter((r) => !c.codes.includes(r.code));
 
   if (c.kind === 'blockstate') {
+    /** 전사 목록에서 가져오는 시설이 쓰는 속성을 숙소에 붙입니다 — 이걸 안 하면
+     *  가려내기 규칙이 가리키는 속성이 없어서 영영 계산되지 않습니다. */
+    if (c.addAttr && !attrs.includes(c.addAttr)) {
+      attrs = [...attrs, c.addAttr];
+      defaults = { ...defaults, [c.addAttr]: c.addDefault ?? 'none' };
+    }
     if (c.applyAttr && c.applyCode) {
       const applyCodes = checked.filter((i) => i.key.startsWith('apply:')).map((i) => i.key.slice(6));
-      rooms = rooms.map((r) =>
-        !applyCodes.includes(r.code) ? r : { ...r, values: { ...r.values, [c.applyAttr!]: c.applyCode! } },
-      );
+      const offered = c.groups.flatMap((g) => g.items).filter((i) => i.key.startsWith('apply:')).map((i) => i.key.slice(6));
+      rooms = rooms.map((r) => {
+        if (applyCodes.includes(r.code)) {
+          /** 이미 이 시설을 쓰고 있으면 지금 값을 그대로 둡니다 — 체크가 종류를 덮어쓰면 안 됩니다. */
+          const now = String(valueOf(p, r, c.applyAttr!));
+          const keeps = blocks.find((b) => b.key === c.blockKey)?.memberOf?.codes.includes(now);
+          return keeps ? r : { ...r, values: { ...r.values, [c.applyAttr!]: c.applyCode! } };
+        }
+        /** 체크가 풀린 객실에서는 값을 비웁니다 — 체크 해제가 "이 객실에서 빼기"가 됩니다. */
+        if (c.clearUnpicked && offered.includes(r.code)) {
+          const now = String(valueOf(p, r, c.applyAttr!));
+          const wasMember = blocks.find((b) => b.key === c.blockKey)?.memberOf?.codes.includes(now);
+          if (wasMember) return { ...r, values: { ...r.values, [c.applyAttr!]: 'none' } };
+        }
+        return r;
+      });
     }
     if (c.nextSt !== 'used' && c.killRooms?.length && c.applyAttr) {
       rooms = rooms.map((r) =>
@@ -557,16 +831,16 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
     }
     blocks = blocks.map((b) => {
       if (b.key !== c.blockKey) return b;
+      const cat = BLOCKCAT[b.key];
       const nb: Block = { ...b, st: c.nextSt };
       nb.fields = nb.fields.map((f) =>
         f[0] === '사용 여부' ? [f[0], c.nextSt === 'used' ? '사용' : '사용안함'] : f,
       );
-      if (c.nextSt === 'off' && !nb.fields.length) {
-        nb.fields = [
-          ['이용 객실', '미입력'],
-          ['이용 요금', '미입력'],
-          ['이용 시간', '미입력'],
-        ];
+      /** 전사 목록에서 가져올 때 정의를 통째로 붙입니다 — 가려내기 규칙과 자동 계산까지. */
+      if (c.nextSt === 'off' && !nb.fields.length && cat) {
+        nb.fields = cat.fields.map(([k, v]): [string, string] => [k, v]);
+        if (cat.attr && cat.codes) nb.memberOf = { attr: cat.attr, codes: cat.codes };
+        if (cat.computed) nb.computed = cat.computed;
       }
       if (c.nextSt === 'none') {
         nb.fields = [];
@@ -597,7 +871,7 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
     channels = { ...channels, [c.rowId]: { ...channels[c.rowId], [c.ck]: c.value } };
   }
 
-  const written: Property = { ...p, rooms, blocks, fees, channels };
+  const written: Property = { ...p, rooms, blocks, fees, channels, attrs, defaults };
   /** 마지막에 자동 계산 필드를 한 번 더 돌립니다 — 저장된 값과 계산 결과가 늘 같도록.
    *  단, 시설을 켜고 끈 직후에는 사용자가 고른 상태가 자동 계산보다 우선합니다. */
   const recomputed = deriveBlocks(written).map((b) =>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { RULECAT } from '../../domain/catalog';
+import { FIELDCAT, RULECAT } from '../../domain/catalog';
 import { deriveBlocks, isCalcField, roomCount, ruleText, slotText } from '../../domain/derive';
 import { typeName, typeOf } from '../../domain/fieldTypes';
 import type { Block, BlockFilter, Property } from '../../domain/types';
 import { current, useStore } from '../../state/store';
-import { Corners, CountChip, Seg, SegItem } from '../primitives';
+import { Chip, Corners, CountChip, Seg, SegItem } from '../primitives';
 
 const FILTERS: [BlockFilter, string][] = [
   ['all', '전체'],
@@ -141,6 +141,48 @@ const RulesSection = ({ b }: { b: Block }) => {
   );
 };
 
+/** 이 시설에 넣을 수 있는 항목. 이미 있는 것과 자동 계산 필드는 뺍니다 —
+ *  자동 계산은 사람이 넣는 게 아니라 시설 정의가 정하는 것이라서요. */
+const FieldPicker = ({ b }: { b: Block }) => {
+  const { dispatch } = useStore();
+  const [open, setOpen] = useState(false);
+  const have = b.fields.map((f) => f[0]);
+  const available = FIELDCAT.filter((k) => !have.includes(k) && !b.computed?.[k]);
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)' }}>항목 {b.fields.length}개</span>
+        <div style={{ flex: 1 }} />
+        <button className="btn btn-secondary" onClick={() => setOpen((v) => !v)} style={smallBtn} disabled={!available.length}>
+          {open ? '닫기' : available.length ? '+ 항목 넣기' : '넣을 항목 없음'}
+        </button>
+      </div>
+      {open ? (
+        <div style={{ marginTop: 7, border: '1px dashed var(--color-neutral-400)', padding: '8px 10px' }}>
+          <div style={{ fontSize: 10.5, color: 'var(--color-neutral-600)', marginBottom: 6 }}>
+            전사 항목 목록입니다. 넣으면 "미입력"으로 생기고, 형식에 맞는 편집기가 붙습니다.
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {available.map((k) => (
+              <Chip
+                key={k}
+                label={k}
+                padding="4px 9px"
+                on={false}
+                onClick={() => {
+                  setOpen(false);
+                  dispatch({ type: 'PREVIEW_FIELD_ADD', blockKey: b.key, fieldKey: k });
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
   const { dispatch } = useStore();
   const rooms = roomCount(p, b);
@@ -178,6 +220,16 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
           </span>
         ) : null}
         <div style={{ flex: 1 }} />
+        {isUsed && b.memberOf ? (
+          <button
+            className="btn btn-secondary"
+            onClick={() => dispatch({ type: 'OPEN_PICK_ROOMS', blockKey: b.key })}
+            style={smallBtn}
+            title="이 시설을 쓰는 객실을 다시 고릅니다"
+          >
+            쓰는 객실 고치기
+          </button>
+        ) : null}
         {isUsed ? (
           <button
             className="btn btn-secondary"
@@ -285,18 +337,29 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                   </span>
                 )}
                 {isUsed && !calc ? (
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => dispatch({ type: 'OPEN_BLOCK_EDIT', blockKey: b.key, k, v })}
-                    style={{ ...smallBtn, height: 23, flex: 'none' }}
-                  >
-                    고치기
-                  </button>
+                  <>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => dispatch({ type: 'OPEN_BLOCK_EDIT', blockKey: b.key, k, v })}
+                      style={{ ...smallBtn, height: 23, flex: 'none' }}
+                    >
+                      고치기
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => dispatch({ type: 'PREVIEW_FIELD_DEL', blockKey: b.key, fieldKey: k })}
+                      style={{ ...smallBtn, height: 23, flex: 'none' }}
+                      title="이 항목을 뺍니다"
+                    >
+                      빼기
+                    </button>
+                  </>
                 ) : null}
               </div>
             );
           })}
 
+          {isUsed ? <FieldPicker b={b} /> : null}
           {isUsed ? <RulesSection b={b} /> : null}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, flexWrap: 'wrap' }}>

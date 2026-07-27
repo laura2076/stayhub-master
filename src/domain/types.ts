@@ -148,9 +148,14 @@ type CascadeBase = { field: string; from: string; to: string; warn: string; grou
 
 export type Cascade =
   | (CascadeBase & { kind: 'bulk'; attr: string; value: AttrValue })
+  /** 숙소 전체값 바꾸기 — 따로 정한 객실은 그대로 두고 나머지만 따라옵니다. */
+  | (CascadeBase & { kind: 'default'; attr: string; value: AttrValue })
   | (CascadeBase & { kind: 'block'; blockKey: string; fieldKey: string; value: string })
   | (CascadeBase & { kind: 'roomadd'; room: Room })
+  | (CascadeBase & { kind: 'roominfo'; code: string; patch: RoomInfo })
   | (CascadeBase & { kind: 'roomdel'; codes: string[] })
+  | (CascadeBase & { kind: 'fieldadd'; blockKey: string; fieldKey: string })
+  | (CascadeBase & { kind: 'fielddel'; blockKey: string; fieldKey: string })
   | (CascadeBase & {
       kind: 'blockstate';
       blockKey: string;
@@ -158,6 +163,11 @@ export type Cascade =
       killRooms?: string[];
       applyAttr?: string;
       applyCode?: string;
+      /** 체크가 풀린 객실에서는 값을 비웁니다 — 체크 해제가 "이 객실에서 빼기"가 됩니다. */
+      clearUnpicked?: boolean;
+      /** 이 시설이 쓰는 속성을 숙소에 함께 붙입니다 (전사 목록에서 새로 가져올 때). */
+      addAttr?: string;
+      addDefault?: AttrValue;
     })
   | (CascadeBase & { kind: 'optfee'; attr: string; code: string; value: string })
   | (CascadeBase & { kind: 'rule'; blockKey: string; ri: number; si: number; value: string | number })
@@ -190,7 +200,13 @@ export type Tier = { a: number; b: number; amt: number };
 
 export type BulkDraft = { attr: string; value: AttrValue };
 
-export type NewRoomDraft = { name: string; floor: string; values: Record<string, AttrValue> };
+/** 객실을 설명하는 값들 — 속성 사전이 아니라 객실 자체에 붙어 있는 것. */
+export type RoomInfo = { name: string; floor: number; area: string; form: string; bed: string; tag: string };
+
+export type NewRoomDraft = RoomInfo & { floorText: string; values: Record<string, AttrValue>; from?: string };
+
+/** 이미 있는 객실의 정보를 고치는 중 — `code`가 대상입니다. */
+export type RoomEdit = RoomInfo & { code: string; floorText: string };
 
 export type Editor =
   | { kind: 'block'; bk: Block; k: string; type: FieldType; p: Parts }
@@ -199,6 +215,9 @@ export type Editor =
 
 export type TabId = 'rooms' | 'blocks' | 'options' | 'channels' | 'faq' | 'history';
 export type BlockFilter = 'all' | BlockStatus;
+
+/** 객실 표를 어떤 순서로 볼지. 28실이 넘어가면 순서가 곧 찾는 속도입니다. */
+export type RoomSort = 'floor' | 'name' | 'own';
 
 export type Settings = {
   inheritanceViz: 'marker' | 'ghost';
@@ -220,6 +239,13 @@ export type MasterState = {
   bfilter: BlockFilter;
   bulk: BulkDraft | null;
   nr: NewRoomDraft | null;
+  /** 객실 정보를 고치는 중. */
+  re: RoomEdit | null;
+  /** 이 시설에 어느 객실을 붙일지 다시 고르는 중. */
+  pickRooms: string | null;
+  sort: RoomSort;
+  /** 따로 정한 객실만 보기. */
+  onlyOwn: boolean;
   cas: Cascade | null;
   edit: Editor | null;
   toast: string;

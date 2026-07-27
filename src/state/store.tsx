@@ -9,9 +9,13 @@ import {
   previewBlockUse,
   previewBulk,
   previewChannelSync,
+  previewDefault,
   previewDelete,
+  previewFieldAdd,
+  previewFieldDel,
   previewNewRoom,
   previewOptFee,
+  previewRoomInfo,
   previewRule,
   previewRuleAdd,
   previewRuleDel,
@@ -28,7 +32,11 @@ import type {
   ChannelRowId,
   MasterState,
   Parts,
+  NewRoomDraft,
   Property,
+  Room,
+  RoomEdit,
+  RoomSort,
   Settings,
   TabId,
   Tier,
@@ -48,11 +56,21 @@ export type Action =
   | { type: 'PICK_BULK_ATTR'; attr: string }
   | { type: 'PICK_BULK_VALUE'; value: AttrValue }
   | { type: 'PICK_CELL'; code: string; attr: string; value: AttrValue }
-  | { type: 'OPEN_NEW_ROOM' }
+  | { type: 'PICK_DEFAULT'; attr: string; value: AttrValue }
+  | { type: 'SET_SORT'; sort: RoomSort }
+  | { type: 'TOGGLE_ONLY_OWN' }
+  | { type: 'OPEN_NEW_ROOM'; from?: string }
   | { type: 'CLOSE_NEW_ROOM' }
-  | { type: 'SET_NR_NAME'; v: string }
-  | { type: 'SET_NR_FLOOR'; v: string }
+  | { type: 'SET_NR'; patch: Partial<NewRoomDraft> }
   | { type: 'SET_NR_VALUE'; attr: string; v: AttrValue }
+  | { type: 'OPEN_ROOM_EDIT'; code: string }
+  | { type: 'CLOSE_ROOM_EDIT' }
+  | { type: 'SET_RE'; patch: Partial<RoomEdit> }
+  | { type: 'PREVIEW_ROOM_EDIT' }
+  | { type: 'OPEN_PICK_ROOMS'; blockKey: string }
+  | { type: 'CLOSE_PICK_ROOMS' }
+  | { type: 'PREVIEW_FIELD_ADD'; blockKey: string; fieldKey: string }
+  | { type: 'PREVIEW_FIELD_DEL'; blockKey: string; fieldKey: string }
   | { type: 'PREVIEW_BULK' }
   | { type: 'PREVIEW_DELETE' }
   | { type: 'PREVIEW_NEW_ROOM' }
@@ -149,16 +167,80 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       return openCascade({ ...st, sel: [a.code], bulk: null }, previewBulk(p, [a.code], a.attr, a.value));
     }
 
-    case 'OPEN_NEW_ROOM':
-      return { ...st, nr: { name: '', floor: String(p.rooms[0]?.floor ?? 1), values: {} } };
+    /** 숙소 전체값 — 따로 정하지 않은 객실이 전부 따라오므로 늘 한 번 묻습니다. */
+    case 'PICK_DEFAULT':
+      return p.defaults[a.attr] === a.value ? st : { ...st, cas: previewDefault(p, a.attr, a.value) };
+
+    case 'SET_SORT':
+      return { ...st, sort: a.sort };
+    case 'TOGGLE_ONLY_OWN':
+      return { ...st, onlyOwn: !st.onlyOwn };
+
+    case 'OPEN_NEW_ROOM': {
+      /** 복제하면 값·구조·침구까지 그대로 가져옵니다 — 28실 펜션에서 한 실씩 채우는 일이 사라집니다. */
+      const src = a.from ? p.rooms.find((r) => r.code === a.from) : undefined;
+      /** 그냥 만들 때는 이 숙소에서 **가장 흔한** 모양을 채워 둡니다. 첫 객실을 쓰면
+       *  하필 그 한 실이 특이한 경우(7층 복층)에 매번 지우고 다시 쓰게 됩니다. */
+      const common = (pick: (r: Room) => string): string => {
+        const n = new Map<string, number>();
+        p.rooms.forEach((r) => n.set(pick(r), (n.get(pick(r)) ?? 0) + 1));
+        return [...n].sort((x, y) => y[1] - x[1])[0]?.[0] ?? '';
+      };
+      const floor = src?.floor ?? Math.min(...p.rooms.map((r) => r.floor));
+      return {
+        ...st,
+        nr: {
+          name: src ? `${src.name} 사본` : '',
+          floor,
+          floorText: String(floor),
+          area: src?.area ?? common((r) => r.area),
+          form: src?.form ?? common((r) => r.form),
+          bed: src?.bed ?? common((r) => r.bed),
+          tag: src?.tag ?? '신규 등록',
+          values: src ? { ...src.values } : {},
+          from: a.from,
+        },
+      };
+    }
     case 'CLOSE_NEW_ROOM':
       return { ...st, nr: null };
-    case 'SET_NR_NAME':
-      return st.nr ? { ...st, nr: { ...st.nr, name: a.v } } : st;
-    case 'SET_NR_FLOOR':
-      return st.nr ? { ...st, nr: { ...st.nr, floor: a.v } } : st;
+    case 'SET_NR':
+      return st.nr ? { ...st, nr: { ...st.nr, ...a.patch } } : st;
     case 'SET_NR_VALUE':
       return st.nr ? { ...st, nr: { ...st.nr, values: { ...st.nr.values, [a.attr]: a.v } } } : st;
+
+    case 'OPEN_ROOM_EDIT': {
+      const r = p.rooms.find((x) => x.code === a.code);
+      return r
+        ? { ...st, re: { code: r.code, name: r.name, floor: r.floor, floorText: String(r.floor), area: r.area, form: r.form, bed: r.bed, tag: r.tag } }
+        : st;
+    }
+    case 'CLOSE_ROOM_EDIT':
+      return { ...st, re: null };
+    case 'SET_RE':
+      return st.re ? { ...st, re: { ...st.re, ...a.patch } } : st;
+    case 'PREVIEW_ROOM_EDIT': {
+      if (!st.re) return st;
+      const { code, floorText, ...rest } = st.re;
+      const patch = { ...rest, floor: Number(floorText) || rest.floor };
+      return openCascade({ ...st, re: null }, previewRoomInfo(p, code, patch));
+    }
+
+    case 'OPEN_PICK_ROOMS': {
+      const bk = p.blocks.find((b) => b.key === a.blockKey);
+      return bk ? { ...st, cas: previewBlockUse(p, bk, false) } : st;
+    }
+    case 'CLOSE_PICK_ROOMS':
+      return { ...st, pickRooms: null };
+
+    case 'PREVIEW_FIELD_ADD': {
+      const bk = p.blocks.find((b) => b.key === a.blockKey);
+      return bk ? openCascade(st, previewFieldAdd(bk, a.fieldKey)) : st;
+    }
+    case 'PREVIEW_FIELD_DEL': {
+      const bk = p.blocks.find((b) => b.key === a.blockKey);
+      return bk ? openCascade(st, previewFieldDel(p, bk, a.fieldKey)) : st;
+    }
 
     case 'PREVIEW_BULK':
       return st.bulk ? openCascade({ ...st, bulk: null }, previewBulk(p, st.sel, st.bulk.attr, st.bulk.value)) : st;

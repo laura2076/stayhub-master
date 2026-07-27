@@ -106,3 +106,15 @@ dialog.dc-modal::backdrop {
 input[type='checkbox'] {
   accent-color: var(--color-accent);
 }
+
+/* 줄 위에 마우스가 올라갔을 때만 보이는 버튼.
+   28실 표에서 줄마다 버튼을 늘 띄우면 값이 안 보이고, 오른쪽 끝에 두면
+   가로 스크롤 밖으로 밀려나 아무도 찾지 못합니다. 객실명 옆에 두되 평소엔 숨깁니다. */
+.row-actions {
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+.row:hover .row-actions,
+.row-actions:focus-within {
+  opacity: 1;
+}
