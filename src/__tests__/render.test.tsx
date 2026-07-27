@@ -187,7 +187,6 @@ describe('every dialog renders', () => {
       type: 'OPEN_BLOCK_EDIT',
       blockKey: 'shared_bbq',
       k: '이용 시간',
-      v: '17:00~21:00',
     });
     expect(out).toContain('공용 BBQ · 이용 시간');
     expect(out).toContain('언제부터');

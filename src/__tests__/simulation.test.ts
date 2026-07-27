@@ -353,7 +353,7 @@ describe('직원 시나리오 — 시설 항목 넣고 제외 · 쓰는 객실 �
 
     const filled = commit(
       after,
-      { type: 'OPEN_BLOCK_EDIT', blockKey: 'spa', k: '이용 복장', v: '미입력' },
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'spa', k: '이용 복장' },
       { type: 'SET_PART', k: 'v', v: '수영복 필수' },
       { type: 'PREVIEW_EDIT' },
     );
@@ -519,7 +519,7 @@ describe('직원 시나리오 — 시설 정보에서 이용요금·이용시간
     const before = initialState();
     const after = commit(
       before,
-      { type: 'OPEN_BLOCK_EDIT', blockKey: 'spa', k: '이용 요금', v: '무료' },
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'spa', k: '이용 요금' },
       { type: 'SET_PART', k: 'amt', v: 10000 },
       { type: 'PREVIEW_EDIT' },
     );
@@ -540,14 +540,15 @@ describe('직원 시나리오 — 시설 정보에서 이용요금·이용시간
     const before = initialState();
     const after = commit(
       before,
-      { type: 'OPEN_BLOCK_EDIT', blockKey: 'shared_bbq', k: '이용 시간', v: '17:00~21:00' },
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'shared_bbq', k: '이용 시간' },
       { type: 'SET_PART', k: 'h', v: '16' },
       { type: 'SET_PART', k: 'h2', v: '22' },
       { type: 'PREVIEW_EDIT' },
     );
 
-    expect(field(after, 'shared_bbq', '이용 시간')).toBe('16:00~22:00');
-    expect(faq(after, 'Q-0015').a).toBe('16:00~22:00에 이용 가능합니다.');
+    /** 7층 4실은 따로 정한 값을 지키고, 나머지 18실만 따라옵니다. */
+    expect(field(after, 'shared_bbq', '이용 시간')).toBe('7층 15:00~22:00 / 4~6층 16:00~22:00');
+    expect(faq(after, 'Q-0015').a).toBe('7층 15:00~22:00 / 4~6층 16:00~22:00에 이용 가능합니다.');
 
     const found = step('시설 · 공용 BBQ 이용 시간 17:00~21:00 → 16:00~22:00', after, [
       `공용 BBQ 이용 시간: ${field(before, 'shared_bbq', '이용 시간')} → ${field(after, 'shared_bbq', '이용 시간')}`,
@@ -560,7 +561,7 @@ describe('직원 시나리오 — 시설 정보에서 이용요금·이용시간
   it('입실 기준 시간대의 부가 조건이 편집 왕복에서 사라지지 않는다', () => {
     const after = commit(
       initialState(),
-      { type: 'OPEN_BLOCK_EDIT', blockKey: 'spa', k: '이용 시간', v: '입실~23시 (오전 이용 불가)' },
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'spa', k: '이용 시간' },
       { type: 'SET_PART', k: 'h2', v: '22' },
       { type: 'PREVIEW_EDIT' },
     );
@@ -761,7 +762,7 @@ describe('연속 작업 — 한 직원이 하루에 하는 일 전부', () => {
     );
     const s5 = commit(
       s4,
-      { type: 'OPEN_BLOCK_EDIT', blockKey: 'shared_bbq', k: '이용 시간', v: field(s4, 'shared_bbq', '이용 시간') },
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'shared_bbq', k: '이용 시간' },
       { type: 'SET_PART', k: 'h2', v: '22' },
       { type: 'PREVIEW_EDIT' },
     );
@@ -850,6 +851,126 @@ describe('일관성 검사기 자체 검증', () => {
     const p = P(st);
     const broken = replace(st, { ...p, rooms: [...p.rooms, { ...p.rooms[0], code: '99999' }] });
     expect(errorsOf(broken).some((v) => v.what.includes('객실명이 겹칩니다'))).toBe(true);
+  });
+});
+
+describe('직원 시나리오 — 시설은 하나인데 조건만 객실마다 다를 때', () => {
+  /** 실제로 가장 자주 걸리는 모양입니다. 공용 BBQ는 하나인데 7층만 두 시간 일찍 열고,
+   *  4층 몇 실은 장소가 다릅니다. 전에는 시설을 둘로 쪼개 넣어야 했고, 그러면 판매
+   *  사이트 시설 목록에 같은 시설이 두 번 나갔습니다. */
+  const SEVEN = ['27758', '27759', '27760', '27761'];
+
+  it('시설 값은 그대로 두고 고른 객실만 다른 값을 갖는다', () => {
+    const before = initialState();
+    /** 씨앗에 이미 7층 4실이 15:00~22:00으로 들어 있습니다 — 카드는 갈린 채로 부릅니다. */
+    expect(field(before, 'shared_bbq', '이용 시간')).toBe('7층 15:00~22:00 / 4~6층 17:00~21:00');
+    /** 저장된 값은 갈린 문장이 아니라 기본값 하나입니다. 문장을 저장하면 다음 계산의
+     *  기본값이 되어 겹쳐 쌓입니다. */
+    expect(P(before).blocks.find((b) => b.key === 'shared_bbq')!.fields.find((f) => f[0] === '이용 시간')![1]).toBe('17:00~21:00');
+
+    const after = commit(
+      before,
+      { type: 'OPEN_BLOCK_FIELD', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
+      { type: 'BF_EDIT_PICKED' },
+      { type: 'SET_PART', k: 'h', v: '14' },
+      { type: 'PREVIEW_EDIT' },
+    );
+
+    const p = P(after);
+    expect(SEVEN.every((c) => p.rooms.find((r) => r.code === c)!.values['blk:shared_bbq:이용 시간'] === '14:00~22:00')).toBe(true);
+    /** 나머지 18실은 시설 값을 그대로 씁니다 — 아무 값도 안 생깁니다. */
+    expect(p.rooms.filter((r) => r.floor !== 7).every((r) => !('blk:shared_bbq:이용 시간' in r.values))).toBe(true);
+    expect(field(after, 'shared_bbq', '이용 시간')).toBe('7층 14:00~22:00 / 4~6층 17:00~21:00');
+
+    const found = step('시설 · 공용 BBQ 이용 시간을 7층 4실만 14:00~22:00으로', after, [
+      `공용 BBQ 이용 시간: ${field(before, 'shared_bbq', '이용 시간')} → ${field(after, 'shared_bbq', '이용 시간')}`,
+      `시설에 저장된 기본값(안 바뀜): ${P(after).blocks.find((b) => b.key === 'shared_bbq')!.fields.find((f) => f[0] === '이용 시간')![1]}`,
+      `따로 정한 객실: ${p.rooms.filter((r) => 'blk:shared_bbq:이용 시간' in r.values).map((r) => r.name).join(',')}`,
+      `FAQ Q-0015: ${faq(after, 'Q-0015').a}`,
+      `알림: ${after.toast}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('시설 값을 바꾸면 따로 정하지 않은 객실만 따라온다', () => {
+    const after = commit(
+      initialState(),
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'shared_bbq', k: '이용 시간' },
+      { type: 'SET_PART', k: 'h', v: '18' },
+      { type: 'PREVIEW_EDIT' },
+    );
+    expect(field(after, 'shared_bbq', '이용 시간')).toBe('7층 15:00~22:00 / 4~6층 18:00~21:00');
+    expect(errorsOf(after)).toEqual([]);
+  });
+
+  it('시설 값으로 되돌리면 따로 정한 값이 사라진다', () => {
+    const after = commit(
+      initialState(),
+      { type: 'OPEN_BLOCK_FIELD', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
+      { type: 'BF_RESET_PICKED' },
+    );
+    const p = P(after);
+    expect(p.rooms.every((r) => !('blk:shared_bbq:이용 시간' in r.values))).toBe(true);
+    expect(field(after, 'shared_bbq', '이용 시간')).toBe('17:00~21:00');
+    expect(errorsOf(after)).toEqual([]);
+  });
+
+  it('시설 값과 같은 값을 넣으면 따로 정한 표시가 남지 않는다', () => {
+    const after = commit(
+      initialState(),
+      { type: 'OPEN_BLOCK_FIELD', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
+      { type: 'BF_EDIT_PICKED' },
+      { type: 'SET_PART', k: 'h', v: '17' },
+      { type: 'SET_PART', k: 'h2', v: '21' },
+      { type: 'PREVIEW_EDIT' },
+    );
+    expect(P(after).rooms.every((r) => !('blk:shared_bbq:이용 시간' in r.values))).toBe(true);
+    expect(errorsOf(after)).toEqual([]);
+  });
+
+  it('항목을 제외하면 객실에 남은 값도 함께 사라진다', () => {
+    const after = commit(initialState(), { type: 'PREVIEW_FIELD_DEL', blockKey: 'shared_bbq', fieldKey: '이용 시간' });
+    expect(P(after).rooms.every((r) => !('blk:shared_bbq:이용 시간' in r.values))).toBe(true);
+    expect(errorsOf(after).some((v) => v.what.includes('남아 있습니다'))).toBe(false);
+    /** 이 항목을 인용하던 질문은 답이 비게 됩니다 — 확인 창이 미리 알려 주는 그대로이고,
+     *  검사도 같은 것을 짚습니다. 값이 조용히 사라지는 쪽이 훨씬 나쁩니다. */
+    expect(errorsOf(after).map((v) => v.what)).toEqual(['자동 답변이 값을 못 찾았습니다: "—에 이용 가능합니다."']);
+  });
+
+  it('시설을 이 숙소에서 없애면 객실에 남은 값도 함께 사라진다', () => {
+    const off = commit(initialState(), { type: 'PREVIEW_BLOCK_STATE', blockKey: 'shared_bbq', nextSt: 'off' });
+    const gone = commit(off, { type: 'PREVIEW_BLOCK_STATE', blockKey: 'shared_bbq', nextSt: 'none' });
+    expect(P(gone).rooms.every((r) => !Object.keys(r.values).some((k) => k.startsWith('blk:shared_bbq:')))).toBe(true);
+    expect(errorsOf(gone)).toEqual([]);
+  });
+
+  it('갈 곳 없는 값이 객실에 남아 있으면 검사가 잡는다', () => {
+    const st = initialState();
+    const p = P(st);
+    const cases: [string, string][] = [
+      ['blk:shared_bbq:없는 항목', '19:00~20:00'],
+      ['blk:shared_bbq:이용 객실', '아무 값'],
+      ['blk:checkin_checkout:체크인', '16:00'],
+      ['blk:없는시설:이용 시간', '19:00~20:00'],
+    ];
+    cases.forEach(([key, v]) => {
+      const broken = replace(st, {
+        ...p,
+        rooms: p.rooms.map((r, i) => (i === 4 ? { ...r, values: { ...r.values, [key]: v } } : r)),
+      });
+      expect(errorsOf(broken).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('그 시설을 안 쓰는 객실에 값만 남으면 검사가 잡는다', () => {
+    const st = initialState();
+    const p = P(st);
+    /** 3층은 개별BBQ라 공용 BBQ 소속이 아닙니다. */
+    const broken = replace(st, {
+      ...p,
+      rooms: p.rooms.map((r) => (r.name === 'A301' ? { ...r, values: { ...r.values, 'blk:shared_bbq:이용 시간': '19:00~20:00' } } : r)),
+    });
+    expect(errorsOf(broken).some((v) => v.what.includes('쓰지 않는 객실인데'))).toBe(true);
   });
 });
 

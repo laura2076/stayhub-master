@@ -1,5 +1,5 @@
 import { instantiateRule as R } from './catalog';
-import { channelRows, deriveBlocks } from './derive';
+import { channelRows, recomputeBlocks } from './derive';
 import type { AttrValue, Block, ChannelRowId, ChannelValues, Faq, HistoryEntry, MasterState, Property, Room } from './types';
 
 /** 세 숙소가 **서로 다른 모양**으로 들어 있습니다 — 구조가 한 곳에 맞춰져 있지 않다는 증거입니다.
@@ -41,6 +41,9 @@ const sokchoRooms = (): Room[] =>
       values.capacity_base = 4;
       values.capacity_max = 6;
       values.spa = 'jet4';
+      /** 7층은 루프탑이 바로 붙어 있어 공용 BBQ를 두 시간 일찍 엽니다. 시설은 하나인데
+       *  조건만 층마다 다른 흔한 경우 — 시설을 둘로 쪼개지 않고 이 객실만 값을 갖습니다. */
+      values['blk:shared_bbq:이용 시간'] = '15:00~22:00';
     }
     /** 기본값(set3)과 같은 객실은 아예 적지 않습니다 — 적어 두면 나중에 전체값을 바꿔도
      *  이 객실만 안 따라옵니다. */
@@ -607,7 +610,9 @@ const syncChannels = (p: Property, stale: Partial<Record<ChannelRowId, Partial<C
 const build = (p: Property, stale?: Partial<Record<ChannelRowId, Partial<ChannelValues>>>): Property => {
   const withChannels = syncChannels(p, stale);
   /** 저장된 블록을 처음부터 계산된 상태로 둡니다 — 시드 문장이 낡은 쪽이 되는 일이 없도록. */
-  return { ...withChannels, blocks: deriveBlocks(withChannels) };
+  /** 저장용 계산만 돌립니다 — 객실마다 갈린 항목의 묶음 문장은 화면에서 만들지, 여기
+   *  저장해 두지 않습니다. 저장하면 그 문장이 다음 계산의 기본값이 되어 겹쳐 쌓입니다. */
+  return { ...withChannels, blocks: recomputeBlocks(withChannels) };
 };
 
 const sokcho = (): Property =>
@@ -735,6 +740,7 @@ export const initialState = (): MasterState => ({
   nr: null,
   re: null,
   pickRooms: null,
+  bf: null,
   sort: 'floor',
   onlyOwn: false,
   cas: null,

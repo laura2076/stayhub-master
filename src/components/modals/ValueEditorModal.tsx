@@ -36,10 +36,14 @@ export const ValueEditorModal = () => {
   };
 
   const title = edit.kind === 'optfee' ? `${edit.label} 요금 수정` : `${edit.bk.label} · ${edit.k}`;
+  /** 어디에 들어가는 값인지를 제목 밑에 한 줄로 적습니다. 같은 편집기가 시설 값과 객실별
+   *  값을 모두 받으므로, 이 한 줄이 없으면 어느 쪽을 고치는 중인지 알 수 없습니다. */
   const sub =
     edit.kind === 'optfee'
       ? '이 값을 쓰는 모든 객실에 같이 적용됩니다'
-      : `이 숙소 전체값 · 객실 ${roomCount(current(state), edit.bk)}개가 이 값을 씁니다`;
+      : edit.kind === 'block' && edit.codes?.length
+        ? `고른 객실 ${edit.codes.length}개에만 들어갑니다. 나머지 객실은 시설 값을 그대로 씁니다.`
+        : `이 숙소 전체값 · 객실 ${roomCount(current(state), edit.bk)}개가 이 값을 씁니다`;
 
   /** Any qualifier already stored but missing from the catalogue is kept as its own chip. */
   const tailChoices = p.tail && !TAILS.includes(p.tail) ? [...TAILS, p.tail] : TAILS;

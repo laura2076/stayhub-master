@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FIELDCAT, RULECAT } from '../../domain/catalog';
-import { deriveBlocks, isCalcField, roomCount, ruleText, slotText } from '../../domain/derive';
+import { ownRooms } from '../../domain/blockValues';
+import { canSplit, deriveBlocks, isCalcField, membersOf, roomCount, ruleText, slotText } from '../../domain/derive';
 import { typeName, typeOf } from '../../domain/fieldTypes';
 import type { Block, BlockFilter, Property, Rule } from '../../domain/types';
 import { current, useStore } from '../../state/store';
@@ -156,6 +157,8 @@ const AddPanel = ({ b }: { b: Block }) => {
 const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
   const { dispatch } = useStore();
   const rooms = roomCount(p, b);
+  /** 이 시설이 걸린 객실 — 항목을 객실마다 다르게 정할 때의 대상 범위입니다. */
+  const scope = b.memberOf ? membersOf(p, b) : p.rooms;
   const isUsed = b.st === 'used';
   const isOff = b.st === 'off';
   const isNone = b.st === 'none';
@@ -251,6 +254,8 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
         <div style={{ padding: '6px 13px 12px' }}>
           {b.fields.map(([k, v]) => {
             const calc = isCalcField(b, k);
+            /** 이 항목을 따로 정한 객실이 몇 개인지. 0이면 숙소 하나에 값도 하나입니다. */
+            const own = canSplit(b, k) ? ownRooms(b, scope, k).length : 0;
             return (
               <div
                 key={k}
@@ -272,10 +277,21 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                   ) : (
                     <EditableValue
                       v={v}
-                      title={`눌러서 ${typeName(typeOf(b.key, k))} 수정`}
-                      onClick={() => dispatch({ type: 'OPEN_BLOCK_EDIT', blockKey: b.key, k, v })}
+                      title={`눌러서 ${typeName(typeOf(b.key, k))} 수정${own ? ' (따로 정하지 않은 객실만)' : ''}`}
+                      onClick={() => dispatch({ type: 'OPEN_BLOCK_EDIT', blockKey: b.key, k })}
                     />
                   )}
+                  {/** 갈려 있으면 그 사실을 값 옆에 적습니다 — 카드만 보고도 "이 시설은 객실마다 다르다"를 압니다. */}
+                  {own ? (
+                    <span
+                      onClick={() => dispatch({ type: 'OPEN_BLOCK_FIELD', blockKey: b.key, fieldKey: k })}
+                      className="hov-accent"
+                      title="눌러서 객실별 값 수정"
+                      style={{ marginLeft: 6, fontSize: 10.5, color: 'var(--color-neutral-600)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      객실 {own}개 따로
+                    </span>
+                  ) : null}
                 </span>
                 {calc ? (
                   /** 알약 모양이면 눌러야 할 것처럼 보입니다. 이건 누를 수 없는 것이므로 글자로만. */
@@ -283,7 +299,16 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                     자동 계산
                   </span>
                 ) : isUsed ? (
-                  <span className="row-actions" style={{ flex: 'none' }}>
+                  <span className="row-actions" style={{ flex: 'none', display: 'flex', gap: 4 }}>
+                    {canSplit(b, k) && scope.length > 1 ? (
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => dispatch({ type: 'OPEN_BLOCK_FIELD', blockKey: b.key, fieldKey: k })}
+                        style={{ ...smallBtn, height: 20, fontSize: 10.5 }}
+                      >
+                        객실별
+                      </button>
+                    ) : null}
                     <button
                       className="btn btn-secondary"
                       onClick={() => dispatch({ type: 'PREVIEW_FIELD_DEL', blockKey: b.key, fieldKey: k })}

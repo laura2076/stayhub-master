@@ -5,6 +5,7 @@ import {
   buildRoom,
   previewAddBlockItem,
   previewBlockEdit,
+  previewBlockPer,
   previewBlockState,
   previewBlockUse,
   previewBulk,
@@ -20,7 +21,8 @@ import {
   previewRuleAdd,
   previewRuleDel,
 } from '../domain/cascade';
-import { slotText } from '../domain/derive';
+import { baseValue, fieldValueOf, ownRooms } from '../domain/blockValues';
+import { membersOf, slotText } from '../domain/derive';
 import { composeVal, parseVal, typeOf } from '../domain/fieldTypes';
 import { initialState } from '../domain/seed';
 import { doneSentence, needsConfirm } from '../domain/summary';
@@ -89,7 +91,14 @@ export type Action =
   | { type: 'PREVIEW_ADD_BLOCK_ITEM'; blockKey: string }
   | { type: 'PREVIEW_RULE_ADD'; blockKey: string; ruleId: string }
   | { type: 'PREVIEW_RULE_DEL'; blockKey: string; ri: number }
-  | { type: 'OPEN_BLOCK_EDIT'; blockKey: string; k: string; v: string }
+  | { type: 'OPEN_BLOCK_EDIT'; blockKey: string; k: string }
+  | { type: 'OPEN_BLOCK_FIELD'; blockKey: string; fieldKey: string }
+  | { type: 'CLOSE_BLOCK_FIELD' }
+  | { type: 'BF_TOGGLE_ROOM'; code: string }
+  | { type: 'BF_TOGGLE_FLOOR'; floor: number }
+  | { type: 'BF_SELECT_SAME'; value: string }
+  | { type: 'BF_EDIT_PICKED' }
+  | { type: 'BF_RESET_PICKED' }
   | { type: 'OPEN_OPT_FEE'; attr: string; code: string }
   | { type: 'OPEN_RULE_SLOT'; blockKey: string; ri: number; si: number }
   | { type: 'CLOSE_EDIT' }
@@ -343,11 +352,65 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       return bk?.rules?.[a.ri] ? openCascade(st, previewRuleDel(bk, a.ri)) : st;
     }
 
+    /** 값을 고칠 때는 화면에 그려진 문장이 아니라 **저장된 값**을 읽습니다. 객실마다 갈린
+     *  항목은 화면에 "7층 15:00~22:00 / 3~6층 17:00~21:00"으로 보이는데, 그 문장을 편집기에
+     *  넣으면 형식이 깨집니다. */
     case 'OPEN_BLOCK_EDIT': {
       const bk = p.blocks.find((b) => b.key === a.blockKey);
       if (!bk) return st;
       const type = typeOf(bk.key, a.k);
-      return { ...st, edit: { kind: 'block', bk, k: a.k, type, p: parseVal(type, a.v) } };
+      return { ...st, edit: { kind: 'block', bk, k: a.k, type, p: parseVal(type, baseValue(bk, a.k)) } };
+    }
+
+    /** 항목 하나를 객실마다 다르게 정하는 흐름 — 고르기(여기) → 값 넣기(편집기) → 확인. */
+    case 'OPEN_BLOCK_FIELD': {
+      const bk = p.blocks.find((b) => b.key === a.blockKey);
+      if (!bk) return st;
+      /** 이미 따로 정해둔 객실이 있으면 그것부터 골라 둡니다 — 대개 그걸 고치러 옵니다. */
+      const scope = bk.memberOf ? membersOf(p, bk) : p.rooms;
+      const own = ownRooms(bk, scope, a.fieldKey).map((r) => r.code);
+      return { ...st, bf: { blockKey: a.blockKey, fieldKey: a.fieldKey, sel: own } };
+    }
+    case 'CLOSE_BLOCK_FIELD':
+      return { ...st, bf: null };
+    case 'BF_TOGGLE_ROOM':
+      return st.bf
+        ? { ...st, bf: { ...st.bf, sel: st.bf.sel.includes(a.code) ? st.bf.sel.filter((c) => c !== a.code) : [...st.bf.sel, a.code] } }
+        : st;
+    case 'BF_TOGGLE_FLOOR': {
+      if (!st.bf) return st;
+      const codes = p.rooms.filter((r) => r.floor === a.floor).map((r) => r.code);
+      const allOn = codes.every((c) => st.bf!.sel.includes(c));
+      return {
+        ...st,
+        bf: { ...st.bf, sel: allOn ? st.bf.sel.filter((c) => !codes.includes(c)) : [...new Set([...st.bf.sel, ...codes])] },
+      };
+    }
+    /** "지금 이 값을 쓰는 객실 전부" — 22실을 한 번에 고릅니다. */
+    case 'BF_SELECT_SAME': {
+      const bk = st.bf && p.blocks.find((b) => b.key === st.bf!.blockKey);
+      if (!st.bf || !bk) return st;
+      const scope = bk.memberOf ? membersOf(p, bk) : p.rooms;
+      const codes = scope.filter((r) => fieldValueOf(bk, r, st.bf!.fieldKey) === a.value).map((r) => r.code);
+      return { ...st, bf: { ...st.bf, sel: [...new Set([...st.bf.sel, ...codes])] } };
+    }
+    /** 고른 객실에 넣을 값을 편집기로 받습니다 — 형식은 시설 값을 고칠 때와 똑같습니다. */
+    case 'BF_EDIT_PICKED': {
+      const bk = st.bf && p.blocks.find((b) => b.key === st.bf!.blockKey);
+      if (!st.bf || !bk || !st.bf.sel.length) return st;
+      const first = p.rooms.find((r) => r.code === st.bf!.sel[0]);
+      const type = typeOf(bk.key, st.bf.fieldKey);
+      const seed = first ? fieldValueOf(bk, first, st.bf.fieldKey) : baseValue(bk, st.bf.fieldKey);
+      return { ...st, edit: { kind: 'block', bk, k: st.bf.fieldKey, type, p: parseVal(type, seed), codes: st.bf.sel } };
+    }
+    /** 따로 정한 값을 떼고 시설 값을 따라가게 되돌립니다 — 값 넣기와 같은 경로를 씁니다. */
+    case 'BF_RESET_PICKED': {
+      const bk = st.bf && p.blocks.find((b) => b.key === st.bf!.blockKey);
+      if (!st.bf || !bk || !st.bf.sel.length) return st;
+      return openCascade(
+        { ...st, bf: null },
+        previewBlockPer(p, bk, st.bf.fieldKey, st.bf.sel, baseValue(bk, st.bf.fieldKey)),
+      );
     }
     case 'OPEN_OPT_FEE': {
       const def = attrDef(a.attr);
@@ -394,6 +457,10 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
         const nv =
           slot.type === 'money' ? (e.p.amt ?? 0) : slot.type.startsWith('int:') ? (e.p.n ?? 0) : composeVal(slot.type, e.p);
         return openCascade(cleared, previewRule(e.bk, e.ri, e.si, nv));
+      }
+      /** 고른 객실이 있으면 그 객실에만, 없으면 시설 값 전체에 — 편집기는 하나입니다. */
+      if (e.codes?.length) {
+        return openCascade({ ...cleared, bf: null }, previewBlockPer(p, e.bk, e.k, e.codes, composeVal(e.type, e.p)));
       }
       return openCascade(cleared, previewBlockEdit(p, e.bk, e.k, composeVal(e.type, e.p)));
     }

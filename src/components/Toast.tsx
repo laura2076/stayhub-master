@@ -33,10 +33,19 @@ export const Toast = () => {
       }}
     >
       <span style={{ fontSize: 12.5, fontWeight: 600 }}>{state.toast}</span>
+      {/** 문장이 길어지면 버튼이 눌려 "되돌리 기"로 두 줄이 됩니다 — 버튼은 줄이지 않습니다. */}
       <button
         className="btn"
         onClick={() => dispatch({ type: 'UNDO' })}
-        style={{ height: 26, padding: '0 10px', fontSize: 12, color: 'var(--color-bg)', borderColor: 'rgba(255,255,255,.32)' }}
+        style={{
+          flex: 'none',
+          whiteSpace: 'nowrap',
+          height: 26,
+          padding: '0 10px',
+          fontSize: 12,
+          color: 'var(--color-bg)',
+          borderColor: 'rgba(255,255,255,.32)',
+        }}
       >
         되돌리기
       </button>

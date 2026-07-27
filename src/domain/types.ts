@@ -152,6 +152,8 @@ export type Cascade =
   /** 숙소 전체값 바꾸기 — 따로 정한 객실은 그대로 두고 나머지만 따라옵니다. */
   | (CascadeBase & { kind: 'default'; attr: string; value: AttrValue })
   | (CascadeBase & { kind: 'block'; blockKey: string; fieldKey: string; value: string })
+  /** 시설 항목을 **고른 객실에만** 다르게 정합니다. 기본값과 같아지면 따로 정한 표시를 뗍니다. */
+  | (CascadeBase & { kind: 'blockper'; blockKey: string; fieldKey: string; codes: string[]; value: string })
   | (CascadeBase & { kind: 'roomadd'; room: Room })
   | (CascadeBase & { kind: 'roominfo'; code: string; patch: RoomInfo })
   | (CascadeBase & { kind: 'roomdel'; codes: string[] })
@@ -209,6 +211,10 @@ export type BulkDraft = {
   open: boolean;
 };
 
+/** 시설 항목 하나를 객실마다 다르게 정하는 중.
+ *  고르는 일과 값 넣는 일을 한 창에서 끝내려고 고른 객실을 여기 담아 둡니다. */
+export type BlockFieldDraft = { blockKey: string; fieldKey: string; sel: string[] };
+
 /** 객실을 설명하는 값들 — 속성 사전이 아니라 객실 자체에 붙어 있는 것. */
 export type RoomInfo = { name: string; floor: number; area: string; form: string; bed: string; tag: string };
 
@@ -218,7 +224,8 @@ export type NewRoomDraft = RoomInfo & { floorText: string; values: Record<string
 export type RoomEdit = RoomInfo & { code: string; floorText: string };
 
 export type Editor =
-  | { kind: 'block'; bk: Block; k: string; type: FieldType; p: Parts }
+  /** `codes`가 있으면 그 객실에만 넣습니다. 없으면 시설 전체(= 따로 정하지 않은 객실)의 값. */
+  | { kind: 'block'; bk: Block; k: string; type: FieldType; p: Parts; codes?: string[] }
   | { kind: 'optfee'; attr: string; code: string; label: string; k: string; type: 'tier'; p: Parts }
   | { kind: 'rule'; bk: Block; ri: number; si: number; k: string; type: FieldType; p: Parts };
 
@@ -255,6 +262,8 @@ export type MasterState = {
   re: RoomEdit | null;
   /** 이 시설에 어느 객실을 붙일지 다시 고르는 중. */
   pickRooms: string | null;
+  /** 시설 항목을 객실마다 다르게 정하는 중 — 어느 객실에 넣을지 고르는 단계. */
+  bf: BlockFieldDraft | null;
   sort: RoomSort;
   /** 따로 정한 객실만 보기. */
   onlyOwn: boolean;

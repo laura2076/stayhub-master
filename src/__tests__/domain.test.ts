@@ -321,21 +321,24 @@ describe('FAQ answers derived from facility values', () => {
     const blocks = deriveBlocks(p);
     const q15 = renderFaq(p.faqs.find((f) => f.qid === 'Q-0015')!, blocks);
     expect(q15.derived).toBe(true);
-    expect(q15.a).toBe('17:00~21:00에 이용 가능합니다.');
+    /** 7층 4실만 두 시간 일찍 여는 숙소라, 답변도 갈린 그대로 말합니다 — 한 값으로
+     *  뭉뚱그리면 나머지 층이나 7층 중 한쪽에게 거짓말이 됩니다. */
+    expect(q15.a).toBe('7층 15:00~22:00 / 4~6층 17:00~21:00에 이용 가능합니다.');
     expect(q15.src).toBe('공용 BBQ · 이용 시간');
   });
 
   it('follows the facility when it changes — with nowhere else to edit it', () => {
     const st = run(
       initialState(),
-      { type: 'OPEN_BLOCK_EDIT', blockKey: 'shared_bbq', k: '이용 시간', v: '17:00~21:00' },
+      { type: 'OPEN_BLOCK_EDIT', blockKey: 'shared_bbq', k: '이용 시간' },
       { type: 'SET_PART', k: 'h2', v: '22' },
       { type: 'PREVIEW_EDIT' },
       { type: 'APPLY_CAS' },
     );
     const p = P(st);
     const q15 = renderFaq(p.faqs.find((f) => f.qid === 'Q-0015')!, deriveBlocks(p));
-    expect(q15.a).toBe('17:00~22:00에 이용 가능합니다.');
+    /** 시설 값을 고치면 따로 정하지 않은 층만 따라옵니다 — 7층은 자기 값을 지킵니다. */
+    expect(q15.a).toBe('7층 15:00~22:00 / 4~6층 17:00~22:00에 이용 가능합니다.');
   });
 
   it('deactivates the answer when the facility is not in use', () => {

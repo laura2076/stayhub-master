@@ -1,10 +1,11 @@
 import { attrDef, attrOption, feeOf, isOwn, showValue, valueOf } from './attrs';
+import { baseValue, bfKey, fieldValueOf, isOwnField, stripBlockValues } from './blockValues';
 import { BLOCKCAT, CHANKEYS, instantiateRule, ruleById } from './catalog';
 import {
-  deriveBlocks,
   derivedDiff,
   derivedGroup,
   membersOf,
+  recomputeBlocks,
   ruleText,
   showRoomValue,
   stName,
@@ -44,6 +45,16 @@ const faqItemsFor = (p: Property, blockKeys: string[], before: string, after: st
     .filter((f) => blockKeys.some((k) => f.tpl.includes(`{${k}.`)))
     .slice(0, max)
     .map((f) => ({ key: `faq:${f.qid}`, label: `질문 ${f.qid}`, before, after, on: true, locked: true, isOv: false }));
+
+/** 객실 하나에 시설 항목 값을 씁니다. 기본값과 같아지면 지웁니다 —
+ *  "따로 정함"이라 적혀 있는데 값은 기본값과 같은 상태를 만들지 않기 위해서입니다.
+ *  미리보기와 적용이 같은 함수를 쓰므로 둘이 어긋날 수 없습니다. */
+const writeField = (r: Room, blockKey: string, fieldKey: string, value: string, base: string): Room => {
+  const values = { ...r.values };
+  if (value === base) delete values[bfKey(blockKey, fieldKey)];
+  else values[bfKey(blockKey, fieldKey)] = value;
+  return { ...r, values };
+};
 
 /* ── 객실 값 바꾸기 ─────────────────────────────────────────────────────── */
 
@@ -614,6 +625,65 @@ export const previewBlockEdit = (p: Property, bk: Block, fieldKey: string, value
   };
 };
 
+/** 시설 항목을 고른 객실에만 다르게 정합니다.
+ *
+ *  객실 속성과 **같은 상속 규칙**입니다 — 시설에 적힌 값이 기본이고, 여기서 정한 객실만
+ *  자기 값을 갖습니다. 기본값과 같은 값을 넣으면 따로 정한 표시를 떼서, "따로 정함"이라
+ *  적혀 있는데 값은 기본값과 같은 상태가 생기지 않게 합니다. */
+export const previewBlockPer = (p: Property, bk: Block, fieldKey: string, codes: string[], value: string): Cascade => {
+  const base = baseValue(bk, fieldKey);
+  const backToBase = value === base;
+  const scope = bk.memberOf ? membersOf(p, bk) : p.rooms;
+  const hit = scope.filter((r) => codes.includes(r.code));
+
+  const items: CascadeItem[] = hit.map((r) => ({
+    key: `room:${r.code}`,
+    label: `${r.name} · ${r.code}`,
+    before: fieldValueOf(bk, r, fieldKey),
+    after: value,
+    on: fieldValueOf(bk, r, fieldKey) !== value,
+    isOv: isOwnField(r, bk.key, fieldKey),
+  }));
+
+  const next: Property = {
+    ...p,
+    rooms: p.rooms.map((r) => (codes.includes(r.code) ? writeField(r, bk.key, fieldKey, value, base) : r)),
+  };
+  const derived = derivedDiff(p, next);
+  const faq = faqItemsFor(p, [bk.key], '지금 답변', '객실마다 다른 값으로 다시 만들어짐', 4);
+  const rest = scope.length - hit.length;
+
+  return {
+    kind: 'blockper',
+    blockKey: bk.key,
+    fieldKey,
+    codes,
+    value,
+    field: `${bk.label} · ${fieldKey}`,
+    from: '객실마다 지금 값',
+    to: value,
+    warn: backToBase
+      ? `고른 객실에서 따로 정한 값을 떼어 냅니다. 앞으로는 시설 값(${base})을 그대로 따라갑니다.`
+      : rest > 0
+        ? `고른 객실 ${hit.length}개만 이 값을 씁니다. 나머지 ${rest}개는 시설 값 "${base}"을 그대로 씁니다.`
+        : `이 시설을 쓰는 객실 전부에 넣습니다. 전부 같은 값이 되면 시설 값을 바꾸는 편이 간단합니다.`,
+    groups: [
+      {
+        title: `객실 ${items.length}`,
+        desc: backToBase ? '시설 값을 따라가게 되돌림' : '이 객실만 따로 정함',
+        items,
+      },
+      ...derivedGroup(derived),
+      {
+        title: '판매 사이트 3',
+        desc: '객실 상품마다 다른 문구로 나감',
+        items: channelItems((ch) => `${ch} · ${bk.label} ${fieldKey}`, '이전 값', value),
+      },
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '이 시설을 옮겨 적는 답변', items: faq }] : []),
+    ],
+  };
+};
+
 /** 요금은 객실이 아니라 선택지에 붙습니다 — 한 번 고치면 그 선택지를 쓰는 객실 전부에 갑니다. */
 export const previewOptFee = (p: Property, attr: string, code: string, value: string): Cascade => {
   const def = attrDef(attr)!;
@@ -793,6 +863,15 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
 
   if (c.kind === 'fielddel') {
     blocks = blocks.map((b) => (b.key !== c.blockKey ? b : { ...b, fields: b.fields.filter((f) => f[0] !== c.fieldKey) }));
+    /** 항목을 없애면 그 항목을 따로 정해둔 객실 값도 함께 없앱니다 —
+     *  안 그러면 화면에 없는 값이 객실 안에 남아 다시 넣을 때 되살아납니다. */
+    rooms = stripBlockValues(rooms, c.blockKey, c.fieldKey);
+  }
+
+  if (c.kind === 'blockper') {
+    const bk = blocks.find((b) => b.key === c.blockKey);
+    const base = bk ? baseValue(bk, c.fieldKey) : '';
+    rooms = rooms.map((r) => (roomKeys.includes(r.code) ? writeField(r, c.blockKey, c.fieldKey, c.value, base) : r));
   }
 
   if (c.kind === 'bulk') {
@@ -811,6 +890,8 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
     blocks = blocks.map((b) =>
       b.key !== c.blockKey ? b : { ...b, fields: b.fields.map((f) => (f[0] === c.fieldKey ? [f[0], c.value] : f)) },
     );
+    /** 새 기본값과 같아진 객실은 따로 정한 표시를 뗍니다 — 숙소 전체값을 바꿀 때와 같은 규칙입니다. */
+    rooms = rooms.map((r) => (r.values[bfKey(c.blockKey, c.fieldKey)] === c.value ? writeField(r, c.blockKey, c.fieldKey, c.value, c.value) : r));
   }
 
   if (c.kind === 'roomadd') rooms = [...rooms, c.room];
@@ -868,6 +949,8 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
       }
       return nb;
     });
+    /** 시설을 아예 없애면 객실에 남은 그 시설의 값도 함께 없앱니다. */
+    if (c.nextSt === 'none') rooms = stripBlockValues(rooms, c.blockKey);
   }
 
   if (c.kind === 'rule' || c.kind === 'ruleadd' || c.kind === 'ruledel') {
@@ -894,7 +977,7 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
   const written: Property = { ...p, rooms, blocks, fees, channels, attrs, defaults };
   /** 마지막에 자동 계산 필드를 한 번 더 돌립니다 — 저장된 값과 계산 결과가 늘 같도록.
    *  단, 시설을 켜고 끈 직후에는 사용자가 고른 상태가 자동 계산보다 우선합니다. */
-  const recomputed = deriveBlocks(written).map((b) =>
+  const recomputed = recomputeBlocks(written).map((b) =>
     c.kind === 'blockstate' && b.key === c.blockKey ? { ...b, st: c.nextSt } : b,
   );
 

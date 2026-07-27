@@ -3,6 +3,7 @@ import { PensionSidebar } from './components/PensionSidebar';
 import { PropertyHeader } from './components/PropertyHeader';
 import { Toast } from './components/Toast';
 import { TopBar } from './components/TopBar';
+import { BlockFieldModal } from './components/modals/BlockFieldModal';
 import { BulkEditModal } from './components/modals/BulkEditModal';
 import { CascadeModal } from './components/modals/CascadeModal';
 import { NewRoomModal } from './components/modals/NewRoomModal';
@@ -54,6 +55,7 @@ const App = () => {
       </div>
 
       <BulkEditModal />
+      <BlockFieldModal />
       <NewRoomModal />
       <RoomEditModal />
       <CascadeModal />

@@ -34,7 +34,7 @@ export const needsConfirm = (c: Cascade): boolean => {
   if (c.kind === 'roomadd' || c.kind === 'roomdel' || c.kind === 'blockstate' || c.kind === 'default') return true;
   if (c.kind === 'fielddel') return true;
   const rooms = on(c, 'room:');
-  return c.kind === 'bulk' && rooms.length > 1 && rooms.some((i) => i.isOv);
+  return (c.kind === 'bulk' || c.kind === 'blockper') && rooms.length > 1 && rooms.some((i) => i.isOv);
 };
 
 /** 적용된 뒤 화면 아래에 뜨는 말. "~했어요"로 끝나 이미 벌어진 일임을 알립니다. */
@@ -58,6 +58,10 @@ export const doneSentence = (c: Cascade): string => {
     }
     case 'block':
       return `${josa(c.field, '을', '를')} ${ro(c.to)} 바꿨어요.${also}`;
+    case 'blockper': {
+      const n = on(c, 'room:').length;
+      return `객실 ${n}개만 ${josa(c.field, '을', '를')} ${ro(c.to)} 따로 정했어요. 나머지 객실은 그대로예요.${also}`;
+    }
     case 'rule':
       return `안내 문구를 "${c.to}"로 바꿨어요.`;
     case 'ruleadd':
@@ -115,6 +119,15 @@ export const willSentence = (c: Cascade): string => {
       return `${josa(c.field.replace(' 제외', ''), '을', '를')} 제외합니다. 넣어둔 값도 함께 사라집니다.`;
     case 'blockstate':
       return `${josa(c.field, '을', '를')} ${ro(c.to)} 바꿉니다.${also}`;
+    case 'blockper': {
+      const rooms = on(c, 'room:');
+      const own = rooms.filter((i) => i.isOv);
+      return (
+        `고른 객실 ${rooms.length}개만 ${josa(c.field, '을', '를')} ${ro(c.to)} 정합니다. 나머지 객실은 시설 값을 그대로 씁니다.` +
+        (own.length ? ` 그중 ${own.length}개는 이미 따로 정해둔 값이 있어요 — 그대로 두려면 체크를 푸세요.` : '') +
+        also
+      );
+    }
     case 'bulk': {
       const rooms = on(c, 'room:');
       const own = rooms.filter((i) => i.isOv);

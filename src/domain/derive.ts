@@ -1,5 +1,6 @@
 import { ATTRS, attrDef, attrOption, attrsOf, feeOf, roomFee, showValue, valueOf } from './attrs';
-import { CHANKEYS } from './catalog';
+import { baseValue, fieldValueOf, ownRooms } from './blockValues';
+import { CHANKEYS, PERROOM_FIELDS } from './catalog';
 import { fmtNum } from './fieldTypes';
 import type {
   Block,
@@ -42,35 +43,80 @@ export const membersOf = (p: Property, b: Block, rooms: Room[] = p.rooms): Room[
 
 /** 자동 계산 필드를 지금 객실 목록으로 다시 만들어 냅니다.
  *  이 필드들은 저장된 문장이 아니라 규칙입니다 — 손으로 맞출 것이 없습니다. */
-/** "4명" · "7층 6명 / 3~6층 4명" — 같은 인원을 쓰는 객실끼리 묶어 층으로 부릅니다.
- *  인원을 숫자로 넣게 한 이상 값의 가짓수를 미리 알 수 없으므로, 문장도 세어서 만듭니다. */
-export const capacityText = (p: Property, rooms: Room[], key: string): string => {
-  const groups = new Map<number, Room[]>();
+
+/** 객실마다 값이 갈릴 때 한 문장으로 부르는 방법.
+ *
+ *  "17:00~21:00" 하나면 그대로, 갈리면 "7층 15:00~22:00 / 3~6층 17:00~21:00"입니다.
+ *  직원은 객실 코드가 아니라 층으로 말하니까요. 다만 층으로 부르는 건 층마다 값이 하나일
+ *  때만 통합니다 — 같은 층에 두 값이 섞이면 "7층 A / 7층 B"가 되어 읽는 사람이 먼저
+ *  걸리므로, 그럴 때는 객실 수로 셉니다. */
+export const spreadText = (
+  rooms: Room[],
+  get: (r: Room) => string,
+  order: (a: string, b: string) => number = () => 0,
+): string => {
+  const groups = new Map<string, Room[]>();
   rooms.forEach((r) => {
-    const n = Number(valueOf(p, r, key));
-    groups.set(n, [...(groups.get(n) ?? []), r]);
+    const v = get(r);
+    groups.set(v, [...(groups.get(v) ?? []), r]);
   });
-  const entries = [...groups].sort((a, b) => b[0] - a[0]);
+  const entries = [...groups].sort((a, b) => order(a[0], b[0]));
   if (!entries.length) return '—';
-  if (entries.length === 1) return `${entries[0][0]}명`;
-  /** 층으로 부르는 건 층마다 값이 하나일 때만 통합니다. 같은 층에 6명 객실과 9명 객실이
-   *  섞이면 "7층 9명 / 7층 6명"이 되어 읽는 사람을 헷갈리게 하므로 객실 수로 셉니다. */
+  if (entries.length === 1) return entries[0][0];
   const spans = entries.map(([, list]) => floorSpan(list));
   return new Set(spans).size === spans.length
-    ? entries.map(([n], i) => `${spans[i]} ${n}명`).join(' / ')
-    : entries.map(([n, list]) => `${n}명 ${list.length}객실`).join(' / ');
+    ? entries.map(([v], i) => `${spans[i]} ${v}`).join(' / ')
+    : entries.map(([v, list]) => `${v} ${list.length}객실`).join(' / ');
 };
+
+/** "4명" · "7층 6명 / 3~6층 4명" — 같은 인원을 쓰는 객실끼리 묶어 층으로 부릅니다.
+ *  인원을 숫자로 넣게 한 이상 값의 가짓수를 미리 알 수 없으므로, 문장도 세어서 만듭니다. */
+export const capacityText = (p: Property, rooms: Room[], key: string): string =>
+  spreadText(
+    rooms,
+    (r) => `${Number(valueOf(p, r, key))}명`,
+    (a, b) => parseInt(b, 10) - parseInt(a, 10),
+  );
+
+/** 시설 항목이 객실마다 갈렸는지 — 갈렸으면 몇 객실이 따로인지.
+ *  "따로 정한 객실이 있다"와 "그 값이 기본값과 다르다"는 같은 말이어야 합니다. */
+export const fieldSpread = (
+  p: Property,
+  b: Block,
+  fieldKey: string,
+  rooms: Room[] = p.rooms,
+): { own: Room[]; scope: Room[]; text: string } => {
+  const scope = b.memberOf ? membersOf(p, b, rooms) : rooms;
+  const own = ownRooms(b, scope, fieldKey);
+  return {
+    own,
+    scope,
+    text: own.length ? spreadText(scope, (r) => fieldValueOf(b, r, fieldKey)) : baseValue(b, fieldKey),
+  };
+};
+
+/** 이 항목을 객실마다 다르게 정할 수 있는지. 전사 목록이 정하고, 자동 계산 항목은 제외입니다 —
+ *  그건 이미 객실에서 나오는 값이라 따로 정할 것이 없습니다. */
+export const canSplit = (b: Block, fieldKey: string): boolean =>
+  b.st === 'used' && PERROOM_FIELDS.includes(fieldKey) && !b.computed?.[fieldKey];
 
 export const deriveBlocks = (p: Property, rooms: Room[] = p.rooms, blocks: Block[] = p.blocks): Block[] =>
   blocks.map((b) => {
-    if (!b.computed) return b;
     /** 시설에 딸린 객실을 가려내는 규칙이 없으면 숙소 전 객실이 대상입니다. */
     const list = b.memberOf ? membersOf(p, b, rooms) : rooms;
     const attr = b.memberOf?.attr ?? '';
+    /** 객실이 따로 정한 항목이 하나라도 있으면 그 시설도 다시 그려야 합니다 —
+     *  자동 계산 항목이 없는 시설(공용 수영장 같은)도 마찬가지입니다. */
+    const split = b.fields.some(([k]) => canSplit(b, k) && ownRooms(b, list, k).length > 0);
+    if (!b.computed && !split) return b;
 
     const fields = b.fields.map(([k, v]): [string, string] => {
-      const how = b.computed![k];
-      if (!how) return [k, v];
+      const how = b.computed?.[k];
+      /** 사람이 쓴 항목인데 객실마다 갈렸으면, 갈린 그대로 한 문장으로 부릅니다. */
+      if (!how) {
+        const own = canSplit(b, k) ? ownRooms(b, list, k) : [];
+        return own.length ? [k, spreadText(list, (r) => fieldValueOf(b, r, k))] : [k, v];
+      }
       if (how === 'capacityBase') return [k, capacityText(p, rooms, 'capacity_base')];
       if (how === 'capacityMax') return [k, capacityText(p, rooms, 'capacity_max')];
       if (!b.memberOf) return [k, v];
@@ -106,6 +152,19 @@ export const deriveBlocks = (p: Property, rooms: Room[] = p.rooms, blocks: Block
     if (!b.memberOf) return { ...b, fields };
     const st = b.st === 'none' ? 'none' : list.length === 0 ? 'off' : 'used';
     return { ...b, fields, st };
+  });
+
+/** 저장할 때 쓰는 다시 계산.
+ *
+ *  `deriveBlocks`는 **보여 주기용**입니다 — 객실마다 갈린 항목을 "7층 15:00~22:00 /
+ *  3~6층 17:00~21:00"처럼 묶어 부릅니다. 그 문장을 그대로 저장하면 시설의 기본값이
+ *  사라지고, 다음에 편집기를 열 때 형식이 깨집니다. 그래서 저장할 때는 자동 계산 항목만
+ *  갱신하고, 사람이 쓴 값은 저장된 그대로 둡니다. */
+export const recomputeBlocks = (p: Property): Block[] =>
+  deriveBlocks(p).map((b, i) => {
+    const raw = p.blocks[i];
+    if (!raw) return b;
+    return { ...b, fields: b.fields.map((f, fi) => (raw.computed?.[f[0]] ? f : (raw.fields[fi] ?? f))) };
   });
 
 /** 이 시설을 쓰는 객실 수 — 카드의 "객실 N"에 쓰입니다. */

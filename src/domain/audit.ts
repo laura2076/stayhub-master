@@ -1,5 +1,7 @@
 import { attrDef, attrOption, attrsOf, feeOf, isOwn, valueOf } from './attrs';
-import { deriveBlocks, roomCount, ruleText, slotText } from './derive';
+import { baseValue, fieldValueOf, parseBfKey } from './blockValues';
+import { PERROOM_FIELDS } from './catalog';
+import { deriveBlocks, membersOf, roomCount, ruleText, slotText } from './derive';
 import { renderFaq } from './faq';
 import { composeVal, parseVal } from './fieldTypes';
 import type { MasterState, Property, Violation } from './types';
@@ -41,8 +43,41 @@ export const auditProperty = (p: Property): Violation[] => {
   defs.forEach((d) => checkValue('숙소 전체값', d.key, p.defaults[d.key]));
   p.rooms.forEach((r) =>
     Object.entries(r.values).forEach(([key, val]) => {
+      /** 객실 값은 두 종류입니다 — 속성(바베큐·기준 인원)과 시설 항목(공용 BBQ · 이용 시간).
+       *  키 이름으로 갈리고, 규칙은 아래 2-b에서 따로 봅니다. */
+      if (parseBfKey(key)) return;
       if (!p.attrs.includes(key)) at(`객실 ${r.name}`, `이 숙소가 쓰지 않는 속성에 값이 있습니다: ${key}`);
       checkValue(`객실 ${r.name}`, key, val);
+    }),
+  );
+
+  /* 2-b — 객실이 따로 정한 시설 항목. 시설이 기본이고 객실이 예외인 구조라, 예외가
+           가리키는 곳이 사라지면 값은 화면 어디에도 안 나오면서 데이터에는 남습니다. */
+  p.rooms.forEach((r) =>
+    Object.keys(r.values).forEach((key) => {
+      const parsed = parseBfKey(key);
+      if (!parsed) return;
+      const where = `객실 ${r.name}`;
+      const b = p.blocks.find((x) => x.key === parsed.blockKey);
+      if (!b || b.st === 'none') return at(where, `이 숙소에 없는 시설의 값이 남아 있습니다: ${parsed.blockKey}`);
+      if (!b.fields.some((f) => f[0] === parsed.fieldKey)) {
+        return at(where, `${b.label}에 없는 항목의 값이 남아 있습니다: ${parsed.fieldKey}`);
+      }
+      if (!PERROOM_FIELDS.includes(parsed.fieldKey)) {
+        return at(where, `${b.label} · ${parsed.fieldKey}은 객실마다 다를 수 없는 항목입니다`);
+      }
+      if (b.computed?.[parsed.fieldKey]) {
+        return at(where, `${b.label} · ${parsed.fieldKey}은 자동 계산 항목이라 따로 정할 수 없습니다`);
+      }
+      /** 시설 값과 같은 값을 따로 정해 두면, 화면에는 "따로 정함"이라 적히는데 값은 같습니다.
+       *  나중에 시설 값을 바꿔도 이 객실만 안 따라와서 원인을 찾기 어려워집니다. */
+      if (fieldValueOf(b, r, parsed.fieldKey) === baseValue(b, parsed.fieldKey)) {
+        return at(where, `${b.label} · ${parsed.fieldKey}을 시설 값과 똑같이 따로 정해 두었습니다`);
+      }
+      /** 그 시설을 안 쓰는 객실에 값만 남은 경우 — 판매 사이트로도 안 나갑니다. */
+      if (b.memberOf && !membersOf(p, b).some((m) => m.code === r.code)) {
+        at(where, `${b.label}을 쓰지 않는 객실인데 ${parsed.fieldKey} 값이 남아 있습니다`);
+      }
     }),
   );
 
@@ -85,6 +120,9 @@ export const auditProperty = (p: Property): Violation[] => {
   p.blocks.forEach((b, i) => {
     const f2 = fresh[i];
     b.fields.forEach((f, fi) => {
+      /** 사람이 쓴 값은 낡을 수 없습니다 — 객실마다 갈린 항목의 묶음 문장은 화면에서만
+       *  만들어지고 저장되지 않으므로, 여기서 비교하면 늘 다르다고 나옵니다. */
+      if (!b.computed?.[f[0]]) return;
       if (f2.fields[fi] && f[1] !== f2.fields[fi][1]) {
         at(`시설 ${b.label}`, `자동 계산 필드가 낡았습니다 · ${f[0]}: "${f[1]}" → 다시 계산 "${f2.fields[fi][1]}"`);
       }

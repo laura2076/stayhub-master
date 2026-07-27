@@ -227,6 +227,16 @@ export const FIELDCAT: string[] = [
   '도로명 주소',
 ];
 
+/** 객실마다 다를 수 있는 항목.
+ *
+ *  숙소마다 따로 켜 두는 설정이 아니라 **전사 한 곳**에서 정합니다. 1000개 숙소가
+ *  제각각이라 항목 이름은 같은데 어떤 곳은 층마다 다르고 어떤 곳은 아닙니다. 여기서
+ *  "이 항목은 원래 갈릴 수 있는 종류"만 정해 두면, 실제로 갈렸는지는 객실 값이 답합니다.
+ *
+ *  체크인 시각이나 주소처럼 숙소 하나에 하나뿐인 항목은 여기 없습니다 — 열어 두면
+ *  객실마다 체크인이 다른 숙소가 생기고, 그건 판매 사이트가 받지 못합니다. */
+export const PERROOM_FIELDS: string[] = ['이용 장소', '이용 시간', '이용 요금', '제공 구성', '온도', '크기', '형태', '이용 복장'];
+
 export const ruleById = (id: string): RuleDef | undefined => RULECAT.find((r) => r.id === id);
 
 export const instantiateRule = (id: string, values: Record<string, string | number> = {}): Rule => {
