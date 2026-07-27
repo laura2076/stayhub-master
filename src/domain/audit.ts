@@ -143,7 +143,34 @@ export const auditProperty = (p: Property): Violation[] => {
       }
     });
 
-  /* 12 — 꺼진 시설 때문이 아니라 그냥 비어 있는 답변. */
+  /* 12 — 손으로 쓴 답변이 인원을 숫자로 인용하는데, 그 숫자가 이 숙소의 인원이 아닌 경우.
+         인원을 숫자로 넣게 한 이상 "최대 4명까지 가능합니다" 같은 문장은 인원을 올리는 순간
+         조용히 거짓말이 됩니다. 시설 값을 인용하는 답변(tpl)은 저절로 따라오므로 검사에서 빠집니다. */
+  const capacities = new Set(
+    ['capacity_base', 'capacity_max']
+      .filter((k) => p.attrs.includes(k))
+      .flatMap((k) => p.rooms.map((r) => Number(valueOf(p, r, k)))),
+  );
+  if (capacities.size) {
+    p.faqs
+      .filter((f) => !f.tpl && f.a)
+      .forEach((f) => {
+        const aboutPeople = /인원|입실|명까지/.test(`${f.q}${f.a}`);
+        if (!aboutPeople) return;
+        const cited = [...f.a.matchAll(/(\d+)\s*명/g)].map((m) => Number(m[1]));
+        const stale = cited.filter((n) => !capacities.has(n));
+        if (stale.length) {
+          info(
+            `질문 ${f.qid}`,
+            `손으로 쓴 답변이 ${stale.join('명, ')}명을 말하는데 이 숙소의 인원(${[...capacities]
+              .sort((a2, b2) => a2 - b2)
+              .join(', ')}명)에 없습니다: "${f.a}"`,
+          );
+        }
+      });
+  }
+
+  /* 13 — 꺼진 시설 때문이 아니라 그냥 비어 있는 답변. */
   const unanswered = p.faqs.map((f) => renderFaq(f, fresh)).filter((f) => f.reason === '답변 미입력');
   if (unanswered.length) {
     info(
@@ -155,7 +182,7 @@ export const auditProperty = (p: Property): Violation[] => {
     );
   }
 
-  /* 13 — 같은 객실명·객실코드가 둘 이상이면 판매 사이트 상품이 어느 쪽인지 알 수 없습니다. */
+  /* 14 — 같은 객실명·객실코드가 둘 이상이면 판매 사이트 상품이 어느 쪽인지 알 수 없습니다. */
   const names = new Map<string, number>();
   p.rooms.forEach((r) => names.set(r.name, (names.get(r.name) ?? 0) + 1));
   [...names].forEach(([n, c]) => c > 1 && at('객실', `객실명이 겹칩니다: ${n} × ${c}`));

@@ -45,8 +45,9 @@ export type AttrDef = {
   | { kind: 'money' }
 );
 
-/** 시설 필드가 사람이 쓴 값인지, 객실에서 계산되는 값인지. */
-export type ComputedKind = 'rooms' | 'fee' | 'optionLabel' | 'capacity';
+/** 시설 필드가 사람이 쓴 값인지, 객실에서 계산되는 값인지.
+ *  `capacityBase`·`capacityMax`는 시설에 딸린 객실이 아니라 숙소 전 객실에서 계산됩니다. */
+export type ComputedKind = 'rooms' | 'fee' | 'optionLabel' | 'capacity' | 'capacityBase' | 'capacityMax';
 
 /** used = 쓰는 중 · off = 있지만 안 씀 · none = 이 숙소에 없음 */
 export type BlockStatus = 'used' | 'off' | 'none';

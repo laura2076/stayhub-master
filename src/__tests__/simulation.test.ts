@@ -182,6 +182,91 @@ describe('직원 시나리오 — 인원을 숫자로 고치기', () => {
   });
 });
 
+describe('직원 시나리오 — 인원을 바꾸면 초과입실 안내가 따라오는가', () => {
+  /** 인원을 숫자로 넣게 한 순간 생긴 문제입니다. "최대 4명까지 가능합니다"처럼 답변이
+   *  숫자를 인용하면, 인원을 올려도 답변은 그 자리에 남아 조용히 거짓말이 됩니다.
+   *  판매 사이트 값은 계산되므로 따라오고, 답변만 안 따라와서 **서로 다른 말**을 하게 됩니다. */
+  it('초과입실 3문항이 인원 값에서 만들어져 손댈 곳이 없다', () => {
+    const before = initialState();
+    ['Q-0011', 'Q-0012', 'Q-0013'].forEach((qid) => {
+      const f = P(before).faqs.find((x) => x.qid === qid)!;
+      expect(f.tpl).not.toBe('');
+      expect(faq(before, qid).derived).toBe(true);
+    });
+    expect(faq(before, 'Q-0013').a).toBe('객실 최대 인원은 7층 6명 / 3~6층 4명입니다. 그 이상은 받지 않습니다.');
+  });
+
+  it('최대 인원을 올리면 답변·시설 값·판매 사이트가 한 번에 움직인다', () => {
+    const before = initialState();
+    const after = run(before, { type: 'PICK_CELL', code: room(before, 'A701').code, attr: 'capacity_max', value: 9 });
+
+    /** 7층에 9명 객실과 6명 객실이 섞이므로 층이 아니라 객실 수로 셉니다. */
+    expect(field(after, 'extra_person', '최대 인원')).toBe('9명 1객실 / 6명 3객실 / 4명 24객실');
+    expect(faq(after, 'Q-0013').a).toBe('객실 최대 인원은 9명 1객실 / 6명 3객실 / 4명 24객실입니다. 그 이상은 받지 않습니다.');
+    expect(channelRows(P(after)).find((r) => r.id === 'maxpax')!.master).toContain('9명');
+
+    const found = step('객실 · A701 최대 인원 6명 → 9명 (초과입실 안내 추적)', after, [
+      `추가 인원 시설 · 최대 인원: ${field(before, 'extra_person', '최대 인원')} → ${field(after, 'extra_person', '최대 인원')}`,
+      `Q-0011: ${faq(after, 'Q-0011').a}`,
+      `Q-0013: ${faq(after, 'Q-0013').a}`,
+      `판매 사이트 최대 인원: ${channelRows(P(after)).find((r) => r.id === 'maxpax')!.master}`,
+      `시설 문구(숫자 인용 없음): ${ruleText(P(after).blocks.find((b) => b.key === 'extra_person')!.rules![3])}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('전 객실 인원이 같아지면 층 표기가 사라지고 한 값으로 말한다', () => {
+    const before = initialState();
+    const codes = P(before).rooms.filter((r) => r.floor !== 7).map((r) => r.code);
+    const after = commit(
+      before,
+      ...codes.map((code): Action => ({ type: 'TOGGLE_ROOM', code })),
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_ATTR', attr: 'capacity_max' },
+      { type: 'PICK_BULK_VALUE', value: 6 },
+      { type: 'PREVIEW_BULK' },
+    );
+    expect(field(after, 'extra_person', '최대 인원')).toBe('6명');
+    expect(faq(after, 'Q-0013').a).toBe('객실 최대 인원은 6명입니다. 그 이상은 받지 않습니다.');
+
+    const found = step('한꺼번에 · 3~6층 최대 인원 4 → 6명 (전 객실 6명)', after, [
+      `추가 인원 시설 · 최대 인원: ${field(after, 'extra_person', '최대 인원')}`,
+      `Q-0013: ${faq(after, 'Q-0013').a}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  /** 1000곳의 나머지 답변은 아직 손으로 쓴 문장입니다. 그것까지 자동으로 만들 수는 없으니,
+   *  최소한 낡았을 때 알려는 줘야 합니다. */
+  it('손으로 쓴 답변이 인원을 잘못 인용하면 검사기가 알려준다', () => {
+    const base = initialState();
+    const p = P(base);
+    const st0 = replace(base, {
+      ...p,
+      faqs: p.faqs.map((f) => (f.qid === 'Q-0049' ? { ...f, tpl: '', a: '최대 6명까지 입실 가능합니다.' } : f)),
+    });
+    expect(audit(st0).filter((v) => v.what.includes('손으로 쓴 답변'))).toHaveLength(0);
+
+    const st1 = commit(
+      st0,
+      ...P(st0).rooms.map((r): Action => ({ type: 'TOGGLE_ROOM', code: r.code })),
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_ATTR', attr: 'capacity_max' },
+      { type: 'PICK_BULK_VALUE', value: 8 },
+      { type: 'PREVIEW_BULK' },
+    );
+    const flagged = audit(st1).filter((v) => v.what.includes('손으로 쓴 답변'));
+    expect(flagged).toHaveLength(1);
+
+    const found = step('검사기 · 손으로 쓴 답변이 낡은 인원을 인용', st1, [
+      `전 객실 최대 인원 → 8명 (6명 객실이 사라짐)`,
+      `자동 답변 Q-0013: ${faq(st1, 'Q-0013').a}`,
+      `검사기가 잡은 것: ${flagged[0].what}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+});
+
 describe('직원 시나리오 — 시설 정보에서 이용요금·이용시간 수정', () => {
   it('시설의 이용 요금(금액)을 고쳐도 다른 값이 오염되지 않는다', () => {
     const before = initialState();

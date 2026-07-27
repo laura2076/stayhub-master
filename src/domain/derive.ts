@@ -42,15 +42,38 @@ export const membersOf = (p: Property, b: Block, rooms: Room[] = p.rooms): Room[
 
 /** 자동 계산 필드를 지금 객실 목록으로 다시 만들어 냅니다.
  *  이 필드들은 저장된 문장이 아니라 규칙입니다 — 손으로 맞출 것이 없습니다. */
+/** "4명" · "7층 6명 / 3~6층 4명" — 같은 인원을 쓰는 객실끼리 묶어 층으로 부릅니다.
+ *  인원을 숫자로 넣게 한 이상 값의 가짓수를 미리 알 수 없으므로, 문장도 세어서 만듭니다. */
+export const capacityText = (p: Property, rooms: Room[], key: string): string => {
+  const groups = new Map<number, Room[]>();
+  rooms.forEach((r) => {
+    const n = Number(valueOf(p, r, key));
+    groups.set(n, [...(groups.get(n) ?? []), r]);
+  });
+  const entries = [...groups].sort((a, b) => b[0] - a[0]);
+  if (!entries.length) return '—';
+  if (entries.length === 1) return `${entries[0][0]}명`;
+  /** 층으로 부르는 건 층마다 값이 하나일 때만 통합니다. 같은 층에 6명 객실과 9명 객실이
+   *  섞이면 "7층 9명 / 7층 6명"이 되어 읽는 사람을 헷갈리게 하므로 객실 수로 셉니다. */
+  const spans = entries.map(([, list]) => floorSpan(list));
+  return new Set(spans).size === spans.length
+    ? entries.map(([n], i) => `${spans[i]} ${n}명`).join(' / ')
+    : entries.map(([n, list]) => `${n}명 ${list.length}객실`).join(' / ');
+};
+
 export const deriveBlocks = (p: Property, rooms: Room[] = p.rooms, blocks: Block[] = p.blocks): Block[] =>
   blocks.map((b) => {
-    if (!b.computed || !b.memberOf) return b;
-    const list = membersOf(p, b, rooms);
-    const attr = b.memberOf.attr;
+    if (!b.computed) return b;
+    /** 시설에 딸린 객실을 가려내는 규칙이 없으면 숙소 전 객실이 대상입니다. */
+    const list = b.memberOf ? membersOf(p, b, rooms) : rooms;
+    const attr = b.memberOf?.attr ?? '';
 
     const fields = b.fields.map(([k, v]): [string, string] => {
       const how = b.computed![k];
       if (!how) return [k, v];
+      if (how === 'capacityBase') return [k, capacityText(p, rooms, 'capacity_base')];
+      if (how === 'capacityMax') return [k, capacityText(p, rooms, 'capacity_max')];
+      if (!b.memberOf) return [k, v];
       if (how === 'rooms') return [k, roomsLabel(list, rooms)];
       if (how === 'fee') {
         const fees = [...new Set(list.map((r) => roomFee(p, r, attr)))].filter((f) => f !== '—');
@@ -78,7 +101,9 @@ export const deriveBlocks = (p: Property, rooms: Room[] = p.rooms, blocks: Block
       return [k, txt || '—'];
     });
 
-    /** 마지막 객실이 빠지면 시설도 저절로 안 쓰는 상태가 됩니다. */
+    /** 마지막 객실이 빠지면 시설도 저절로 안 쓰는 상태가 됩니다.
+     *  가려내기 규칙이 있는 시설만 그렇습니다 — 숙소 전체를 덮는 시설은 사람이 켜고 끕니다. */
+    if (!b.memberOf) return { ...b, fields };
     const st = b.st === 'none' ? 'none' : list.length === 0 ? 'off' : 'used';
     return { ...b, fields, st };
   });
