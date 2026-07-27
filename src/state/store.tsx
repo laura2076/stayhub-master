@@ -59,6 +59,12 @@ export type Action =
   | { type: 'CLOSE_BULK' }
   | { type: 'PICK_BULK_ATTR'; attr: string }
   | { type: 'PICK_BULK_VALUE'; value: AttrValue }
+  | { type: 'SET_BULK_PER'; code: string; value: AttrValue }
+  | { type: 'CLEAR_BULK_PER'; code: string }
+  | { type: 'BULK_TOGGLE_ROOM'; code: string }
+  | { type: 'BULK_TOGGLE_FLOOR'; floor: number }
+  | { type: 'BULK_CLEAR_SEL' }
+  | { type: 'TOGGLE_BULK_PER_OPEN' }
   | { type: 'PICK_CELL'; code: string; attr: string; value: AttrValue }
   | { type: 'PICK_DEFAULT'; attr: string; value: AttrValue }
   | { type: 'SET_SORT'; sort: RoomSort }
@@ -177,16 +183,54 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
     case 'CLEAR_SEL':
       return { ...st, sel: [] };
 
+    /** 창은 표에서 고른 객실을 물려받되, 그 뒤로는 창 안에서 더 넣고 뺄 수 있습니다.
+     *  고르는 일과 값 넣는 일이 한 창 안에서 끝나야 왔다 갔다 하지 않습니다. */
     case 'OPEN_BULK': {
       const attr = firstAttr(p);
-      return { ...st, bulk: { attr, value: p.defaults[attr] } };
+      const sel = st.sel.length ? st.sel : p.rooms.map((r) => r.code);
+      return { ...st, bulk: { attr, value: p.defaults[attr], per: {}, sel, open: false } };
     }
     case 'CLOSE_BULK':
       return { ...st, bulk: null };
+    /** 속성을 바꾸면 개별값은 버립니다 — 인원에 넣은 6이 바베큐에 남으면 안 됩니다. */
     case 'PICK_BULK_ATTR':
-      return { ...st, bulk: { attr: a.attr, value: p.defaults[a.attr] } };
+      return st.bulk ? { ...st, bulk: { ...st.bulk, attr: a.attr, value: p.defaults[a.attr], per: {} } } : st;
     case 'PICK_BULK_VALUE':
       return st.bulk ? { ...st, bulk: { ...st.bulk, value: a.value } } : st;
+    case 'SET_BULK_PER':
+      return st.bulk ? { ...st, bulk: { ...st.bulk, per: { ...st.bulk.per, [a.code]: a.value } } } : st;
+    case 'CLEAR_BULK_PER': {
+      if (!st.bulk) return st;
+      const per = { ...st.bulk.per };
+      delete per[a.code];
+      return { ...st, bulk: { ...st.bulk, per } };
+    }
+    case 'BULK_TOGGLE_ROOM': {
+      if (!st.bulk) return st;
+      const on = st.bulk.sel.includes(a.code);
+      const per = { ...st.bulk.per };
+      if (on) delete per[a.code];
+      return { ...st, bulk: { ...st.bulk, sel: on ? st.bulk.sel.filter((c) => c !== a.code) : [...st.bulk.sel, a.code], per } };
+    }
+    case 'BULK_TOGGLE_FLOOR': {
+      if (!st.bulk) return st;
+      const codes = p.rooms.filter((r) => r.floor === a.floor).map((r) => r.code);
+      const allOn = codes.every((c) => st.bulk!.sel.includes(c));
+      const per = { ...st.bulk.per };
+      if (allOn) codes.forEach((c) => delete per[c]);
+      return {
+        ...st,
+        bulk: {
+          ...st.bulk,
+          sel: allOn ? st.bulk.sel.filter((c) => !codes.includes(c)) : [...new Set([...st.bulk.sel, ...codes])],
+          per,
+        },
+      };
+    }
+    case 'BULK_CLEAR_SEL':
+      return st.bulk ? { ...st, bulk: { ...st.bulk, sel: [], per: {} } } : st;
+    case 'TOGGLE_BULK_PER_OPEN':
+      return st.bulk ? { ...st, bulk: { ...st.bulk, open: !st.bulk.open } } : st;
 
     /** 칸에서 값을 고르면 그 객실에만 바로 씁니다 — 창을 거치지 않습니다. */
     case 'PICK_CELL': {
@@ -271,7 +315,7 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
     }
 
     case 'PREVIEW_BULK':
-      return st.bulk ? openCascade({ ...st, bulk: null }, previewBulk(p, st.sel, st.bulk.attr, st.bulk.value)) : st;
+      return st.bulk ? openCascade({ ...st, bulk: null }, previewBulk(p, st.bulk.sel, st.bulk.attr, st.bulk.value, st.bulk.per)) : st;
     case 'PREVIEW_DELETE':
       return st.sel.length ? openCascade(st, previewDelete(p, st.sel)) : st;
     case 'PREVIEW_NEW_ROOM':

@@ -180,6 +180,73 @@ describe('직원 시나리오 — 인원을 숫자로 고치기', () => {
   });
 });
 
+describe('직원 시나리오 — 한 창에서 고르고 객실마다 다른 값 넣기', () => {
+  /** 참고한 화면(Biz회원 할인 수정)의 패턴입니다 — 왼쪽에서 골라 오른쪽으로 보내고,
+   *  일괄값을 넣되 항목마다 덮어씁니다. 전에는 "고른 객실 전부 같은 값"만 됐습니다. */
+  it('창 안에서 층째로 고르고, 그중 일부만 다른 값을 넣는다', () => {
+    const before = initialState();
+    const a301 = room(before, 'A301').code;
+    const a302 = room(before, 'A302').code;
+
+    const after = commit(
+      before,
+      { type: 'OPEN_BULK' },
+      { type: 'BULK_CLEAR_SEL' },
+      { type: 'BULK_TOGGLE_FLOOR', floor: 3 },
+      { type: 'PICK_BULK_ATTR', attr: 'capacity_max' },
+      { type: 'PICK_BULK_VALUE', value: 6 },
+      { type: 'SET_BULK_PER', code: a301, value: 8 },
+      { type: 'SET_BULK_PER', code: a302, value: 8 },
+      { type: 'PREVIEW_BULK' },
+    );
+
+    const q = P(after);
+    expect(valueOf(q, q.rooms.find((r) => r.code === a301)!, 'capacity_max')).toBe(8);
+    expect(valueOf(q, q.rooms.find((r) => r.code === a302)!, 'capacity_max')).toBe(8);
+    /** 나머지 3층 4실은 일괄값 6명. */
+    expect(
+      q.rooms.filter((r) => r.floor === 3 && ![a301, a302].includes(r.code)).every((r) => valueOf(q, r, 'capacity_max') === 6),
+    ).toBe(true);
+    /** 다른 층은 손대지 않습니다. */
+    expect(q.rooms.filter((r) => r.floor === 4).every((r) => valueOf(q, r, 'capacity_max') === 4)).toBe(true);
+
+    const found = step('한 창에서 · 3층 6실 최대 인원 (4실은 6명 / 2실은 8명)', after, [
+      `3층 최대 인원: ${field(after, 'extra_person', '최대 인원')}`,
+      `기록에 남은 값: ${q.history[0].after}`,
+      `알림: ${after.toast}`,
+    ]);
+    expect(found.filter((f) => f.severity === 'error')).toEqual([]);
+  });
+
+  it('창에서 객실을 빼면 그 객실의 개별값도 함께 버려진다', () => {
+    const before = initialState();
+    const a301 = room(before, 'A301').code;
+    const st = run(
+      before,
+      { type: 'OPEN_BULK' },
+      { type: 'BULK_CLEAR_SEL' },
+      { type: 'BULK_TOGGLE_FLOOR', floor: 3 },
+      { type: 'SET_BULK_PER', code: a301, value: 9 },
+      { type: 'BULK_TOGGLE_ROOM', code: a301 },
+    );
+    expect(st.bulk!.per).toEqual({});
+    expect(st.bulk!.sel).toHaveLength(5);
+  });
+
+  it('바꿀 항목을 바꾸면 개별값은 버린다 — 인원에 넣은 6이 바베큐에 남으면 안 된다', () => {
+    const before = initialState();
+    const st = run(
+      before,
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_ATTR', attr: 'capacity_max' },
+      { type: 'SET_BULK_PER', code: room(before, 'A301').code, value: 9 },
+      { type: 'PICK_BULK_ATTR', attr: 'bbq' },
+    );
+    expect(st.bulk!.per).toEqual({});
+    expect(st.bulk!.value).toBe(P(before).defaults.bbq);
+  });
+});
+
 describe('직원 시나리오 — 숙소 전체값 바꾸기', () => {
   /** 상속 구조의 나머지 절반입니다. 전체값을 바꾸면 손대지 않은 객실만 따라오고,
    *  따로 정해둔 객실은 그대로 남아야 합니다 — 그러라고 따로 정해둔 것이니까요. */

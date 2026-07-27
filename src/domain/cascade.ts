@@ -7,7 +7,6 @@ import {
   membersOf,
   ruleText,
   showRoomValue,
-  simulate,
   stName,
 } from './derive';
 import { typeName, typeOf } from './fieldTypes';
@@ -48,20 +47,39 @@ const faqItemsFor = (p: Property, blockKeys: string[], before: string, after: st
 
 /* ── 객실 값 바꾸기 ─────────────────────────────────────────────────────── */
 
-export const previewBulk = (p: Property, sel: string[], attr: string, value: AttrValue): Cascade => {
+/** 고른 객실에 값을 넣습니다.
+ *
+ *  `per`에 든 객실은 그 값을, 나머지는 일괄값을 씁니다. 28실을 훑으며 "여긴 6명,
+ *  저긴 8명"을 한 번에 정할 수 있어야 실제 일이 한 번에 끝납니다. */
+export const previewBulk = (
+  p: Property,
+  sel: string[],
+  attr: string,
+  value: AttrValue,
+  per: Record<string, AttrValue> = {},
+): Cascade => {
   const def = attrDef(attr)!;
+  const valueFor = (code: string): AttrValue => (code in per ? per[code] : value);
+
   const items: CascadeItem[] = p.rooms
     .filter((r) => sel.includes(r.code))
     .map((r) => ({
       key: `room:${r.code}`,
       label: `${r.name} · ${r.code}`,
       before: showRoomValue(p, r, attr),
-      after: showValue(attr, value),
-      on: valueOf(p, r, attr) !== value,
+      after: showValue(attr, valueFor(r.code)),
+      on: valueOf(p, r, attr) !== valueFor(r.code),
       isOv: isOwn(r, attr),
     }));
 
-  const next: Property = { ...p, rooms: simulate(p.rooms, sel, attr, value) };
+  /** 값이 섞여 있으면 한 값으로 말할 수 없습니다 — 몇 가지인지로 말합니다. */
+  const distinct = [...new Set(sel.map(valueFor))];
+  const toText = distinct.length <= 1 ? showValue(attr, value) : `${distinct.length}가지 값 (객실마다 다름)`;
+
+  const next: Property = {
+    ...p,
+    rooms: p.rooms.map((r) => (sel.includes(r.code) ? { ...r, values: { ...r.values, [attr]: valueFor(r.code) } } : r)),
+  };
   const derived = derivedDiff(p, next);
   const touched = p.blocks.filter((b) => b.memberOf?.attr === attr).map((b) => b.key);
   const faq = faqItemsFor(p, touched, '지금 답변', '새 값으로 다시 만들어짐');
@@ -70,9 +88,10 @@ export const previewBulk = (p: Property, sel: string[], attr: string, value: Att
     kind: 'bulk',
     attr,
     value,
+    per,
     field: def.label,
     from: '객실마다 지금 값',
-    to: showValue(attr, value),
+    to: toText,
     warn: items.some((i) => i.isOv)
       ? '고른 객실 중 몇 개는 따로 정해둔 값이 있어요. 체크를 풀면 그 객실은 지금 값 그대로 둡니다.'
       : derived.length
@@ -84,7 +103,7 @@ export const previewBulk = (p: Property, sel: string[], attr: string, value: Att
       {
         title: '판매 사이트 3',
         desc: '사이트마다 쓰는 말로 바꿔서 나감',
-        items: channelItems((ch) => `${ch} · ${def.label}`, '이전 값', showValue(attr, value)),
+        items: channelItems((ch) => `${ch} · ${def.label}`, '이전 값', toText),
       },
       ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '이 시설을 옮겨 적는 답변', items: faq }] : []),
     ],
@@ -779,10 +798,11 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
   if (c.kind === 'bulk') {
     rooms = rooms.map((r) => {
       if (!roomKeys.includes(r.code)) return r;
+      const v = r.code in c.per ? c.per[r.code] : c.value;
       const values = { ...r.values };
       /** 숙소 기본값과 같아지면 "따로 정함"을 지웁니다 — 표시와 실제가 어긋나지 않게. */
-      if (p.defaults[c.attr] === c.value) delete values[c.attr];
-      else values[c.attr] = c.value;
+      if (p.defaults[c.attr] === v) delete values[c.attr];
+      else values[c.attr] = v;
       return { ...r, values };
     });
   }

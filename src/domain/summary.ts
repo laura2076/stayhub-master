@@ -45,6 +45,11 @@ export const doneSentence = (c: Cascade): string => {
   switch (c.kind) {
     case 'bulk': {
       const n = on(c, 'room:').length;
+      /** 값이 섞이면 "…다름)로 바꿨어요"가 되어 읽히지 않습니다. 문장 모양을 바꿉니다. */
+      const perN = Object.keys(c.per).length;
+      if (perN) {
+        return `객실 ${n}개의 ${josa(c.field, '을', '를')} 객실마다 다르게 바꿨어요 — ${perN}개는 따로 정한 값.${also}`;
+      }
       return `객실 ${n}개의 ${josa(c.field, '을', '를')} ${ro(c.to)} 바꿨어요.${also}`;
     }
     case 'optfee': {

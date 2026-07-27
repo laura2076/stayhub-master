@@ -147,7 +147,8 @@ export type CascadeGroup = { title: string; desc: string; items: CascadeItem[] }
 type CascadeBase = { field: string; from: string; to: string; warn: string; groups: CascadeGroup[] };
 
 export type Cascade =
-  | (CascadeBase & { kind: 'bulk'; attr: string; value: AttrValue })
+  /** 고른 객실에 값을 넣습니다. `value`는 일괄값, `per`는 객실마다 다르게 정한 값. */
+  | (CascadeBase & { kind: 'bulk'; attr: string; value: AttrValue; per: Record<string, AttrValue> })
   /** 숙소 전체값 바꾸기 — 따로 정한 객실은 그대로 두고 나머지만 따라옵니다. */
   | (CascadeBase & { kind: 'default'; attr: string; value: AttrValue })
   | (CascadeBase & { kind: 'block'; blockKey: string; fieldKey: string; value: string })
@@ -196,7 +197,17 @@ export type Parts = {
 
 export type Tier = { a: number; b: number; amt: number };
 
-export type BulkDraft = { attr: string; value: AttrValue };
+export type BulkDraft = {
+  attr: string;
+  /** 고른 객실 전체에 넣을 값. */
+  value: AttrValue;
+  /** 그중 다르게 정한 객실만. 비어 있으면 전부 일괄값입니다. */
+  per: Record<string, AttrValue>;
+  /** 창 안에서 고른 객실 — 표의 선택과 따로 둡니다(창에서 더 넣고 뺄 수 있게). */
+  sel: string[];
+  /** 객실별 설정 표를 펼쳤는지. */
+  open: boolean;
+};
 
 /** 객실을 설명하는 값들 — 속성 사전이 아니라 객실 자체에 붙어 있는 것. */
 export type RoomInfo = { name: string; floor: number; area: string; form: string; bed: string; tag: string };

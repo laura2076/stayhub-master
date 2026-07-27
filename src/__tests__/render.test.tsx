@@ -127,22 +127,41 @@ describe('every tab renders', () => {
 });
 
 describe('every dialog renders', () => {
-  it('한꺼번에 바꾸기 — 선택지 값', () => {
+  /** 왼쪽에서 골라 오른쪽으로 보내고, 아래에서 값을 넣는 한 창짜리 흐름. */
+  it('한꺼번에 바꾸기 — 고르기와 값 넣기가 한 창에 있다', () => {
     const out = html(
       { type: 'TOGGLE_ROOM', code: A401 },
       { type: 'OPEN_BULK' },
       { type: 'PICK_BULK_ATTR', attr: 'bbq' },
       { type: 'PICK_BULK_VALUE', value: 'shared_charcoal' },
     );
-    expect(out).toContain('객실 1개 한꺼번에 바꾸기');
-    expect(out).toContain('숙소 전체값과 달라 &quot;이 객실만 따로 정함&quot;으로 기록됩니다.');
+    expect(out).toContain('객실 값 한꺼번에 바꾸기');
+    expect(out).toContain('적용 객실 선택');
+    expect(out).toContain('객실 전체 선택 (총 28개)');
+    expect(out).toContain('고른 객실 (1개)');
+    expect(out).toContain('한꺼번에 넣기');
+    expect(out).toContain('객실별로 다르게 정하기');
+    expect(out).toContain('공용BBQ · 숯불');
   });
 
   it('한꺼번에 바꾸기 — 인원은 숫자 입력칸이 나온다', () => {
     const out = html({ type: 'TOGGLE_ROOM', code: A401 }, { type: 'OPEN_BULK' });
-    expect(out).toContain('숫자를 넣으세요');
+    expect(out).toContain('한꺼번에 넣기');
     expect(out).toContain('type="number"');
     expect(out).toContain('요금에 포함된 인원');
+  });
+
+  it('한꺼번에 바꾸기 — 객실마다 다른 값을 넣으면 그렇게 알려준다', () => {
+    const out = html(
+      { type: 'TOGGLE_ROOM', code: A401 },
+      { type: 'TOGGLE_ROOM', code: '27741' },
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_VALUE', value: 4 },
+      { type: 'SET_BULK_PER', code: A401, value: 6 },
+      { type: 'TOGGLE_BULK_PER_OPEN' },
+    );
+    expect(out).toContain('객실 2개 중 1개는 따로 정한 값이 들어갑니다.');
+    expect(out).toContain('따로 6명');
   });
 
   it('객실 만들기 — 이 숙소가 쓰는 값만 물어본다', () => {
