@@ -8,7 +8,7 @@ export const BulkEditModal = () => {
   const bulk = state.bulk;
 
   return (
-    <Modal width={520} zIndex={40}>
+    <Modal width={520} onClose={() => dispatch({ type: 'CLOSE_BULK' })}>
       <ModalHead
         title={`일괄 편집 · ${state.sel.length}객실`}
         sub="선택한 객실에만 값을 씁니다. 저장 전에 연쇄 갱신 대상을 확인합니다."

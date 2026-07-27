@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 
 /** Registration marks the design system draws outside a framed box. */
 export const Corners = () => (
@@ -10,38 +10,50 @@ export const Corners = () => (
   </>
 );
 
+/** A modal dialog in the browser's top layer.
+ *
+ *  Not a `position: fixed` overlay: any ancestor carrying `transform`, `filter`,
+ *  `contain` or `will-change` becomes the containing block for fixed descendants,
+ *  which drops the overlay into the page flow. Embedding hosts do exactly that to
+ *  the page they wrap. `showModal()` renders outside the tree entirely, so the
+ *  dialog centres on the viewport wherever this app is mounted — and Esc and the
+ *  focus trap come from the platform. */
 export const Modal = ({
   width,
-  zIndex,
   children,
   panelStyle,
+  onClose,
 }: {
   width: number;
-  zIndex: number;
   children: ReactNode;
   panelStyle?: CSSProperties;
-}) => (
-  <div
-    style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'color-mix(in srgb, var(--color-neutral-900) 50%, transparent)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex,
-      animation: 'fin .14s ease',
-    }}
-  >
-    <div
-      className="blueprint elev-lg"
+  onClose: () => void;
+}) => {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+    return () => {
+      if (d?.open) d.close();
+    };
+  }, []);
+
+  return (
+    <dialog
+      ref={ref}
+      className="dc-modal blueprint elev-lg"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
       style={{ width, background: 'var(--color-bg)', animation: 'tin .18s ease', ...panelStyle }}
     >
       <Corners />
       {children}
-    </div>
-  </div>
-);
+    </dialog>
+  );
+};
 
 export const ModalHead = ({ title, sub }: { title: string; sub?: string }) => (
   <div style={{ padding: '15px 18px', borderBottom: '1px solid var(--color-divider)' }}>

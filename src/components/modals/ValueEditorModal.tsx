@@ -44,7 +44,7 @@ export const ValueEditorModal = () => {
   const tailChoices = p.tail && !TAILS.includes(p.tail) ? [...TAILS, p.tail] : TAILS;
 
   return (
-    <Modal width={460} zIndex={45}>
+    <Modal width={460} onClose={() => dispatch({ type: 'CLOSE_EDIT' })}>
       <ModalHead title={title} sub={sub} />
 
       <div style={{ padding: '16px 18px' }}>

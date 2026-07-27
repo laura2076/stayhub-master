@@ -84,6 +84,24 @@ textarea {
   color: var(--color-accent-900);
 }
 
+/* Modal dialogs. `.blueprint` sets position:relative, so the centring position
+   has to be restated here at higher specificity (element + class). */
+dialog.dc-modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  padding: 0;
+  color: inherit;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: visible;
+}
+
+dialog.dc-modal::backdrop {
+  background: color-mix(in srgb, #2b2b2d 50%, transparent);
+  animation: fin 0.14s ease;
+}
+
 /* Checkboxes read as square wireframe marks like the rest of the system. */
 input[type='checkbox'] {
   accent-color: var(--color-accent);

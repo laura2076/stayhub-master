@@ -16,7 +16,7 @@ export const NewRoomModal = () => {
   const nr = state.nr;
 
   return (
-    <Modal width={520} zIndex={42}>
+    <Modal width={520} onClose={() => dispatch({ type: 'CLOSE_NEW_ROOM' })}>
       <ModalHead title="객실 신규 등록" sub="값을 지정하지 않은 항목은 숙소 기본값을 상속합니다." />
 
       <div style={{ padding: '16px 18px' }}>

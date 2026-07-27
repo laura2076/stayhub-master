@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore } from '../state/store';
 
 export const Toast = () => {
@@ -12,7 +13,7 @@ export const Toast = () => {
 
   if (!state.toast) return null;
 
-  return (
+  const toast = (
     <div
       style={{
         position: 'fixed',
@@ -41,4 +42,9 @@ export const Toast = () => {
       </button>
     </div>
   );
+
+  /* Portalled to <body>: a host that wraps the page in a transformed container would
+     otherwise re-anchor this fixed element inside the app's scroll box.
+     The guard keeps the component renderable without a DOM (static markup checks). */
+  return typeof document === 'undefined' ? toast : createPortal(toast, document.body);
 };
