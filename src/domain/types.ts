@@ -163,8 +163,6 @@ export type Cascade =
       killRooms?: string[];
       applyAttr?: string;
       applyCode?: string;
-      /** 체크가 풀린 객실에서는 값을 비웁니다 — 체크 해제가 "이 객실에서 빼기"가 됩니다. */
-      clearUnpicked?: boolean;
       /** 이 시설이 쓰는 속성을 숙소에 함께 붙입니다 (전사 목록에서 새로 가져올 때). */
       addAttr?: string;
       addDefault?: AttrValue;

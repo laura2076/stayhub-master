@@ -410,8 +410,6 @@ export const previewBlockUse = (p: Property, bk: Block, reviving = bk.st !== 'us
     nextSt: 'used',
     applyAttr: attr,
     applyCode: code,
-    /** 체크가 풀린 객실에서는 값을 비웁니다 — 그래야 체크 해제가 "빼기"로 동작합니다. */
-    clearUnpicked: !!attr,
     field: reviving ? `${bk.label} · 쓰기 시작` : `${bk.label} · 쓰는 객실 고치기`,
     from: reviving ? '있지만 안 씀' : `${current.length}객실`,
     to: reviving ? '쓰는 중' : '고른 객실',
@@ -805,29 +803,31 @@ export const applyCascade = (p: Property, c: Cascade): { next: Property; checked
       attrs = [...attrs, c.addAttr];
       defaults = { ...defaults, [c.addAttr]: c.addDefault ?? 'none' };
     }
-    if (c.applyAttr && c.applyCode) {
-      const applyCodes = checked.filter((i) => i.key.startsWith('apply:')).map((i) => i.key.slice(6));
+    /** 시설을 켜든 끄든 소속 객실을 다시 고르든, **하는 일은 하나뿐입니다** —
+     *  "이 시설에 속할 객실의 최종 목록"을 정하는 것. 그래서 쓰는 자리도 하나입니다.
+     *
+     *  전에는 켜기·끄기·다시 고르기가 각자 객실을 건드려 세 갈래였고, 조건이 조금씩
+     *  달라 어긋나기 쉬웠습니다. 세 경우의 차이는 이제 아래 두 줄(범위와 목록)뿐입니다. */
+    const attr = c.applyAttr;
+    if (attr) {
+      const memberCodes = blocks.find((b) => b.key === c.blockKey)?.memberOf?.codes ?? [];
       const offered = c.groups.flatMap((g) => g.items).filter((i) => i.key.startsWith('apply:')).map((i) => i.key.slice(6));
-      rooms = rooms.map((r) => {
-        if (applyCodes.includes(r.code)) {
-          /** 이미 이 시설을 쓰고 있으면 지금 값을 그대로 둡니다 — 체크가 종류를 덮어쓰면 안 됩니다. */
-          const now = String(valueOf(p, r, c.applyAttr!));
-          const keeps = blocks.find((b) => b.key === c.blockKey)?.memberOf?.codes.includes(now);
-          return keeps ? r : { ...r, values: { ...r.values, [c.applyAttr!]: c.applyCode! } };
-        }
-        /** 체크가 풀린 객실에서는 값을 비웁니다 — 체크 해제가 "이 객실에서 빼기"가 됩니다. */
-        if (c.clearUnpicked && offered.includes(r.code)) {
-          const now = String(valueOf(p, r, c.applyAttr!));
-          const wasMember = blocks.find((b) => b.key === c.blockKey)?.memberOf?.codes.includes(now);
-          if (wasMember) return { ...r, values: { ...r.values, [c.applyAttr!]: 'none' } };
-        }
-        return r;
-      });
-    }
-    if (c.nextSt !== 'used' && c.killRooms?.length && c.applyAttr) {
-      rooms = rooms.map((r) =>
-        !c.killRooms!.includes(r.code) ? r : { ...r, values: { ...r.values, [c.applyAttr!]: 'none' } },
+
+      /** 이 조작이 건드리는 객실 범위. 끄면 지금 쓰는 객실, 켜면 고르라고 내놓은 객실. */
+      const scope = c.nextSt === 'used' ? offered : (c.killRooms ?? []);
+      /** 그중 시설에 속할 객실. 끄면 아무도 없습니다. */
+      const members = new Set(
+        c.nextSt === 'used' ? checked.filter((i) => i.key.startsWith('apply:')).map((i) => i.key.slice(6)) : [],
       );
+
+      rooms = rooms.map((r) => {
+        if (!scope.includes(r.code)) return r;
+        const isMemberNow = memberCodes.includes(String(valueOf(p, r, attr)));
+        const shouldBeMember = members.has(r.code);
+        /** 이미 원하는 상태면 손대지 않습니다 — 쓰던 객실의 종류(가스/숯불)가 덮이지 않습니다. */
+        if (isMemberNow === shouldBeMember) return r;
+        return { ...r, values: { ...r.values, [attr]: shouldBeMember ? (c.applyCode ?? 'none') : 'none' } };
+      });
     }
     blocks = blocks.map((b) => {
       if (b.key !== c.blockKey) return b;
