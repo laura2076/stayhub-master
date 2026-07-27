@@ -57,7 +57,7 @@ export const doneSentence = (c: Cascade): string => {
     case 'ruledel':
       return `안내 문구 "${c.from}"를 지웠어요.`;
     case 'roomadd':
-      return `객실 ${josa(c.room.short, '을', '를')} 새로 만들었어요.${also}`;
+      return `객실 ${josa(c.room.name, '을', '를')} 새로 만들었어요.${also}`;
     case 'roomdel':
       return `객실 ${c.codes.length}개를 지웠어요.${also}`;
     case 'blockstate':
@@ -76,7 +76,7 @@ export const willSentence = (c: Cascade): string => {
 
   switch (c.kind) {
     case 'roomadd':
-      return `객실 ${josa(c.room.short, '을', '를')} 새로 만듭니다.${also}`;
+      return `객실 ${josa(c.room.name, '을', '를')} 새로 만듭니다.${also}`;
     case 'roomdel':
       return `객실 ${c.codes.length}개를 지웁니다. 지운 객실은 판매 사이트에서도 내려갑니다.${also}`;
     case 'blockstate':

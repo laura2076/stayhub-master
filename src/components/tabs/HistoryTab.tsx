@@ -1,11 +1,11 @@
-import { useStore } from '../../state/store';
+import { useProperty } from '../../state/store';
 
 export const HistoryTab = () => {
-  const { state } = useStore();
+  const p = useProperty();
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 40px', background: 'var(--color-bg)' }}>
-      {state.history.map((h, i) => (
+      {p.history.map((h, i) => (
         <div
           key={`${h.title}-${i}`}
           style={{

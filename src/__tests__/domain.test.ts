@@ -1,36 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { deriveBlocks, roomsLabel, ruleText } from '../domain/derive';
+import { attrsOf, cur, feeOf, isOwn, valueOf } from '../domain/attrs';
+import { auditProperty } from '../domain/audit';
+import { deriveBlocks, membersOf, roomCount, roomsLabel, ruleText } from '../domain/derive';
 import { composeVal, parseVal, typeOf } from '../domain/fieldTypes';
 import { renderFaq } from '../domain/faq';
 import { initialState } from '../domain/seed';
 import { reducer, type Action } from '../state/store';
-import type { Block, MasterState } from '../domain/types';
+import type { Block, MasterState, Property } from '../domain/types';
 
 const run = (st: MasterState, ...actions: Action[]) => actions.reduce(reducer, st);
-const block = (st: MasterState, key: string): Block =>
-  deriveBlocks(st.rooms, st.blocks).find((b) => b.key === key)!;
+const P = (st: MasterState): Property => cur(st.properties, st.current);
+const block = (st: MasterState, key: string): Block => deriveBlocks(P(st)).find((b) => b.key === key)!;
 const field = (st: MasterState, key: string, f: string) => block(st, key).fields.find((x) => x[0] === f)![1];
+const room = (st: MasterState, code: string) => P(st).rooms.find((r) => r.code === code)!;
 
 const A401 = '27740';
+const B401 = '27743';
 
 describe('roomsLabel', () => {
   it('collapses contiguous floors and names the rooms left out', () => {
-    const st = initialState();
-    const shared = st.rooms.filter((r) => r.bbq.includes('공용BBQ'));
-    expect(roomsLabel(shared, st.rooms)).toBe('4~7층 객실 · 22객실');
+    const p = P(initialState());
+    const shared = membersOf(p, p.blocks.find((b) => b.key === 'shared_bbq')!);
+    expect(roomsLabel(shared, p.rooms)).toBe('4~7층 객실 · 22객실');
 
     const minusA401 = shared.filter((r) => r.code !== A401);
-    expect(roomsLabel(minusA401, st.rooms)).toBe('4~7층 객실 · 21객실 (A401 제외)');
+    expect(roomsLabel(minusA401, p.rooms)).toBe('4~7층 객실 · 21객실 (A401 제외)');
   });
 
   it('lists floors separately when they are not contiguous', () => {
-    const st = initialState();
-    const split = st.rooms.filter((r) => r.floor === 3 || r.floor === 7);
-    expect(roomsLabel(split, st.rooms)).toMatch(/^3층,7층 객실 · 10객실/);
+    const p = P(initialState());
+    const split = p.rooms.filter((r) => r.floor === 3 || r.floor === 7);
+    expect(roomsLabel(split, p.rooms)).toMatch(/^3층,7층 객실 · 10객실/);
   });
 
   it('says so when nothing is left', () => {
-    expect(roomsLabel([], initialState().rooms)).toBe('이용 객실 없음');
+    expect(roomsLabel([], P(initialState()).rooms)).toBe('이용 객실 없음');
   });
 });
 
@@ -81,50 +85,131 @@ describe('field format resolution', () => {
   });
 });
 
+/* ── 1000개를 담는 구조 ───────────────────────────────────────────────────── */
+
+describe('숙소마다 다른 모양을 같은 코드가 그린다', () => {
+  it('gives each property only the attributes it declares', () => {
+    const st = initialState();
+    const keys = (id: string) => attrsOf(cur(st.properties, id)).map((a) => a.key);
+
+    expect(keys('sokcho')).toContain('bbq');
+    expect(keys('sokcho')).toContain('spa');
+    expect(keys('sokcho')).not.toContain('camp_site');
+
+    expect(keys('gapyeong')).toContain('private_pool');
+    expect(keys('gapyeong')).toContain('pet');
+    expect(keys('gapyeong')).not.toContain('bbq');
+
+    expect(keys('hongcheon')).toContain('camp_site');
+    expect(keys('hongcheon')).not.toContain('spa');
+  });
+
+  it('switches the whole console to another property without carrying state over', () => {
+    const st = run(
+      initialState(),
+      { type: 'TOGGLE_ROOM', code: A401 },
+      { type: 'SET_PROPERTY', id: 'hongcheon' },
+    );
+    expect(P(st).name).toBe('홍천 카라반파크');
+    expect(st.sel).toEqual([]);
+    expect(P(st).rooms).toHaveLength(24);
+  });
+
+  it('holds every seeded property to the same consistency rules', () => {
+    initialState().properties.forEach((p) => {
+      expect(auditProperty(p).filter((v) => v.severity === 'error')).toEqual([]);
+    });
+  });
+
+  it('derives each property‘s facility phrases from its own attribute', () => {
+    const st = run(initialState(), { type: 'SET_PROPERTY', id: 'hongcheon' });
+    // 캠핑 자리는 zone 1=카라반 8 · zone 2=오토 8 · zone 3=텐트 8.
+    expect(field(st, 'camping', '이용 객실')).toBe('1~3층 객실 · 24객실');
+    expect(roomCount(P(st), block(st, 'shared_bbq'))).toBe(24);
+  });
+});
+
+/* ── 인원은 목록이 아니라 숫자 ───────────────────────────────────────────── */
+
+describe('인원과 요금은 숫자로 직접 넣는다', () => {
+  it('accepts any number, not just the ones someone thought of in advance', () => {
+    const st = run(initialState(), { type: 'PICK_CELL', code: A401, attr: 'capacity_max', value: 9 });
+    expect(valueOf(P(st), room(st, A401), 'capacity_max')).toBe(9);
+    expect(isOwn(room(st, A401), 'capacity_max')).toBe(true);
+    expect(st.toast).toContain('9명');
+  });
+
+  it('drops the "따로 정함" mark when the number lands back on the property default', () => {
+    const st = run(
+      initialState(),
+      { type: 'PICK_CELL', code: A401, attr: 'capacity_max', value: 9 },
+      { type: 'PICK_CELL', code: A401, attr: 'capacity_max', value: 4 },
+    );
+    expect(isOwn(room(st, A401), 'capacity_max')).toBe(false);
+    expect(valueOf(P(st), room(st, A401), 'capacity_max')).toBe(4);
+  });
+
+  it('catches a base capacity that exceeds the maximum — a mistake a fixed list could not make', () => {
+    const st = run(initialState(), { type: 'PICK_CELL', code: A401, attr: 'capacity_base', value: 8 });
+    const bad = auditProperty(P(st)).filter((v) => v.severity === 'error');
+    expect(bad.map((v) => v.what).join()).toContain('기준 인원 8명이 최대 인원 4명보다 많습니다');
+  });
+
+  it('feeds the numeric capacity straight into the channel row', () => {
+    const st = run(initialState(), { type: 'PICK_CELL', code: A401, attr: 'capacity_max', value: 9 });
+    const p = P(st);
+    const maxes = [...new Set(p.rooms.map((r) => Number(valueOf(p, r, 'capacity_max'))))].sort((a, b) => b - a);
+    expect(maxes).toEqual([9, 6, 4]);
+  });
+});
+
+/* ── 한 번 고치면 나머지가 따라온다 ──────────────────────────────────────── */
+
 describe('A401 바베큐 이용 불가 — one edit, everything follows', () => {
   /** 값 변경은 평소 확인 창 없이 바로 반영되므로, 미리보기 내용을 볼 때만 "항상 확인"을 켭니다. */
   const previewed = () =>
     run(
       initialState(),
       { type: 'SET_SETTINGS', patch: { cascadeMode: 'always' } },
-      { type: 'EDIT_ROOM_FIELD', code: A401, field: 'bbq' },
-      { type: 'PICK_BULK_VALUE', value: '이용 불가' },
+      { type: 'TOGGLE_ROOM', code: A401 },
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_ATTR', attr: 'bbq' },
+      { type: 'PICK_BULK_VALUE', value: 'none' },
       { type: 'PREVIEW_BULK' },
     );
 
-  /** 실제 사용 흐름: 셀에서 값을 고르면 그대로 반영됩니다. */
-  const edited = () => run(initialState(), { type: 'PICK_CELL', code: A401, field: 'bbq', value: '이용 불가' });
+  /** 실제 사용 흐름: 칸에서 값을 고르면 그대로 반영됩니다. */
+  const edited = () => run(initialState(), { type: 'PICK_CELL', code: A401, attr: 'bbq', value: 'none' });
 
   it('shows the block phrase recomputing in the preview, locked', () => {
     const st = previewed();
-    const derived = st.cas!.groups.find((g) => g.title.startsWith('숙소 블록'))!;
+    const derived = st.cas!.groups.find((g) => g.title.startsWith('자동으로 같이 바뀌는 것'))!;
     const phrase = derived.items.find((i) => i.label === '공용 BBQ · 이용 객실')!;
     expect(phrase.before).toBe('4~7층 객실 · 22객실');
     expect(phrase.after).toBe('4~7층 객실 · 21객실 (A401 제외)');
-    expect(phrase.locked).toBe(true);
     expect(derived.items.every((i) => i.locked)).toBe(true);
   });
 
   it('writes the room and the derived phrase together on apply', () => {
     const st = edited();
-    expect(st.rooms.find((r) => r.code === A401)!.bbq).toBe('이용 불가');
+    expect(valueOf(P(st), room(st, A401), 'bbq')).toBe('none');
     expect(field(st, 'shared_bbq', '이용 객실')).toBe('4~7층 객실 · 21객실 (A401 제외)');
-    expect(block(st, 'shared_bbq').rooms).toBe(21);
-    expect(st.history[0].title).toContain('바베큐 유형');
+    expect(roomCount(P(st), block(st, 'shared_bbq'))).toBe(21);
+    expect(P(st).history[0].title).toContain('바베큐');
   });
 
   it('restores both sides on undo', () => {
     const st = run(edited(), { type: 'UNDO' });
-    expect(st.rooms.find((r) => r.code === A401)!.bbq).toBe('공용BBQ · 가스그릴');
+    expect(valueOf(P(st), room(st, A401), 'bbq')).toBe('shared_gas');
     expect(field(st, 'shared_bbq', '이용 객실')).toBe('4~7층 객실 · 22객실');
-    expect(st.history).toHaveLength(initialState().history.length);
+    expect(P(st).history).toHaveLength(P(initialState()).history.length);
   });
 });
 
 describe('facility lifecycle', () => {
-  it('drops a BBQ block to 사용안함 when its last room leaves', () => {
+  it('drops a BBQ block to 안 씀 when its last room leaves', () => {
     const st = initialState();
-    const threeF = st.rooms.filter((r) => r.floor === 3).map((r) => r.code);
+    const threeF = P(st).rooms.filter((r) => r.floor === 3).map((r) => r.code);
     const gone = run(
       st,
       ...threeF.map((code): Action => ({ type: 'TOGGLE_ROOM', code })),
@@ -132,7 +217,7 @@ describe('facility lifecycle', () => {
       { type: 'APPLY_CAS' },
     );
     expect(block(gone, 'private_bbq').st).toBe('off');
-    expect(block(gone, 'private_bbq').rooms).toBe(0);
+    expect(roomCount(P(gone), block(gone, 'private_bbq'))).toBe(0);
   });
 
   it('clears room values when a facility is switched off', () => {
@@ -141,8 +226,9 @@ describe('facility lifecycle', () => {
       { type: 'PREVIEW_BLOCK_STATE', blockKey: 'private_bbq', nextSt: 'off' },
       { type: 'APPLY_CAS' },
     );
-    const third = st.rooms.filter((r) => r.floor === 3);
-    expect(third.every((r) => r.bbq === '이용 불가' && r.bbqOpt === 'none' && r.bbqFee === '—')).toBe(true);
+    const p = P(st);
+    const third = p.rooms.filter((r) => r.floor === 3);
+    expect(third.every((r) => valueOf(p, r, 'bbq') === 'none' && feeOf(p, 'bbq', 'none') === '—')).toBe(true);
   });
 
   it('re-attaches the picked rooms when a facility is switched back on', () => {
@@ -152,11 +238,10 @@ describe('facility lifecycle', () => {
       { type: 'APPLY_CAS' },
     );
     const back = run(off, { type: 'PREVIEW_BLOCK_USE', blockKey: 'private_bbq' }, { type: 'APPLY_CAS' });
-    const third = back.rooms.filter((r) => r.floor === 3);
-    expect(third.every((r) => r.bbq === '개별BBQ · 전기그릴')).toBe(true);
-    // The fee comes from the option, not from a hardcoded number in the revive path.
-    expect(third.every((r) => r.bbqFee === back.optFees.private_electric)).toBe(true);
-    expect(block(back, 'private_bbq').rooms).toBe(6);
+    const p = P(back);
+    const third = p.rooms.filter((r) => r.floor === 3);
+    expect(third.every((r) => valueOf(p, r, 'bbq') === 'private_electric')).toBe(true);
+    expect(roomCount(p, block(back, 'private_bbq'))).toBe(6);
   });
 });
 
@@ -164,29 +249,41 @@ describe('fees hang off the option', () => {
   it('reaches every room using it, plus the block phrase', () => {
     const st = run(
       initialState(),
-      { type: 'OPEN_OPT_FEE', code: 'private_electric' },
+      { type: 'OPEN_OPT_FEE', attr: 'bbq', code: 'private_electric' },
       { type: 'SET_PART', k: 'amt', v: 25000 },
       { type: 'PREVIEW_EDIT' },
       { type: 'APPLY_CAS' },
     );
     const expected = '1세트 25,000원 (1박기준/현장결제)';
-    expect(st.optFees.private_electric).toBe(expected);
-    expect(st.rooms.filter((r) => r.bbqOpt === 'private_electric').every((r) => r.bbqFee === expected)).toBe(true);
+    expect(feeOf(P(st), 'bbq', 'private_electric')).toBe(expected);
     expect(field(st, 'private_bbq', '이용 요금')).toBe(expected);
   });
 
   it('restores the option fee on undo so rooms and options cannot drift', () => {
-    const before = initialState();
+    const before = P(initialState());
     const st = run(
-      before,
-      { type: 'OPEN_OPT_FEE', code: 'private_electric' },
+      initialState(),
+      { type: 'OPEN_OPT_FEE', attr: 'bbq', code: 'private_electric' },
       { type: 'SET_PART', k: 'amt', v: 25000 },
       { type: 'PREVIEW_EDIT' },
       { type: 'APPLY_CAS' },
       { type: 'UNDO' },
     );
-    expect(st.optFees.private_electric).toBe(before.optFees.private_electric);
-    expect(st.rooms.filter((r) => r.bbqOpt === 'private_electric').every((r) => r.bbqFee === before.optFees.private_electric)).toBe(true);
+    expect(feeOf(P(st), 'bbq', 'private_electric')).toBe(feeOf(before, 'bbq', 'private_electric'));
+    expect(field(st, 'private_bbq', '이용 요금')).toBe(feeOf(before, 'bbq', 'private_electric'));
+  });
+
+  it('applies to whichever attribute carries the fee — 캠핑 자리도 같은 길을 지난다', () => {
+    const st = run(
+      initialState(),
+      { type: 'SET_PROPERTY', id: 'hongcheon' },
+      { type: 'OPEN_OPT_FEE', attr: 'camp_site', code: 'tent' },
+      { type: 'SET_PART', k: 'amt', v: 39000 },
+      { type: 'PREVIEW_EDIT' },
+      { type: 'APPLY_CAS' },
+    );
+    expect(feeOf(P(st), 'camp_site', 'tent')).toContain('39,000원');
+    expect(field(st, 'camping', '이용 요금')).toContain('39,000원');
   });
 });
 
@@ -198,7 +295,7 @@ describe('안내 규칙', () => {
       { type: 'SET_PART', k: 'h', v: '20' },
       { type: 'PREVIEW_EDIT' },
     );
-    const rules = applied.blocks.find((b) => b.key === 'checkin_checkout')!.rules!;
+    const rules = P(applied).blocks.find((b) => b.key === 'checkin_checkout')!.rules!;
     expect(ruleText(rules[0])).toBe('20:00 이후 입실 시 사전 연락 필수');
     expect(applied.toast).toContain('20:00 이후 입실 시 사전 연락 필수');
   });
@@ -209,20 +306,20 @@ describe('안내 규칙', () => {
       { type: 'PREVIEW_RULE_ADD', blockKey: 'parking', ruleId: 'nonsmoking' },
       { type: 'APPLY_CAS' },
     );
-    const rules = added.blocks.find((b) => b.key === 'parking')!.rules!;
+    const rules = P(added).blocks.find((b) => b.key === 'parking')!.rules!;
     expect(rules).toHaveLength(1);
     expect(ruleText(rules[0])).toBe('전 구역 금연 · 지정 외부구역만 흡연 가능');
 
     const removed = run(added, { type: 'PREVIEW_RULE_DEL', blockKey: 'parking', ri: 0 }, { type: 'APPLY_CAS' });
-    expect(removed.blocks.find((b) => b.key === 'parking')!.rules).toHaveLength(0);
+    expect(P(removed).blocks.find((b) => b.key === 'parking')!.rules).toHaveLength(0);
   });
 });
 
 describe('FAQ answers derived from facility values', () => {
   it('quotes the current facility value', () => {
-    const st = initialState();
-    const blocks = deriveBlocks(st.rooms, st.blocks);
-    const q15 = renderFaq(st.faqs.find((f) => f.qid === 'Q-0015')!, blocks);
+    const p = P(initialState());
+    const blocks = deriveBlocks(p);
+    const q15 = renderFaq(p.faqs.find((f) => f.qid === 'Q-0015')!, blocks);
     expect(q15.derived).toBe(true);
     expect(q15.a).toBe('17:00~21:00에 이용 가능합니다.');
     expect(q15.src).toBe('공용 BBQ · 이용 시간');
@@ -236,7 +333,8 @@ describe('FAQ answers derived from facility values', () => {
       { type: 'PREVIEW_EDIT' },
       { type: 'APPLY_CAS' },
     );
-    const q15 = renderFaq(st.faqs.find((f) => f.qid === 'Q-0015')!, deriveBlocks(st.rooms, st.blocks));
+    const p = P(st);
+    const q15 = renderFaq(p.faqs.find((f) => f.qid === 'Q-0015')!, deriveBlocks(p));
     expect(q15.a).toBe('17:00~22:00에 이용 가능합니다.');
   });
 
@@ -246,7 +344,8 @@ describe('FAQ answers derived from facility values', () => {
       { type: 'PREVIEW_BLOCK_STATE', blockKey: 'shared_bbq', nextSt: 'off' },
       { type: 'APPLY_CAS' },
     );
-    const q15 = renderFaq(st.faqs.find((f) => f.qid === 'Q-0015')!, deriveBlocks(st.rooms, st.blocks));
+    const p = P(st);
+    const q15 = renderFaq(p.faqs.find((f) => f.qid === 'Q-0015')!, deriveBlocks(p));
     expect(q15.blank).toBe(true);
     expect(q15.a).toBe('');
   });
@@ -254,28 +353,26 @@ describe('FAQ answers derived from facility values', () => {
 
 describe('cascade preview hygiene', () => {
   it('never shows an empty auto-derived group', () => {
-    const st = run(
-      initialState(),
-      { type: 'PREVIEW_BLOCK_STATE', blockKey: 'parking', nextSt: 'off' },
-    );
-    expect(st.cas!.groups.some((g) => g.title.startsWith('숙소 블록 · 자동 재생성') && g.items.length === 0)).toBe(false);
+    const st = run(initialState(), { type: 'PREVIEW_BLOCK_STATE', blockKey: 'parking', nextSt: 'off' });
+    expect(st.cas!.groups.some((g) => g.title.startsWith('자동으로 같이 바뀌는 것') && g.items.length === 0)).toBe(false);
   });
 
   it('값 변경은 확인 창 없이 바로 반영되고, 무엇이 바뀌었는지 문장으로 알린다', () => {
-    const st = run(initialState(), { type: 'PICK_CELL', code: A401, field: 'bbq', value: '이용 불가' });
+    const st = run(initialState(), { type: 'PICK_CELL', code: A401, attr: 'bbq', value: 'none' });
     expect(st.cas).toBeNull();
-    expect(st.rooms.find((r) => r.code === A401)!.bbq).toBe('이용 불가');
-    expect(st.toast).toBe('객실 1개의 바베큐 유형을 이용 불가로 바꿨어요. 시설 안내문 2곳도 같이 바뀌었어요.');
+    expect(valueOf(P(st), room(st, A401), 'bbq')).toBe('none');
+    expect(st.toast).toContain('객실 1개의 바베큐를 이용 불가로 바꿨어요.');
   });
 
   it('남이 따로 정해둔 값을 여러 개 덮어쓸 때만 확인 창이 뜬다', () => {
     const before = initialState();
-    const third = before.rooms.filter((r) => r.floor === 3).map((r) => r.code);
+    const third = P(before).rooms.filter((r) => r.floor === 3).map((r) => r.code);
     const st = run(
       before,
       ...third.map((code): Action => ({ type: 'TOGGLE_ROOM', code })),
       { type: 'OPEN_BULK' },
-      { type: 'PICK_BULK_VALUE', value: '공용BBQ · 가스그릴' },
+      { type: 'PICK_BULK_ATTR', attr: 'bbq' },
+      { type: 'PICK_BULK_VALUE', value: 'shared_gas' },
       { type: 'PREVIEW_BULK' },
     );
     expect(st.cas).not.toBeNull();
@@ -286,30 +383,29 @@ describe('channel mapping', () => {
   it('corrects a channel value to the dictionary rule', () => {
     const st = run(
       initialState(),
-      { type: 'SYNC_CHANNEL', rowId: 'theme', ck: 'b', label: '테마', chName: '여기어때', to: '가족추천, 커플, 실외수영장' },
+      { type: 'SYNC_CHANNEL', rowId: 'theme', ck: 'b', label: '테마', chName: '여기어때', to: '오션뷰, 가스BBQ, 스파' },
       { type: 'APPLY_CAS' },
     );
-    expect(st.channels.theme.b).toBe('가족추천, 커플, 실외수영장');
+    expect(P(st).channels.theme.b).toBe('오션뷰, 가스BBQ, 스파');
   });
 });
 
 describe('the preview and the save agree', () => {
   it('shows the same fee the commit writes when switching a room to another BBQ option', () => {
     const st = initialState();
-    const b401 = st.rooms.find((r) => r.short === 'B401')!.code;
     const previewed = run(
       st,
       { type: 'SET_SETTINGS', patch: { cascadeMode: 'always' } },
-      { type: 'EDIT_ROOM_FIELD', code: b401, field: 'bbq' },
-      { type: 'PICK_BULK_VALUE', value: '공용BBQ · 숯불' },
+      { type: 'TOGGLE_ROOM', code: B401 },
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_ATTR', attr: 'bbq' },
+      { type: 'PICK_BULK_VALUE', value: 'shared_charcoal' },
       { type: 'PREVIEW_BULK' },
     );
-    const shownFee = previewed
-      .cas!.groups.flatMap((g) => g.items)
-      .find((i) => i.label === '공용 BBQ · 이용 요금')!.after;
+    const shownFee = previewed.cas!.groups.flatMap((g) => g.items).find((i) => i.label === '공용 BBQ · 이용 요금')!.after;
 
     const saved = run(previewed, { type: 'APPLY_CAS' });
     expect(shownFee).toBe(field(saved, 'shared_bbq', '이용 요금'));
-    expect(shownFee).toContain(st.optFees.shared_charcoal);
+    expect(shownFee).toContain(feeOf(P(st), 'bbq', 'shared_charcoal'));
   });
 });

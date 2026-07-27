@@ -1,5 +1,5 @@
-/** Field format. Every value in this console is one of these — free text is the
- *  exception, not the default, so channel conversion and link rules can be built on top. */
+/** 값의 형식. 자유 입력은 예외이고, 나머지는 전부 형식이 정해져 있습니다.
+ *  형식이 있어야 판매 사이트 변환과 연결 규칙을 그 위에 걸 수 있습니다. */
 export type FieldType =
   | 'time'
   | 'range'
@@ -11,67 +11,52 @@ export type FieldType =
   | `dec:${string}`
   | `opt:${string}`;
 
-export type OptionCode =
-  | 'shared_gas'
-  | 'shared_charcoal'
-  | 'shared_lid'
-  | 'private_electric'
-  | 'private_charcoal'
-  | 'none';
-
-export type BbqOption = {
-  code: OptionCode;
-  label: string;
-  scope: 'shared' | 'private' | 'none';
-  ch: ChannelValues;
-};
-
 export type ChannelKey = 'a' | 'b' | 'c';
 export type ChannelValues = Record<ChannelKey, string>;
-export type ChannelRowId = 'theme' | 'maxpax' | 'bbq' | 'checkin';
+export type ChannelRowId = 'theme' | 'maxpax' | 'facility' | 'checkin';
 
-export type Room = {
-  code: string;
-  short: string;
-  tag: string;
-  floor: number;
-  area: string;
-  form: string;
-  bed: string;
-  facil: string;
-  /** 기준 인원 */
-  baseP: number;
-  /** 최대 인원 */
-  maxP: number;
-  paxOv: boolean;
-  extra: number;
-  extraOv: boolean;
-  bbq: string;
-  bbqOv: boolean;
-  bbqOpt: OptionCode;
-  /** Derived from the option's fee — never typed by hand on the room. */
-  bbqFee: string;
-  spa: string;
-  spaOv: boolean;
-};
+/* ── 속성 사전 ──────────────────────────────────────────────────────────────
+   숙소마다 가진 것이 다릅니다. 어떤 곳은 바베큐·스파, 어떤 곳은 개별수영장·
+   애견동반, 어떤 곳은 캠핑장입니다. 그래서 객실이 가지는 값은 타입에 박아 두지
+   않고 전사 속성 사전에서 정의하고, 숙소는 그중 자기가 쓰는 것만 고릅니다. */
 
-/** used = 사용중 · off = 보유하지만 판매 미노출 · none = 이 숙소 미보유 */
+export type AttrValue = string | number;
+
+/** 고를 수 있는 값 하나. 판매 사이트마다 부르는 말이 다르므로 사전을 함께 답니다. */
+export type AttrOption = { code: string; label: string; ch: ChannelValues };
+
+export type AttrDef = {
+  key: string;
+  label: string;
+  /** 객실 표에서 이 속성이 차지할 열 너비. 없으면 표에 열로 나오지 않습니다. */
+  width?: number;
+  /** 이 속성이 어느 시설에 딸린 값인지 (시설 안내문 자동 계산에 씁니다). */
+  facility?: string;
+  /** 짧은 도움말 — 처음 보는 사람이 무슨 값인지 알 수 있게. */
+  hint?: string;
+} & (
+  | {
+      kind: 'option';
+      options: AttrOption[];
+      /** 이 속성의 선택지마다 요금이 붙습니다 (요금은 객실이 아니라 선택지에 붙습니다). */
+      feeBearing?: boolean;
+    }
+  | { kind: 'int'; unit: string; min?: number; max?: number }
+  | { kind: 'money' }
+);
+
+/** 시설 필드가 사람이 쓴 값인지, 객실에서 계산되는 값인지. */
+export type ComputedKind = 'rooms' | 'fee' | 'optionLabel' | 'capacity';
+
+/** used = 쓰는 중 · off = 있지만 안 씀 · none = 이 숙소에 없음 */
 export type BlockStatus = 'used' | 'off' | 'none';
 
 export type RuleSlot = { k: string; type: FieldType; v: string | number };
 
-/** An advisory sentence assembled from typed fragments — never a free-text field.
- *  `id` points back at the company rule catalogue the sentence pattern came from. */
+/** 조각에서 만들어지는 안내 문장. 문장을 직접 쓰는 곳은 없습니다. */
 export type Rule = { id: string; tpl: string; slots: RuleSlot[] };
 
-/** A catalogue entry: the sentence pattern plus where it may be used.
- *  `blocks` limits it to certain facilities; `repeatable` allows several copies
- *  on one block (e.g. one 주변 여행지 line per destination). */
-export type RuleDef = Rule & {
-  group: string;
-  blocks?: string[];
-  repeatable?: boolean;
-};
+export type RuleDef = Rule & { group: string; blocks?: string[]; repeatable?: boolean };
 
 export type BlockField = [key: string, value: string];
 
@@ -79,11 +64,14 @@ export type Block = {
   key: string;
   label: string;
   st: BlockStatus;
-  rooms: number;
   chanN: number;
   faqN: number;
   fields: BlockField[];
   rules?: Rule[];
+  /** 이 시설을 쓰는 객실을 가려내는 규칙 — 어느 속성이 어떤 값일 때. */
+  memberOf?: { attr: string; codes: string[] };
+  /** 객실에서 자동 계산되는 필드. 사람이 고칠 수 없습니다. */
+  computed?: Record<string, ComputedKind>;
 };
 
 export type Faq = {
@@ -91,7 +79,7 @@ export type Faq = {
   qid: string;
   q: string;
   a: string;
-  /** When set, the answer is generated from facility values instead of typed. */
+  /** 값이 있으면 답변을 시설 값에서 만들어 냅니다. */
   tpl: string;
 };
 
@@ -105,31 +93,60 @@ export type HistoryEntry = {
   chips: string[];
 };
 
+export type Room = {
+  code: string;
+  name: string;
+  floor: number;
+  area: string;
+  form: string;
+  bed: string;
+  tag: string;
+  /** 숙소 기본값과 다르게 정한 값만 들어 있습니다. 없으면 기본값을 씁니다. */
+  values: Record<string, AttrValue>;
+};
+
+/** 숙소 하나. 1000개가 이 모양으로 들어옵니다 — 서로 다른 속성·시설을 가집니다. */
+export type Property = {
+  id: string;
+  code: string;
+  name: string;
+  region: string;
+  address: string;
+  status: string;
+  /** 이 숙소가 쓰는 속성 키 (전사 사전의 부분집합). */
+  attrs: string[];
+  /** 숙소 기본값 — 객실이 따로 정하지 않으면 이 값을 씁니다. */
+  defaults: Record<string, AttrValue>;
+  /** `${속성키}:${선택지코드}` → 이 숙소에서 받는 요금. */
+  fees: Record<string, string>;
+  rooms: Room[];
+  blocks: Block[];
+  faqs: Faq[];
+  channels: Record<ChannelRowId, ChannelValues>;
+  savedAt: string;
+  history: HistoryEntry[];
+  /** 목록에 뜨는 점 — 확인이 필요한 숙소 표시. */
+  warn?: boolean;
+};
+
 export type CascadeItem = {
   key: string;
   label: string;
   before: string;
   after: string;
   on: boolean;
-  /** Auto-derived rows: shown as a result, not as a choice. */
+  /** 자동으로 계산되는 줄 — 고를 수 없습니다. */
   locked?: boolean;
+  /** 이미 따로 정해둔 값을 덮어쓰는 줄. */
   isOv: boolean;
 };
 
 export type CascadeGroup = { title: string; desc: string; items: CascadeItem[] };
 
-type CascadeBase = {
-  field: string;
-  from: string;
-  to: string;
-  warn: string;
-  groups: CascadeGroup[];
-};
-
-export type BulkFieldId = 'maxP' | 'extra' | 'bbq' | 'spa' | 'facil';
+type CascadeBase = { field: string; from: string; to: string; warn: string; groups: CascadeGroup[] };
 
 export type Cascade =
-  | (CascadeBase & { kind: 'bulk'; target: BulkFieldId; value: string })
+  | (CascadeBase & { kind: 'bulk'; attr: string; value: AttrValue })
   | (CascadeBase & { kind: 'block'; blockKey: string; fieldKey: string; value: string })
   | (CascadeBase & { kind: 'roomadd'; room: Room })
   | (CascadeBase & { kind: 'roomdel'; codes: string[] })
@@ -138,39 +155,30 @@ export type Cascade =
       blockKey: string;
       nextSt: BlockStatus;
       killRooms?: string[];
-      applyVal?: string;
+      applyAttr?: string;
+      applyCode?: string;
     })
-  | (CascadeBase & { kind: 'optfee'; code: OptionCode; value: string })
+  | (CascadeBase & { kind: 'optfee'; attr: string; code: string; value: string })
   | (CascadeBase & { kind: 'rule'; blockKey: string; ri: number; si: number; value: string | number })
   | (CascadeBase & { kind: 'ruleadd'; blockKey: string; ruleId: string })
   | (CascadeBase & { kind: 'ruledel'; blockKey: string; ri: number })
   | (CascadeBase & { kind: 'chan'; rowId: ChannelRowId; ck: ChannelKey; value: string });
 
-/** Structured pieces a typed value is edited as. Which keys are present depends on FieldType. */
+/** 형식 있는 값을 편집할 때 쓰는 조각들. 어떤 키가 있는지는 FieldType에 따라 다릅니다. */
 export type Parts = {
-  /** range/time: start hour + minute */
   h?: string;
   m?: string;
-  /** range: end hour + minute */
   h2?: string;
   m2?: string;
-  /** range: start reference — 'checkin' means "입실 시각", not a clock time */
   sm?: 'checkin' | 'time';
-  /** range: trailing qualifier, e.g. 오전 이용 불가 */
   tail?: string;
-  /** daterange */
   from?: string;
   to?: string;
-  /** dec: */
   d?: number;
-  /** money / tier */
   amt?: number;
-  /** int: */
   n?: number;
   cmp?: string;
-  /** opt: / text */
   v?: string;
-  /** tier */
   mode?: 'flat' | 'tier';
   tiers?: Tier[];
   unit?: string;
@@ -179,54 +187,42 @@ export type Parts = {
 
 export type Tier = { a: number; b: number; amt: number };
 
-export type BulkDraft = { field: BulkFieldId; value: string };
+export type BulkDraft = { attr: string; value: AttrValue };
 
-export type NewRoomDraft = { name: string; floor: string; bbq: string; pax: '2/4' | '4/6' };
+export type NewRoomDraft = { name: string; floor: string; values: Record<string, AttrValue> };
 
 export type Editor =
   | { kind: 'block'; bk: Block; k: string; type: FieldType; p: Parts }
-  | { kind: 'optfee'; o: BbqOption; k: string; type: 'tier'; p: Parts }
+  | { kind: 'optfee'; attr: string; code: string; label: string; k: string; type: 'tier'; p: Parts }
   | { kind: 'rule'; bk: Block; ri: number; si: number; k: string; type: FieldType; p: Parts };
 
 export type TabId = 'rooms' | 'blocks' | 'options' | 'channels' | 'faq' | 'history';
 export type BlockFilter = 'all' | BlockStatus;
 
-/** The three prototype tweaks, surfaced as a settings menu. */
 export type Settings = {
   inheritanceViz: 'marker' | 'ghost';
   cascadeMode: 'smart' | 'always';
   layout: '3panel' | '2panel';
 };
 
-/** One consistency finding. `error` = 두 값이 서로 어긋남 · `info` = 확인이 필요한 상태. */
+/** 검사 결과 하나. error = 두 값이 서로 어긋남 · info = 확인이 필요한 상태. */
 export type Violation = { severity: 'error' | 'info'; where: string; what: string };
 
-export type Snapshot = {
-  rooms: Room[];
-  channels: Record<ChannelRowId, ChannelValues>;
-  blocks: Block[];
-  optFees: Record<OptionCode, string>;
-  faqs: Faq[];
-};
-
 export type MasterState = {
+  /** 1000개가 여기에 들어옵니다. 지금은 서로 다른 모양의 3곳이 채워져 있습니다. */
+  properties: Property[];
+  /** 지금 보고 있는 숙소 id. */
+  current: string;
   tab: TabId;
   q: string;
   sel: string[];
   bfilter: BlockFilter;
-  optFees: Record<OptionCode, string>;
-  rooms: Room[];
-  blocks: Block[];
-  faqs: Faq[];
-  catalogN: number;
-  channels: Record<ChannelRowId, ChannelValues>;
   bulk: BulkDraft | null;
   nr: NewRoomDraft | null;
   cas: Cascade | null;
   edit: Editor | null;
   toast: string;
-  snapshot: Snapshot | null;
-  savedAt: string;
-  history: HistoryEntry[];
+  /** 되돌리기용 — 바꾸기 직전의 숙소 전체. */
+  snapshot: Property | null;
   settings: Settings;
 };

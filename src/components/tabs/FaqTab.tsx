@@ -1,15 +1,19 @@
 import { deriveBlocks } from '../../domain/derive';
 import { renderFaq } from '../../domain/faq';
-import { useStore } from '../../state/store';
+import { current, useStore } from '../../state/store';
 import { Th } from '../primitives';
 
 const COLS = '104px 72px minmax(0,1.1fr) minmax(0,1.5fr)';
 
 export const FaqTab = () => {
   const { state } = useStore();
-  const blocks = deriveBlocks(state.rooms, state.blocks);
-  const rows = state.faqs.map((f) => renderFaq(f, blocks));
-  const derivedN = state.faqs.filter((f) => !!f.tpl).length;
+  const p = current(state);
+  const blocks = deriveBlocks(p);
+  const rows = p.faqs.map((f) => renderFaq(f, blocks));
+  const derivedN = p.faqs.filter((f) => !!f.tpl).length;
+  /** 빠지는 질문은 세어서 말합니다 — 손으로 쓴 숫자는 숙소가 바뀌면 바로 거짓말이 됩니다. */
+  const dropped = rows.filter((f) => f.blank);
+  const droppedNames = [...new Set(dropped.map((f) => f.cate))].join(' · ');
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: 'var(--color-bg)' }}>
@@ -24,9 +28,11 @@ export const FaqTab = () => {
           시설 정보를 그대로 옮겨 적는 답변 {derivedN}개는 자동으로 만들어집니다. 따로 고칠 곳이 없으니 시설 정보와
           어긋날 일이 없습니다.
         </div>
-        <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-accent-800)' }}>
-          안 쓰는 시설에 딸린 16개는 자동으로 빠져서 판매 사이트로 나가지 않습니다 (개별수영장 · 애견동반 · 캠핑).
-        </div>
+        {dropped.length ? (
+          <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-accent-800)' }}>
+            안 쓰는 시설에 딸린 {dropped.length}개는 자동으로 빠져서 판매 사이트로 나가지 않습니다 ({droppedNames}).
+          </div>
+        ) : null}
       </div>
 
       <div

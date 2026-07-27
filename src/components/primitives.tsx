@@ -161,6 +161,76 @@ export const Chip = ({
   );
 };
 
+/** 숫자를 직접 넣는 칸. 인원·요금처럼 값의 끝이 없는 것은 목록으로 만들 수 없어서
+ *  — 목록으로 만드는 순간 "그 밖의 값"을 넣을 방법이 사라집니다 — 여기서 칩니다.
+ *  화살표만 있으면 큰 수를 넣기 힘들고, 입력칸만 있으면 한 명 늘리기가 번거로워서
+ *  둘 다 둡니다. */
+export const NumberField = ({
+  value,
+  unit,
+  min = 0,
+  max = Number.MAX_SAFE_INTEGER,
+  step = 1,
+  quick,
+  onChange,
+}: {
+  value: number;
+  unit: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  quick?: number[];
+  onChange: (n: number) => void;
+}) => {
+  const clamp = (n: number) => Math.min(max, Math.max(min, n));
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button className="btn btn-secondary" onClick={() => onChange(clamp(value - step))} style={{ width: 34, height: 34, padding: 0, fontSize: 16 }}>
+          −
+        </button>
+        <input
+          className="input"
+          type="number"
+          inputMode="numeric"
+          value={value}
+          min={min}
+          max={max}
+          onChange={(e) => onChange(clamp(Number(e.target.value) || 0))}
+          style={{ flex: 1, minHeight: 34, fontSize: 15, textAlign: 'right', fontWeight: 700 }}
+        />
+        <button className="btn btn-secondary" onClick={() => onChange(clamp(value + step))} style={{ width: 34, height: 34, padding: 0, fontSize: 16 }}>
+          +
+        </button>
+        <span style={{ fontSize: 13, color: 'var(--color-neutral-600)', width: 26 }}>{unit}</span>
+      </div>
+      {quick?.length ? (
+        <div style={{ marginTop: 7, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {quick.map((q) => (
+            <div
+              key={q}
+              onClick={() => onChange(clamp(q))}
+              className={value === q ? undefined : 'hov-neutral'}
+              style={{
+                padding: '4px 10px',
+                border: `1px solid ${value === q ? 'var(--color-accent)' : 'var(--color-divider)'}`,
+                background: value === q ? 'var(--color-accent-100)' : 'var(--color-bg)',
+                color: value === q ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
+                fontSize: 11.5,
+                fontWeight: value === q ? 700 : 400,
+                cursor: 'pointer',
+              }}
+            >
+              {q.toLocaleString('ko-KR')}
+              {unit}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 export const Seg = ({ children, style }: { children: ReactNode; style?: CSSProperties }) => (
   <div style={{ display: 'flex', border: '1px solid var(--color-divider)', ...style }}>{children}</div>
 );

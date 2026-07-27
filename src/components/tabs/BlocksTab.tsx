@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { RULECAT } from '../../domain/catalog';
-import { deriveBlocks, isCalcField, ruleText, slotText } from '../../domain/derive';
+import { deriveBlocks, isCalcField, roomCount, ruleText, slotText } from '../../domain/derive';
 import { typeName, typeOf } from '../../domain/fieldTypes';
-import type { Block, BlockFilter } from '../../domain/types';
-import { useStore } from '../../state/store';
+import type { Block, BlockFilter, Property } from '../../domain/types';
+import { current, useStore } from '../../state/store';
 import { Corners, CountChip, Seg, SegItem } from '../primitives';
 
 const FILTERS: [BlockFilter, string][] = [
@@ -141,8 +141,9 @@ const RulesSection = ({ b }: { b: Block }) => {
   );
 };
 
-const BlockCard = ({ b }: { b: Block }) => {
+const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
   const { dispatch } = useStore();
+  const rooms = roomCount(p, b);
   const isUsed = b.st === 'used';
   const isOff = b.st === 'off';
   const isNone = b.st === 'none';
@@ -252,7 +253,7 @@ const BlockCard = ({ b }: { b: Block }) => {
       {!isNone ? (
         <div style={{ padding: '4px 13px 12px' }}>
           {b.fields.map(([k, v]) => {
-            const calc = isCalcField(b.key, k);
+            const calc = isCalcField(b, k);
             const t = typeOf(b.key, k);
             const isFree = !calc && t === 'text';
             return (
@@ -300,7 +301,7 @@ const BlockCard = ({ b }: { b: Block }) => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>이어져 있는 곳</span>
-            {b.rooms === 0 ? <CountChip tone="accent">객실 0</CountChip> : <CountChip>객실 {b.rooms}</CountChip>}
+            {rooms === 0 ? <CountChip tone="accent">객실 0</CountChip> : <CountChip>객실 {rooms}</CountChip>}
             <CountChip>판매 사이트 {b.chanN}</CountChip>
             {b.st !== 'used' && b.faqN > 0 ? (
               <CountChip tone="accent">질문·답변 {b.faqN} 빠짐</CountChip>
@@ -317,7 +318,10 @@ const BlockCard = ({ b }: { b: Block }) => {
 
 export const BlocksTab = () => {
   const { state, dispatch } = useStore();
-  const derived = deriveBlocks(state.rooms, state.blocks);
+  const p = current(state);
+  const derived = deriveBlocks(p);
+  /** 전사 시설 목록 = 1000개 숙소가 쓰는 시설의 합집합. 이 숙소에 없는 것도 목록에는 있습니다. */
+  const catalogN = new Set(state.properties.flatMap((x) => x.blocks.map((b) => b.key))).size;
   const count = (k: BlockFilter) => derived.filter((b) => b.st === k).length;
   const shown = derived.filter((b) => state.bfilter === 'all' || b.st === state.bfilter);
 
@@ -339,14 +343,14 @@ export const BlocksTab = () => {
       </div>
 
       <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6, marginBottom: 12 }}>
-        전체 시설 목록 {state.catalogN}개 중 이 숙소에 있는 것 <b>{derived.filter((b) => b.st !== 'none').length}</b>개
+        전체 시설 목록 {catalogN}개 중 이 숙소에 있는 것 <b>{derived.filter((b) => b.st !== 'none').length}</b>개
         — 쓰는 중 {count('used')} · 있지만 안 씀 {count('off')} · 없음 {count('none')}. 없는 시설은 판매 사이트로 나가지
         않고, 그 시설을 묻는 질문·답변도 자동으로 빠집니다.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }}>
         {shown.map((b) => (
-          <BlockCard key={b.key} b={b} />
+          <BlockCard key={b.key} p={p} b={b} />
         ))}
       </div>
     </div>

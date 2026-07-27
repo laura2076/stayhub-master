@@ -1,7 +1,8 @@
 import { OPTLIST } from '../../domain/catalog';
+import { roomCount } from '../../domain/derive';
 import { composeVal, digits } from '../../domain/fieldTypes';
 import type { Parts } from '../../domain/types';
-import { useStore } from '../../state/store';
+import { current, useStore } from '../../state/store';
 import { Chip, Modal, ModalFoot, ModalHead, RadioRow, Seg, SegItem } from '../primitives';
 
 const TAILS = ['', '오전 이용 불가', '퇴실일 이용 불가', '연박 시 별도 문의', '우천 시 이용 불가'];
@@ -34,11 +35,11 @@ export const ValueEditorModal = () => {
     }
   };
 
-  const title = edit.kind === 'optfee' ? `${edit.o.label} 요금 고치기` : `${edit.bk.label} · ${edit.k}`;
+  const title = edit.kind === 'optfee' ? `${edit.label} 요금 고치기` : `${edit.bk.label} · ${edit.k}`;
   const sub =
     edit.kind === 'optfee'
-      ? '이 바베큐 종류를 쓰는 모든 객실에 같이 적용됩니다'
-      : `이 숙소 전체값 · 객실 ${edit.bk.rooms}개가 이 값을 씁니다`;
+      ? '이 값을 쓰는 모든 객실에 같이 적용됩니다'
+      : `이 숙소 전체값 · 객실 ${roomCount(current(state), edit.bk)}개가 이 값을 씁니다`;
 
   /** Any qualifier already stored but missing from the catalogue is kept as its own chip. */
   const tailChoices = p.tail && !TAILS.includes(p.tail) ? [...TAILS, p.tail] : TAILS;

@@ -1,20 +1,28 @@
-import { OPTIONS } from '../domain/catalog';
-import type { TabId } from '../domain/types';
-import { useStore } from '../state/store';
+import { attrsOf, feeAttrsOf } from '../domain/attrs';
+import type { Property, TabId } from '../domain/types';
+import { current, useStore } from '../state/store';
 import { SettingsMenu } from './SettingsMenu';
 
-const META = ['강원 속초시 장사항해안길 21', '28객실', '바다전망', '스파 전객실', '공용수영장(냉수)'];
+/** 머리글의 한 줄 설명도 숙소가 가진 속성에서 나옵니다 — 손으로 쓴 문장이 아닙니다. */
+const metaOf = (p: Property): string[] => [
+  p.address,
+  `${p.rooms.length}객실`,
+  ...attrsOf(p)
+    .filter((a) => a.kind === 'option' && (a.facility || a.key === 'view' || a.key === 'bbq'))
+    .map((a) => a.label),
+];
 
 export const PropertyHeader = () => {
   const { state, dispatch } = useStore();
+  const p = current(state);
 
   const tabs: [TabId, string, number][] = [
-    ['rooms', '객실', state.rooms.length],
-    ['blocks', '시설 정보', state.blocks.length],
-    ['options', '요금표', OPTIONS.length],
+    ['rooms', '객실', p.rooms.length],
+    ['blocks', '시설 정보', p.blocks.length],
+    ['options', '요금표', feeAttrsOf(p).reduce((n, a) => n + (a.kind === 'option' ? a.options.length : 0), 0)],
     ['channels', '판매 사이트', 3],
-    ['faq', '자주 묻는 질문', state.faqs.length],
-    ['history', '바꾼 기록', state.history.length],
+    ['faq', '자주 묻는 질문', p.faqs.length],
+    ['history', '바꾼 기록', p.history.length],
   ];
 
   return (
@@ -39,17 +47,10 @@ export const PropertyHeader = () => {
                 borderRadius: 0,
               }}
             >
-              2656
+              {p.code}
             </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: 24,
-                fontWeight: 600,
-                letterSpacing: '-0.01em',
-              }}
-            >
-              속초 더샵 스파 펜션
+            <span style={{ fontFamily: 'var(--font-heading)', fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em' }}>
+              {p.name}
             </span>
             <span
               style={{
@@ -61,7 +62,7 @@ export const PropertyHeader = () => {
                 borderRadius: 0,
               }}
             >
-              판매중
+              {p.status}
             </span>
           </div>
           <div
@@ -75,7 +76,7 @@ export const PropertyHeader = () => {
               flexWrap: 'wrap',
             }}
           >
-            {META.map((m, i) => (
+            {metaOf(p).map((m, i) => (
               <span key={m} style={{ display: 'contents' }}>
                 {i > 0 ? <span style={{ color: 'var(--color-neutral-300)' }}>·</span> : null}
                 <span>{m}</span>
@@ -89,14 +90,10 @@ export const PropertyHeader = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ textAlign: 'right', marginRight: 4 }}>
             <div style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>마지막으로 저장한 때</div>
-            <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--color-neutral-700)' }}>{state.savedAt}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--color-neutral-700)' }}>{p.savedAt}</div>
           </div>
           <SettingsMenu />
-          <button
-            className="btn btn-secondary"
-            onClick={() => dispatch({ type: 'SET_TAB', tab: 'channels' })}
-            style={{ height: 32 }}
-          >
+          <button className="btn btn-secondary" onClick={() => dispatch({ type: 'SET_TAB', tab: 'channels' })} style={{ height: 32 }}>
             판매 사이트 확인
           </button>
           <button className="btn btn-primary" style={{ height: 32 }}>

@@ -1,24 +1,19 @@
-import { CHANKEYS, CHANNEL_RULES, MASTER_ROWS, THEME_DICT } from '../../domain/catalog';
-import type { ChannelKey, ChannelRowId } from '../../domain/types';
-import { useStore } from '../../state/store';
+import { attrsOf } from '../../domain/attrs';
+import { channelRows } from '../../domain/derive';
+import { current, useStore } from '../../state/store';
 import { Th } from '../primitives';
 
 const COLS = '130px 250px repeat(3,minmax(0,1fr))';
 
 export const ChannelsTab = () => {
   const { state, dispatch } = useStore();
+  const p = current(state);
+  /** 기준값은 저장된 문장이 아니라 이 숙소의 객실 값에서 계산됩니다. */
+  const rows = channelRows(p);
+  const mismatchN = rows.reduce((n, r) => n + r.cells.filter((c) => c.bad).length, 0);
 
-  const cells = (id: ChannelRowId, label: string) =>
-    CHANKEYS.map(([ck, chName]) => {
-      const v = state.channels[id][ck];
-      const rule = CHANNEL_RULES[id][ck];
-      return { ck: ck as ChannelKey, chName, v, rule, bad: v !== rule, label };
-    });
-
-  const mismatchN = MASTER_ROWS.reduce(
-    (n, [id]) => n + CHANKEYS.filter(([ck]) => state.channels[id][ck] !== CHANNEL_RULES[id][ck]).length,
-    0,
-  );
+  /** 사전은 이 숙소가 쓰는 속성만 — 캠핑장이 없는 숙소에 캠핑 용어를 보여 줄 이유가 없습니다. */
+  const dict = attrsOf(p).filter((a) => a.kind === 'option' && (a.facility || a.key === 'bbq' || a.key === 'view'));
 
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px 40px', background: 'var(--color-bg)' }}>
@@ -32,15 +27,7 @@ export const ChannelsTab = () => {
           minWidth: 900,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-            padding: '11px 14px',
-            borderBottom: '1px solid var(--color-divider)',
-          }}
-        >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 14px', borderBottom: '1px solid var(--color-divider)' }}>
           <span style={{ fontSize: 12.5, fontWeight: 700 }}>판매 사이트에 나가는 값</span>
           <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>
             우리 값 하나를 사이트마다 쓰는 말로 바꿔서 내보냅니다.
@@ -50,8 +37,8 @@ export const ChannelsTab = () => {
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: 'var(--color-accent-800)',
-              background: 'var(--color-accent-200)',
+              color: mismatchN ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
+              background: mismatchN ? 'var(--color-accent-200)' : 'var(--color-neutral-200)',
               padding: '3px 8px',
               borderRadius: 0,
             }}
@@ -75,44 +62,22 @@ export const ChannelsTab = () => {
           ))}
         </div>
 
-        {MASTER_ROWS.map(([id, label, master]) => (
-          <div
-            key={id}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: COLS,
-              borderBottom: '1px solid var(--color-divider)',
-              fontSize: 12,
-            }}
-          >
-            <div style={{ padding: '11px 14px', fontWeight: 700 }}>{label}</div>
-            <div style={{ padding: '11px 14px', color: 'var(--color-neutral-800)', lineHeight: 1.6 }}>{master}</div>
-            {cells(id, label).map((c) => (
+        {rows.map((row) => (
+          <div key={row.id} style={{ display: 'grid', gridTemplateColumns: COLS, borderBottom: '1px solid var(--color-divider)', fontSize: 12 }}>
+            <div style={{ padding: '11px 14px', fontWeight: 700 }}>{row.label}</div>
+            <div style={{ padding: '11px 14px', color: 'var(--color-neutral-800)', lineHeight: 1.6 }}>{row.master}</div>
+            {row.cells.map((c) => (
               <div key={c.ck} style={{ padding: '11px 14px' }}>
                 {c.bad ? (
-                  <div
-                    style={{
-                      padding: '7px 9px',
-                      background: 'var(--color-accent-100)',
-                      border: '1px solid var(--color-accent-300)',
-                      borderRadius: 0,
-                    }}
-                  >
-                    <div style={{ color: 'var(--color-accent-900)', fontWeight: 600, lineHeight: 1.5 }}>{c.v}</div>
+                  <div style={{ padding: '7px 9px', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', borderRadius: 0 }}>
+                    <div style={{ color: 'var(--color-accent-900)', fontWeight: 600, lineHeight: 1.5 }}>{c.v || '(비어 있음)'}</div>
                     <div style={{ marginTop: 3, fontSize: 10.5, color: 'var(--color-accent-800)', lineHeight: 1.5 }}>
-                      기준대로면: {c.rule}
+                      기준대로면: {c.expected}
                     </div>
                     <button
                       className="btn btn-primary"
                       onClick={() =>
-                        dispatch({
-                          type: 'SYNC_CHANNEL',
-                          rowId: id,
-                          ck: c.ck,
-                          label: c.label,
-                          chName: c.chName,
-                          to: c.rule,
-                        })
+                        dispatch({ type: 'SYNC_CHANNEL', rowId: row.id, ck: c.ck, label: row.label, chName: c.chName, to: c.expected })
                       }
                       style={{ marginTop: 6, height: 23, padding: '0 8px', fontSize: 11 }}
                     >
@@ -128,47 +93,45 @@ export const ChannelsTab = () => {
         ))}
       </div>
 
-      <div
-        style={{
-          background: 'var(--color-bg)',
-          border: '1px solid var(--color-divider)',
-          borderRadius: 0,
-          padding: '13px 14px',
-          minWidth: 900,
-        }}
-      >
+      <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-divider)', borderRadius: 0, padding: '13px 14px', minWidth: 900 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 3 }}>사이트마다 다른 말</div>
         <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', marginBottom: 11 }}>
-          같은 것을 사이트마다 다르게 부릅니다. 여기에 한 번 정해 두면 사이트마다 따로 고를 필요가 없습니다.
+          같은 것을 사이트마다 다르게 부릅니다. 사전은 값 옆에 붙어 있어서, 숙소가 어떤 시설을 갖든 같은 방식으로 바뀝니다.
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
-          {THEME_DICT.map((d) => (
-            <div key={d.master} style={{ border: '1px solid var(--color-divider)', borderRadius: 0, padding: '10px 11px' }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 7 }}>{d.master}</div>
-              {d.rows.map((dr) => (
-                <div key={dr.k} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '3px 0' }}>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      width: 18,
-                      height: 18,
-                      flex: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: 0,
-                      background: 'var(--color-neutral-200)',
-                      color: 'var(--color-neutral-700)',
-                    }}
-                  >
-                    {dr.k}
-                  </span>
-                  <span style={{ fontSize: 11.5, color: 'var(--color-neutral-800)' }}>{dr.v}</span>
-                </div>
-              ))}
-            </div>
-          ))}
+          {dict.flatMap((d) =>
+            d.kind === 'option'
+              ? d.options
+                  .filter((o) => o.code !== 'none' && p.rooms.some((r) => (r.values[d.key] ?? p.defaults[d.key]) === o.code))
+                  .map((o) => (
+                    <div key={`${d.key}:${o.code}`} style={{ border: '1px solid var(--color-divider)', borderRadius: 0, padding: '10px 11px' }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 7 }}>{o.label}</div>
+                      {([['N', o.ch.a], ['여', o.ch.b], ['야', o.ch.c]] as [string, string][]).map(([k, v]) => (
+                        <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '3px 0' }}>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              width: 18,
+                              height: 18,
+                              flex: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 0,
+                              background: 'var(--color-neutral-200)',
+                              color: 'var(--color-neutral-700)',
+                            }}
+                          >
+                            {k}
+                          </span>
+                          <span style={{ fontSize: 11.5, color: 'var(--color-neutral-800)' }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))
+              : [],
+          )}
         </div>
       </div>
     </div>
