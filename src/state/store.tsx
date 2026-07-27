@@ -46,10 +46,14 @@ export type Action =
   | { type: 'SET_PROPERTY'; id: string }
   | { type: 'SET_TAB'; tab: TabId }
   | { type: 'SET_QUERY'; q: string }
+  | { type: 'SET_BQUERY'; q: string }
   | { type: 'SET_BFILTER'; f: BlockFilter }
   | { type: 'SET_SETTINGS'; patch: Partial<Settings> }
   | { type: 'TOGGLE_ROOM'; code: string }
   | { type: 'TOGGLE_ALL' }
+  | { type: 'SELECT_FLOOR'; floor: number }
+  | { type: 'SELECT_OWN' }
+  | { type: 'SELECT_BY_VALUE'; attr: string; value: AttrValue }
   | { type: 'CLEAR_SEL' }
   | { type: 'OPEN_BULK' }
   | { type: 'CLOSE_BULK' }
@@ -132,11 +136,13 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
 
   switch (a.type) {
     case 'SET_PROPERTY':
-      return { ...st, current: a.id, sel: [], q: '', bulk: null, nr: null, cas: null, edit: null, toast: '' };
+      return { ...st, current: a.id, sel: [], q: '', bq: '', bulk: null, nr: null, re: null, cas: null, edit: null, toast: '' };
     case 'SET_TAB':
       return { ...st, tab: a.tab };
     case 'SET_QUERY':
       return { ...st, q: a.q };
+    case 'SET_BQUERY':
+      return { ...st, bq: a.q };
     case 'SET_BFILTER':
       return { ...st, bfilter: a.f };
     case 'SET_SETTINGS':
@@ -146,6 +152,28 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       return { ...st, sel: st.sel.includes(a.code) ? st.sel.filter((c) => c !== a.code) : [...st.sel, a.code] };
     case 'TOGGLE_ALL':
       return { ...st, sel: st.sel.length === p.rooms.length ? [] : p.rooms.map((r) => r.code) };
+    /** 직원은 층으로 생각합니다 — "3층은 개별바베큐야". 체크박스 6번이 한 번이 됩니다.
+     *  이미 그 층이 다 골라져 있으면 해제해서, 같은 버튼으로 켜고 끕니다. */
+    case 'SELECT_FLOOR': {
+      const codes = p.rooms.filter((r) => r.floor === a.floor).map((r) => r.code);
+      const allOn = codes.every((c) => st.sel.includes(c));
+      return {
+        ...st,
+        sel: allOn ? st.sel.filter((c) => !codes.includes(c)) : [...new Set([...st.sel, ...codes])],
+      };
+    }
+    case 'SELECT_OWN': {
+      const codes = p.rooms
+        .filter((r) => attrsOf(p).some((d) => d.key in r.values && r.values[d.key] !== p.defaults[d.key]))
+        .map((r) => r.code);
+      const allOn = codes.length > 0 && codes.every((c) => st.sel.includes(c));
+      return { ...st, sel: allOn ? st.sel.filter((c) => !codes.includes(c)) : [...new Set([...st.sel, ...codes])] };
+    }
+    /** "이 값을 쓰는 객실 전부" — 공용BBQ 22실을 숯불로 바꾸는 일이 두 번 클릭이 됩니다. */
+    case 'SELECT_BY_VALUE': {
+      const codes = p.rooms.filter((r) => valueOf(p, r, a.attr) === a.value).map((r) => r.code);
+      return { ...st, sel: [...new Set([...st.sel, ...codes])] };
+    }
     case 'CLEAR_SEL':
       return { ...st, sel: [] };
 

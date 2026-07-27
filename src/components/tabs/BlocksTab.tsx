@@ -386,12 +386,39 @@ export const BlocksTab = () => {
   /** 전사 시설 목록 = 1000개 숙소가 쓰는 시설의 합집합. 이 숙소에 없는 것도 목록에는 있습니다. */
   const catalogN = new Set(state.properties.flatMap((x) => x.blocks.map((b) => b.key))).size;
   const count = (k: BlockFilter) => derived.filter((b) => b.st === k).length;
-  const shown = derived.filter((b) => state.bfilter === 'all' || b.st === state.bfilter);
+  /** 시설이 19개면 원하는 카드를 눈으로 찾는 데 시간이 걸립니다. 이름·항목·문구까지 봅니다 —
+   *  직원은 "체크인"이 어느 시설에 있는지 모른 채 "체크인"을 칩니다. */
+  const q = state.bq.trim();
+  const hit = (b: (typeof derived)[number]) =>
+    !q ||
+    `${b.label}${b.key}`.includes(q) ||
+    b.fields.some((f) => `${f[0]}${f[1]}`.includes(q)) ||
+    (b.rules ?? []).some((r) => ruleText(r).includes(q));
+  const shown = derived.filter((b) => (state.bfilter === 'all' || b.st === state.bfilter) && hit(b));
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 40px', background: 'var(--color-bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
         <span style={{ fontSize: 12.5, fontWeight: 700 }}>이 숙소가 가진 시설</span>
+        <input
+          className="input"
+          value={state.bq}
+          onChange={(e) => dispatch({ type: 'SET_BQUERY', q: e.target.value })}
+          placeholder="시설·항목·문구에서 찾기"
+          style={{ width: 210, minHeight: 28, fontSize: 12.5 }}
+        />
+        {q ? (
+          <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>
+            {shown.length}개 나옴
+            <button
+              className="btn btn-secondary"
+              onClick={() => dispatch({ type: 'SET_BQUERY', q: '' })}
+              style={{ ...smallBtn, marginLeft: 6 }}
+            >
+              지우기
+            </button>
+          </span>
+        ) : null}
         <div style={{ flex: 1 }} />
         <Seg>
           {FILTERS.map(([f, label]) => (
@@ -416,6 +443,11 @@ export const BlocksTab = () => {
           <BlockCard key={b.key} p={p} b={b} />
         ))}
       </div>
+      {shown.length === 0 ? (
+        <div style={{ padding: '28px 0', fontSize: 12, color: 'var(--color-neutral-500)' }}>
+          "{q}"에 맞는 시설이 없습니다.
+        </div>
+      ) : null}
     </div>
   );
 };

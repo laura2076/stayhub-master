@@ -728,6 +728,7 @@ export const initialState = (): MasterState => ({
   current: 'sokcho',
   tab: 'rooms',
   q: '',
+  bq: '',
   sel: [],
   bfilter: 'all',
   bulk: null,

@@ -2,7 +2,7 @@ import { attrsOf, feeOf, isOwn, showValue, valueOf } from '../../domain/attrs';
 import type { AttrDef, Property, Room } from '../../domain/types';
 import { current, useStore } from '../../state/store';
 import { CellPicker, type PickerMode } from '../CellPicker';
-import { ChannelBadge, Seg, SegItem, Th } from '../primitives';
+import { ChannelBadge, Chip, Seg, SegItem, Th } from '../primitives';
 
 /** 표의 열은 이 숙소가 쓰는 속성에서 만들어집니다 — 코드에 박힌 열은
  *  체크박스·객실·구조·판매 사이트 넷뿐입니다. 그래서 바베큐가 없고 캠핑장만
@@ -72,6 +72,8 @@ const AttrCell = ({ p, room, def, ghost }: { p: Property; room: Room; def: AttrD
   const own = isOwn(room, def.key) && v !== p.defaults[def.key];
   /** 요금은 객실이 아니라 선택지에 붙습니다 — 값 밑에 따라오는 결과로 보여 줍니다. */
   const fee = def.kind === 'option' && def.feeBearing ? feeOf(p, def.key, v) : '—';
+  /** 같은 값을 쓰는 객실 수 — "공용BBQ 22실 전부 숯불로"가 두 번 클릭이 됩니다. */
+  const sameN = p.rooms.filter((r) => valueOf(p, r, def.key) === v).length;
 
   return (
     <CellPicker
@@ -81,6 +83,8 @@ const AttrCell = ({ p, room, def, ghost }: { p: Property; room: Room; def: AttrD
       mode={modeOf(p, def)}
       current={v}
       onPick={(value) => dispatch({ type: 'PICK_CELL', code: room.code, attr: def.key, value })}
+      alsoLabel={sameN > 1 ? `이 값을 쓰는 객실 ${sameN}개 모두 고르기` : undefined}
+      onAlso={() => dispatch({ type: 'SELECT_BY_VALUE', attr: def.key, value: v })}
     >
       <Value v={showValue(def.key, v)} own={own} />
       {fee !== '—' ? <Sub>{shortFee(fee)}</Sub> : null}
@@ -113,6 +117,7 @@ export const RoomsTab = () => {
 
   const ownCount = p.rooms.filter(own).length;
   const hasSel = state.sel.length > 0;
+  const floors = [...new Set(p.rooms.map((r) => r.floor))].sort((a, b) => a - b);
   const SORTS: [typeof state.sort, string][] = [
     ['floor', '층순'],
     ['name', '이름순'],
@@ -179,14 +184,54 @@ export const RoomsTab = () => {
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>
-              값을 누르면 바로 고칠 수 있어요 · 인원과 요금은 숫자를 직접 넣습니다
-            </span>
+            <span style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>값을 누르면 바로 고칠 수 있어요</span>
             <button className="btn btn-secondary" onClick={() => dispatch({ type: 'OPEN_NEW_ROOM' })} style={{ height: 29, fontSize: 13 }}>
               + 객실 만들기
             </button>
           </div>
         )}
+      </div>
+
+      {/* 층으로 고르기 — 직원은 "3층은 개별바베큐" 식으로 생각합니다.
+          체크박스를 6번 누르는 대신 층 하나를 누릅니다. */}
+      <div
+        style={{
+          flex: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 20px',
+          background: 'var(--color-bg)',
+          borderBottom: '1px solid var(--color-divider)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <span style={{ fontSize: 11, color: 'var(--color-neutral-500)', marginRight: 2 }}>골라서 한꺼번에 바꾸기</span>
+        {floors.map((f) => {
+          const codes = p.rooms.filter((r) => r.floor === f).map((r) => r.code);
+          const on = codes.every((c) => state.sel.includes(c));
+          return (
+            <Chip
+              key={f}
+              label={`${f}층 ${codes.length}`}
+              padding="4px 10px"
+              on={on}
+              onClick={() => dispatch({ type: 'SELECT_FLOOR', floor: f })}
+            />
+          );
+        })}
+        {ownCount ? (
+          <Chip
+            label={`따로 정한 ${ownCount}`}
+            padding="4px 10px"
+            tone="ink"
+            on={p.rooms.filter(own).every((r) => state.sel.includes(r.code))}
+            onClick={() => dispatch({ type: 'SELECT_OWN' })}
+          />
+        ) : null}
+        <span style={{ fontSize: 10.5, color: 'var(--color-neutral-400)' }}>
+          · 값 칸을 누르면 "같은 값 쓰는 객실 모두 고르기"도 있어요
+        </span>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--color-bg)' }}>
@@ -202,7 +247,7 @@ export const RoomsTab = () => {
               borderBottom: '1px solid var(--color-divider)',
             }}
           >
-            <div style={{ padding: '8px 0 8px 13px' }}>
+            <div style={{ padding: '8px 0 8px 13px', position: 'sticky', left: 0, zIndex: 1, background: 'var(--color-surface)' }}>
               <input
                 type="checkbox"
                 checked={state.sel.length === p.rooms.length && p.rooms.length > 0}
@@ -211,7 +256,9 @@ export const RoomsTab = () => {
                 title="전체 선택"
               />
             </div>
-            <Th style={{ borderRight: '1px solid var(--color-divider)' }}>객실</Th>
+            <Th style={{ borderRight: '1px solid var(--color-divider)', position: 'sticky', left: 36, zIndex: 1, background: 'var(--color-surface)' }}>
+              객실
+            </Th>
             {defs.map((d) => (
               <Th key={d.key} style={d.hint ? { cursor: 'help' } : undefined}>
                 <span title={d.hint}>{d.label}</span>
@@ -227,7 +274,7 @@ export const RoomsTab = () => {
               className="row"
               style={{ display: 'grid', gridTemplateColumns: grid, borderBottom: '1px solid var(--color-divider)', fontSize: 12 }}
             >
-              <div style={{ padding: '8px 0 0 13px' }}>
+              <div style={{ padding: '8px 0 0 13px', position: 'sticky', left: 0, zIndex: 1, background: 'var(--color-bg)' }}>
                 <input
                   type="checkbox"
                   checked={state.sel.includes(r.code)}
@@ -237,7 +284,17 @@ export const RoomsTab = () => {
                 />
               </div>
 
-              <div style={{ padding: '7px 12px', borderRight: '1px solid var(--color-divider)', minWidth: 0 }}>
+              <div
+                style={{
+                  padding: '7px 12px',
+                  borderRight: '1px solid var(--color-divider)',
+                  minWidth: 0,
+                  position: 'sticky',
+                  left: 36,
+                  zIndex: 1,
+                  background: 'var(--color-bg)',
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ fontWeight: 700, fontSize: 12.5 }}>{r.name}</span>
                   <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 10, color: 'var(--color-neutral-400)' }}>

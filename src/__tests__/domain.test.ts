@@ -351,6 +351,48 @@ describe('FAQ answers derived from facility values', () => {
   });
 });
 
+describe('직원이 대상 객실을 고르는 손이 덜 가야 한다', () => {
+  it('층 하나를 누르면 그 층이 통째로 골라지고, 다시 누르면 풀린다', () => {
+    const on = run(initialState(), { type: 'SELECT_FLOOR', floor: 3 });
+    expect(on.sel).toHaveLength(6);
+    expect(P(on).rooms.filter((r) => on.sel.includes(r.code)).every((r) => r.floor === 3)).toBe(true);
+
+    const off = run(on, { type: 'SELECT_FLOOR', floor: 3 });
+    expect(off.sel).toEqual([]);
+  });
+
+  it('층을 여러 개 누르면 더해진다', () => {
+    const st = run(initialState(), { type: 'SELECT_FLOOR', floor: 3 }, { type: 'SELECT_FLOOR', floor: 7 });
+    expect(st.sel).toHaveLength(10);
+  });
+
+  it('같은 값을 쓰는 객실을 한 번에 고른다 — 공용BBQ 22실', () => {
+    const st = run(initialState(), { type: 'SELECT_BY_VALUE', attr: 'bbq', value: 'shared_gas' });
+    expect(st.sel).toHaveLength(22);
+
+    /** 고른 뒤 한꺼번에 바꾸면 22실이 한 번에 갑니다. */
+    const changed = run(
+      st,
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_ATTR', attr: 'bbq' },
+      { type: 'PICK_BULK_VALUE', value: 'shared_charcoal' },
+      { type: 'PREVIEW_BULK' },
+      { type: 'APPLY_CAS' },
+    );
+    const p = P(changed);
+    expect(p.rooms.filter((r) => valueOf(p, r, 'bbq') === 'shared_charcoal')).toHaveLength(22);
+  });
+
+  it('따로 정한 객실만 한 번에 고른다', () => {
+    const st = run(initialState(), { type: 'SELECT_OWN' });
+    const p = P(st);
+    const own = (r: (typeof p.rooms)[number]) =>
+      attrsOf(p).some((d) => isOwn(r, d.key) && r.values[d.key] !== p.defaults[d.key]);
+    expect(st.sel).toHaveLength(p.rooms.filter(own).length);
+    expect(p.rooms.filter((r) => st.sel.includes(r.code)).every(own)).toBe(true);
+  });
+});
+
 describe('cascade preview hygiene', () => {
   it('never shows an empty auto-derived group', () => {
     const st = run(initialState(), { type: 'PREVIEW_BLOCK_STATE', blockKey: 'parking', nextSt: 'off' });

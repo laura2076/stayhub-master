@@ -232,7 +232,10 @@ export type MasterState = {
   /** 지금 보고 있는 숙소 id. */
   current: string;
   tab: TabId;
+  /** 왼쪽 숙소 목록과 객실 표를 좁히는 검색어. */
   q: string;
+  /** 시설 카드를 좁히는 검색어 — 위 검색과 섞이면 두 칸이 서로를 따라 하게 됩니다. */
+  bq: string;
   sel: string[];
   bfilter: BlockFilter;
   bulk: BulkDraft | null;

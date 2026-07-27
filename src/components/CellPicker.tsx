@@ -21,6 +21,8 @@ export const CellPicker = ({
   children,
   cellStyle,
   className,
+  alsoLabel,
+  onAlso,
 }: {
   label: string;
   mode: PickerMode;
@@ -29,6 +31,9 @@ export const CellPicker = ({
   children: ReactNode;
   cellStyle?: CSSProperties;
   className?: string;
+  /** 값을 고치는 대신 "같은 값을 쓰는 객실을 전부 고르는" 지름길. */
+  alsoLabel?: string;
+  onAlso?: () => void;
 }) => {
   const anchor = useRef<HTMLDivElement>(null);
   const pop = useRef<HTMLDivElement>(null);
@@ -227,6 +232,28 @@ export const CellPicker = ({
               );
             })
           )}
+
+          {alsoLabel && onAlso ? (
+            <div
+              onClick={() => {
+                setOpen(false);
+                onAlso();
+              }}
+              className="hov-surface"
+              style={{
+                padding: '9px 12px',
+                borderTop: '1px solid var(--color-divider)',
+                background: 'var(--color-surface)',
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: 'var(--color-accent-800)',
+                cursor: 'pointer',
+              }}
+              title="고른 뒤 '한꺼번에 바꾸기'로 한 번에 바꿉니다"
+            >
+              + {alsoLabel}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

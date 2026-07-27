@@ -79,7 +79,7 @@ describe('숙소마다 열이 달라진다', () => {
     const out = html();
     expect(out).toContain('기준 인원');
     expect(out).toContain('최대 인원');
-    expect(out).toContain('인원과 요금은 숫자를 직접 넣습니다');
+    expect(out).toContain('값을 누르면 바로 고칠 수 있어요');
   });
 });
 
