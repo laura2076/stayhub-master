@@ -34,11 +34,11 @@ export const ValueEditorModal = () => {
     }
   };
 
-  const title = edit.kind === 'optfee' ? `${edit.o.label} · 이용요금` : `${edit.bk.label} · ${edit.k}`;
+  const title = edit.kind === 'optfee' ? `${edit.o.label} 요금 고치기` : `${edit.bk.label} · ${edit.k}`;
   const sub =
     edit.kind === 'optfee'
-      ? '옵션 단위 요금 — 이 옵션을 쓰는 모든 객실에 적용됩니다'
-      : `숙소 단위 원본값 · 상속 객실 ${edit.bk.rooms}개`;
+      ? '이 바베큐 종류를 쓰는 모든 객실에 같이 적용됩니다'
+      : `이 숙소 전체값 · 객실 ${edit.bk.rooms}개가 이 값을 씁니다`;
 
   /** Any qualifier already stored but missing from the catalogue is kept as its own chip. */
   const tailChoices = p.tail && !TAILS.includes(p.tail) ? [...TAILS, p.tail] : TAILS;
@@ -62,7 +62,7 @@ export const ValueEditorModal = () => {
 
         {type === 'range' ? (
           <div>
-            <div style={{ ...subLabel, marginBottom: 6 }}>시작 기준</div>
+            <div style={{ ...subLabel, marginBottom: 6 }}>언제부터</div>
             <Seg style={{ marginBottom: 11 }}>
               <SegItem
                 label="입실 시각"
@@ -107,12 +107,12 @@ export const ValueEditorModal = () => {
               />
             </div>
 
-            <div style={{ ...subLabel, margin: '12px 0 6px' }}>부가 조건</div>
+            <div style={{ ...subLabel, margin: '12px 0 6px' }}>덧붙일 조건</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {tailChoices.map((t) => (
                 <Chip
                   key={t || 'none'}
-                  label={t || '부가 조건 없음'}
+                  label={t || '조건 없음'}
                   on={(p.tail ?? '') === t}
                   onClick={() => set('tail', t)}
                 />
@@ -242,19 +242,19 @@ export const ValueEditorModal = () => {
                   onClick={() => dispatch({ type: 'ADD_TIER' })}
                   style={{ alignSelf: 'flex-start', height: 28, fontSize: 12 }}
                 >
-                  + 구간 추가
+                  + 구간 넣기
                 </button>
               </div>
             )}
 
-            <div style={{ ...subLabel, margin: '13px 0 6px' }}>과금 기준</div>
+            <div style={{ ...subLabel, margin: '13px 0 6px' }}>얼마 기준</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {UNITS.map((u) => (
                 <Chip key={u} label={u} on={p.unit === u} onClick={() => set('unit', u)} />
               ))}
             </div>
 
-            <div style={{ ...subLabel, margin: '11px 0 6px' }}>결제 방식</div>
+            <div style={{ ...subLabel, margin: '11px 0 6px' }}>어디서 냄</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {PAYS.map((u) => (
                 <Chip key={u} label={u} on={p.pay === u} onClick={() => set('pay', u)} />
@@ -313,17 +313,17 @@ export const ValueEditorModal = () => {
         ) : null}
 
         <div style={{ marginTop: 13, padding: '9px 11px', background: 'var(--color-surface)', fontSize: 12 }}>
-          <span style={{ color: 'var(--color-neutral-600)', fontSize: 11 }}>저장될 값 </span>
+          <span style={{ color: 'var(--color-neutral-600)', fontSize: 11 }}>이렇게 저장돼요 </span>
           <b>{composeVal(type, p)}</b>
         </div>
       </div>
 
       <ModalFoot>
         <button className="btn btn-secondary" onClick={() => dispatch({ type: 'CLOSE_EDIT' })} style={{ height: 32 }}>
-          취소
+          그만두기
         </button>
         <button className="btn btn-primary" onClick={() => dispatch({ type: 'PREVIEW_EDIT' })} style={{ height: 32 }}>
-          연쇄 갱신 미리보기
+          바꾸기
         </button>
       </ModalFoot>
     </Modal>

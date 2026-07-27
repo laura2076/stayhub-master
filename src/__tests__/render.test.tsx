@@ -24,8 +24,8 @@ describe('console shell', () => {
     expect(out).toContain('STAYHUB 마스터');
     expect(out).toContain('속초 더샵 스파 펜션');
     expect(out).toContain('A701');
-    expect(out).toContain('객실 오버라이드');
-    expect(out).toContain('필드 인스펙터');
+    expect(out).toContain('이 객실만 따로 정함');
+    expect(out).toContain('이 값 설명');
   });
 
   it('lists all 28 rooms', () => {
@@ -35,42 +35,42 @@ describe('console shell', () => {
 
   it('hides the inspector in the 2단 layout', () => {
     const out = html({ type: 'SET_SETTINGS', patch: { layout: '2panel' } });
-    expect(out).not.toContain('필드 인스펙터');
+    expect(out).not.toContain('이 값 설명');
   });
 
   it('shows the 숙소 기본값 under inherited cells in 고스트 mode', () => {
-    expect(html()).not.toContain('숙소 공용BBQ · 가스그릴');
-    expect(html({ type: 'SET_SETTINGS', patch: { inheritanceViz: 'ghost' } })).toContain('숙소 공용BBQ · 가스그릴');
+    expect(html()).not.toContain('전체 공용BBQ · 가스그릴');
+    expect(html({ type: 'SET_SETTINGS', patch: { inheritanceViz: 'ghost' } })).toContain('전체 공용BBQ · 가스그릴');
   });
 });
 
 describe('every tab renders', () => {
   it('시설·블록정보 — cards, format tags and the rule editor', () => {
     const out = onTab('blocks');
-    expect(out).toContain('시설 항목 · 블록정보');
-    expect(out).toContain('객실에서 자동 산출');
-    expect(out).toContain('안내 규칙');
+    expect(out).toContain('이 숙소가 가진 시설');
+    expect(out).toContain('자동 계산');
+    expect(out).toContain('안내 문구');
     expect(out).toContain('21:00 이후 입실 시 사전 연락 필수');
-    expect(out).toContain('미보유');
+    expect(out).toContain('없음');
   });
 
   it('옵션·요금 — one row per option with its fee and channel words', () => {
     const out = onTab('options');
-    expect(out).toContain('바베큐 형태 옵션 · 요금');
+    expect(out).toContain('바베큐 종류와 요금');
     expect(out).toContain('shared_charcoal');
     expect(out).toContain('참숯BBQ');
   });
 
   it('채널 매핑 — mismatches flagged against the dictionary', () => {
     const out = onTab('channels');
-    expect(out).toContain('채널별 값 매핑');
-    expect(out).toContain('불일치 3');
-    expect(out).toContain('마스터값으로 교정');
+    expect(out).toContain('판매 사이트에 나가는 값');
+    expect(out).toContain('다른 값 3개');
+    expect(out).toContain('기준값으로 맞추기');
   });
 
   it('FAQ — derived answers carry their source', () => {
     const out = onTab('faq');
-    expect(out).toContain('시설 값에서 생성');
+    expect(out).toContain('시설 정보에서 자동');
     expect(out).toContain('17:00~21:00에 이용 가능합니다.');
     expect(out).toContain('미사용 시설 · 자동 비활성');
   });
@@ -83,23 +83,19 @@ describe('every tab renders', () => {
 describe('every dialog renders', () => {
   it('일괄 편집', () => {
     const out = html({ type: 'TOGGLE_ROOM', code: '27740' }, { type: 'OPEN_BULK' });
-    expect(out).toContain('일괄 편집 · 1객실');
+    expect(out).toContain('객실 1개 한꺼번에 바꾸기');
     expect(out).toContain('숙소 기본값과 달라 객실 오버라이드로 기록됩니다.');
   });
 
-  it('객실 신규 등록', () => {
-    expect(html({ type: 'OPEN_NEW_ROOM' })).toContain('객실 신규 등록');
+  it('객실 만들기', () => {
+    expect(html({ type: 'OPEN_NEW_ROOM' })).toContain('객실 만들기');
   });
 
-  it('연쇄 갱신 미리보기', () => {
-    const out = html(
-      { type: 'EDIT_ROOM_FIELD', code: '27740', field: 'bbq' },
-      { type: 'PICK_BULK_VALUE', value: '이용 불가' },
-      { type: 'PREVIEW_BULK' },
-    );
-    expect(out).toContain('연쇄 갱신 미리보기');
-    expect(out).toContain('4~7층 객실 · 21객실 (A401 제외)');
-    expect(out).toContain('자동 산출');
+  it('확인 창 — 지우기처럼 되돌리기로 못 되살리는 것만', () => {
+    const out = html({ type: 'TOGGLE_ROOM', code: '27740' }, { type: 'PREVIEW_DELETE' });
+    expect(out).toContain('이렇게 바뀝니다');
+    expect(out).toContain('객실 1개를 지웁니다');
+    expect(out).toContain('네, 바꿀게요');
   });
 
   it('값 편집기 — 시간대', () => {
@@ -110,27 +106,22 @@ describe('every dialog renders', () => {
       v: '17:00~21:00',
     });
     expect(out).toContain('공용 BBQ · 이용 시간');
-    expect(out).toContain('시작 기준');
-    expect(out).toContain('부가 조건');
-    expect(out).toContain('저장될 값');
+    expect(out).toContain('언제부터');
+    expect(out).toContain('덧붙일 조건');
+    expect(out).toContain('이렇게 저장돼요');
   });
 
   it('값 편집기 — 금액 구간', () => {
     const out = onTab('options', { type: 'OPEN_OPT_FEE', code: 'shared_gas' });
-    expect(out).toContain('공용BBQ · 가스그릴 · 이용요금');
-    expect(out).toContain('과금 기준');
-    expect(out).toContain('결제 방식');
-    expect(out).toContain('+ 구간 추가');
+    expect(out).toContain('공용BBQ · 가스그릴 요금 고치기');
+    expect(out).toContain('얼마 기준');
+    expect(out).toContain('어디서 냄');
+    expect(out).toContain('+ 구간 넣기');
   });
 
-  it('되돌리기 토스트', () => {
-    const out = html(
-      { type: 'EDIT_ROOM_FIELD', code: '27740', field: 'bbq' },
-      { type: 'PICK_BULK_VALUE', value: '이용 불가' },
-      { type: 'PREVIEW_BULK' },
-      { type: 'APPLY_CAS' },
-    );
+  it('바꾸면 문장으로 알리고 되돌릴 수 있다', () => {
+    const out = html({ type: 'PICK_CELL', code: '27740', field: 'bbq', value: '이용 불가' });
     expect(out).toContain('되돌리기');
-    expect(out).toContain('연쇄 갱신');
+    expect(out).toContain('바꿨어요');
   });
 });

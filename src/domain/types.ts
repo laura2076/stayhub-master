@@ -194,7 +194,7 @@ export type BlockFilter = 'all' | BlockStatus;
 /** The three prototype tweaks, surfaced as a settings menu. */
 export type Settings = {
   inheritanceViz: 'marker' | 'ghost';
-  cascadeMode: 'preview' | 'instant';
+  cascadeMode: 'smart' | 'always';
   layout: '3panel' | '2panel';
 };
 

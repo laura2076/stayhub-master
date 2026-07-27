@@ -21,11 +21,11 @@ export const FaqTab = () => {
         }}
       >
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-accent-900)' }}>
-          시설 값을 인용하는 답변 {derivedN}건은 자유 입력이 아니라 시설 값에서 생성됩니다 — 사람이 따로 고칠 곳이 없으므로
-          어긋날 수 없습니다.
+          시설 정보를 그대로 옮겨 적는 답변 {derivedN}개는 자동으로 만들어집니다. 따로 고칠 곳이 없으니 시설 정보와
+          어긋날 일이 없습니다.
         </div>
         <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-accent-800)' }}>
-          미사용 시설과 연결된 16건은 자동 비활성이라 채널로 전송되지 않습니다 (개별수영장 · 애견동반 · 캠핑).
+          안 쓰는 시설에 딸린 16개는 자동으로 빠져서 판매 사이트로 나가지 않습니다 (개별수영장 · 애견동반 · 캠핑).
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export const FaqTab = () => {
             {f.derived ? (
               <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span className="tag tag-outline" style={{ fontSize: 10 }}>
-                  시설 값에서 생성
+                  시설 정보에서 자동
                 </span>
                 <span style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>{f.src}</span>
               </div>

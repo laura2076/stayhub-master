@@ -19,6 +19,7 @@ import { FIELDS, OPTIONS, optByCode } from '../domain/catalog';
 import { curVal, slotText } from '../domain/derive';
 import { composeVal, parseVal, typeOf } from '../domain/fieldTypes';
 import { initialState } from '../domain/seed';
+import { doneSentence, needsConfirm } from '../domain/summary';
 import type {
   BlockFilter,
   BulkFieldId,
@@ -46,6 +47,7 @@ export type Action =
   | { type: 'PICK_BULK_FIELD'; id: BulkFieldId }
   | { type: 'PICK_BULK_VALUE'; value: string }
   | { type: 'EDIT_ROOM_FIELD'; code: string; field: BulkFieldId }
+  | { type: 'PICK_CELL'; code: string; field: BulkFieldId; value: string }
   | { type: 'OPEN_NEW_ROOM' }
   | { type: 'CLOSE_NEW_ROOM' }
   | { type: 'SET_NR'; k: 'name' | 'floor' | 'bbq' | 'pax'; v: string }
@@ -88,7 +90,7 @@ const commit = (st: MasterState, c: Cascade): MasterState => {
     sel: [],
     snapshot,
     savedAt: SAVED_AT,
-    toast: `연쇄 갱신 ${checkedN}건 적용됨 · ${c.field}`,
+    toast: doneSentence(c),
     history: [
       {
         title: `${c.field} 변경`,
@@ -104,10 +106,12 @@ const commit = (st: MasterState, c: Cascade): MasterState => {
   };
 };
 
-/** In 미리보기 mode the cascade opens as a dialog; in 즉시 적용 mode it commits
- *  straight away — undo from the toast is the safety net either way. */
+/** Value edits go straight through — they are reversible, and a dialog nobody reads
+ *  is not a safeguard. Creating, deleting, and overwriting someone else's setting ask
+ *  first, because undo cannot recover the judgement behind them.
+ *  "항상 확인" 설정을 켜면 예전처럼 모든 변경을 묻습니다. */
 const openCascade = (st: MasterState, c: Cascade): MasterState =>
-  st.settings.cascadeMode === 'instant' ? commit(st, c) : { ...st, cas: c };
+  st.settings.cascadeMode === 'always' || needsConfirm(c) ? { ...st, cas: c } : commit(st, c);
 
 const patchParts = (st: MasterState, p: Parts): MasterState =>
   st.edit ? { ...st, edit: { ...st.edit, p } } : st;
@@ -149,6 +153,14 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       const room = st.rooms.find((r) => r.code === a.code);
       if (!room) return st;
       return { ...st, sel: [a.code], bulk: { field: a.field, value: curVal(room, a.field) } };
+    }
+
+    /** 셀에서 값을 고르면 그 객실에만 바로 씁니다 — 창을 거치지 않습니다. */
+    case 'PICK_CELL': {
+      const room = st.rooms.find((r) => r.code === a.code);
+      if (!room || curVal(room, a.field) === a.value) return { ...st, bulk: null };
+      const staged: MasterState = { ...st, sel: [a.code], bulk: { field: a.field, value: a.value } };
+      return openCascade({ ...staged, bulk: null }, previewBulk(staged));
     }
 
     case 'OPEN_NEW_ROOM':

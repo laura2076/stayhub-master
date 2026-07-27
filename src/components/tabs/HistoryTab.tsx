@@ -28,7 +28,7 @@ export const HistoryTab = () => {
                 borderRadius: 0,
               }}
             >
-              연쇄 {h.n}건
+              같이 바뀐 것 {h.n}개
             </span>
             <div style={{ flex: 1 }} />
             <span style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>

@@ -65,15 +65,15 @@ export const previewBulk = (st: MasterState): Cascade => {
     target: b.field,
     value: b.value,
     warn: items.some((i) => i.isOv)
-      ? '선택 객실 중 일부는 이미 개별 오버라이드가 있습니다. 체크를 해제하면 그 객실의 기존 값은 유지됩니다.'
+      ? '고른 객실 중 몇 개는 따로 정해둔 값이 있어요. 체크를 풀면 그 객실은 지금 값 그대로 둡니다.'
       : derived.length
-        ? `숙소 블록의 자동 산출 필드 ${derived.length}건은 객실 값에서 다시 계산됩니다 — 따로 수정할 필요가 없습니다.`
+        ? `시설 안내문 ${derived.length}곳은 객실 값에서 자동으로 다시 만들어집니다 — 따로 고칠 필요가 없어요.`
         : '',
     groups: [
-      { title: `객실 ${items.length}`, desc: '선택한 객실에 값 쓰기', items },
+      { title: `객실 ${items.length}`, desc: '고른 객실에 적용', items },
       ...derivedGroup(derived),
-      { title: '판매 채널 3', desc: '매핑 사전을 통해 채널 표현으로 변환', items: side },
-      ...(faq.length ? [{ title: `FAQ ${faq.length}`, desc: '시설 값을 인용하는 답변', items: faq }] : []),
+      { title: '판매 사이트 3', desc: '사이트마다 쓰는 말로 바꿔서 나감', items: side },
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '시설 값을 옮겨 적는 답변', items: faq }] : []),
     ],
   };
 };
@@ -113,11 +113,11 @@ export const previewNewRoom = (st: MasterState, room: Room): Cascade => {
     field: `객실 신규 등록 · ${room.short}`,
     from: '없음',
     to: `${room.short} (${room.floor}층 · ${room.bbq})`,
-    warn: '객실이 하나 늘면 이 객실을 참조하는 숙소 블록 문구와 객실 수가 모두 다시 계산됩니다.',
+    warn: '객실이 하나 늘면 이 객실을 쓰는 시설 안내문과 객실 수가 모두 다시 계산됩니다.',
     groups: [
       {
         title: '객실 1',
-        desc: '신규 등록',
+        desc: '새로 만드는 객실',
         items: [
           {
             key: `room:${room.code}`,
@@ -131,8 +131,8 @@ export const previewNewRoom = (st: MasterState, room: Room): Cascade => {
       },
       ...derivedGroup(derived),
       {
-        title: '판매 채널 3',
-        desc: '신규 객실 상품 생성 + 부대시설 문구',
+        title: '판매 사이트 3',
+        desc: '사이트에 새 상품이 생김',
         items: channelItems((ch) => `${ch} · ${room.short} 상품`, '없음', '생성 · 전송 대기'),
       },
     ],
@@ -149,11 +149,11 @@ export const previewDelete = (st: MasterState): Cascade => {
     field: `객실 삭제 · ${gone.length}객실`,
     from: gone.map((r) => r.short).join(','),
     to: '삭제',
-    warn: '삭제된 객실을 참조하던 블록 문구·객실 수는 자동으로 줄어듭니다. 마지막 객실이 빠진 시설은 사용안함으로 내려갑니다.',
+    warn: '지운 객실을 쓰던 안내문과 객실 수가 자동으로 줄어듭니다. 마지막 객실이 빠진 시설은 저절로 안 쓰는 상태가 됩니다.',
     groups: [
       {
         title: `객실 ${gone.length}`,
-        desc: '삭제 대상',
+        desc: '지울 객실',
         items: gone.map((r) => ({
           key: `room:${r.code}`,
           label: `${r.short} · ${r.code}`,
@@ -165,8 +165,8 @@ export const previewDelete = (st: MasterState): Cascade => {
       },
       ...derivedGroup(derived),
       {
-        title: '판매 채널 3',
-        desc: '채널 상품 판매중지',
+        title: '판매 사이트 3',
+        desc: '사이트에서 내림',
         items: channelItems((ch) => `${ch} · 상품 ${gone.length}건`, '판매중', '판매중지'),
       },
     ],
@@ -222,12 +222,12 @@ export const previewBlockState = (st: MasterState, bk: Block, nextSt: 'off' | 'n
     to: stName(nextSt),
     warn:
       nextSt === 'none'
-        ? '항목 자체를 이 숙소에서 제거합니다. 이 시설을 쓰던 객실 값도 함께 비워지고, 관련 FAQ는 비활성됩니다.'
-        : '판매 노출만 끕니다. 값과 필드는 남아 있어 언제든 다시 켤 수 있습니다.',
+        ? '이 숙소에서 시설을 아예 없앱니다. 그 시설을 쓰던 객실 값도 비워지고, 딸린 질문·답변도 빠집니다.'
+        : '판매 사이트에만 안 나가게 합니다. 값은 그대로 남아 있어 언제든 다시 켤 수 있어요.',
     groups: [
       {
-        title: '숙소 블록 1',
-        desc: nextSt === 'none' ? '카탈로그 항목 제거' : '사용 여부 전환',
+        title: '시설 1',
+        desc: nextSt === 'none' ? '이 숙소에서 없앰' : '쓸지 말지 바꿈',
         items: [
           { key: `blk:${bk.key}`, label: bk.label, before: stName(bk.st), after: stName(nextSt), on: true, isOv: false },
           ...useFieldItem(bk, nextSt),
@@ -237,7 +237,7 @@ export const previewBlockState = (st: MasterState, bk: Block, nextSt: 'off' | 'n
         ? [
             {
               title: `객실 ${hit.length}`,
-              desc: '이 시설을 참조하던 객실 값',
+              desc: '이 시설을 쓰던 객실',
               items: hit.map((r) => ({
                 key: `room:${r.code}`,
                 label: `${r.short} · ${r.code}`,
@@ -252,11 +252,11 @@ export const previewBlockState = (st: MasterState, bk: Block, nextSt: 'off' | 'n
         : []),
       ...derivedGroup(derived),
       {
-        title: `판매 채널 ${bk.chanN}`,
-        desc: '채널 부대시설 항목',
+        title: `판매 사이트 ${bk.chanN}`,
+        desc: '사이트에 나가는 시설 목록',
         items: channelItems((ch) => `${ch} · ${bk.label}`, '노출', '미노출', bk.chanN),
       },
-      ...(faq.length ? [{ title: `FAQ ${faq.length}`, desc: '연결 문항 자동 비활성', items: faq }] : []),
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '딸린 질문이 자동으로 빠짐', items: faq }] : []),
     ],
   };
 };
@@ -299,26 +299,26 @@ export const previewBlockUse = (st: MasterState, bk: Block): Cascade => {
     from: '보유 · 사용안함',
     to: '사용중',
     warn: isBbq
-      ? '적용 객실을 여기서 바로 고르세요 — 체크한 객실에 오버라이드로 기록되고, 블록의 이용 객실 문구·객실 수는 그 결과에서 자동 산출됩니다. (기본 선택: 이용 불가 상태였던 객실)'
+      ? '어느 객실에 붙일지 여기서 바로 고르세요. 체크한 객실에만 붙고, 안내문과 객실 수는 그 결과대로 자동으로 만들어집니다. (원래 쓰던 객실이 미리 체크돼 있어요)'
       : faq.length
-        ? `연결된 FAQ ${faq.length}건이 함께 활성화됩니다. 답변이 빈 문항은 채널 전송 전에 채워야 합니다.`
+        ? `딸린 질문·답변 ${faq.length}개가 같이 살아납니다. 답이 빈 것은 사이트에 보내기 전에 채워야 해요.`
         : '',
     groups: [
       {
-        title: '숙소 블록 1',
-        desc: '사용 여부 전환',
+        title: '시설 1',
+        desc: '쓸지 말지 바꿈',
         items: [
           { key: `blk:${bk.key}`, label: bk.label, before: '보유·사용안함', after: '사용중', on: true, locked: true, isOv: false },
           ...useFieldItem(bk, 'used'),
         ],
       },
-      ...(pick.length ? [{ title: `적용 객실 선택 ${pick.length}`, desc: '체크한 객실에만 이 시설을 붙입니다', items: pick }] : []),
+      ...(pick.length ? [{ title: `어느 객실에 붙일까요 ${pick.length}`, desc: '체크한 객실에만 붙습니다', items: pick }] : []),
       {
-        title: `판매 채널 ${bk.chanN}`,
-        desc: '채널 부대시설 항목에 노출',
+        title: `판매 사이트 ${bk.chanN}`,
+        desc: '사이트 시설 목록에 나감',
         items: channelItems((ch) => `${ch} · ${bk.label}`, '미노출', '노출', bk.chanN),
       },
-      ...(faq.length ? [{ title: `FAQ ${faq.length}`, desc: '자동 비활성 해제', items: faq }] : []),
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '빠져 있던 질문이 다시 살아남', items: faq }] : []),
     ],
   };
 };
@@ -337,16 +337,16 @@ export const previewAddBlockItem = (st: MasterState, bk: Block): Cascade => {
     field: `${bk.label} · 항목 보유`,
     from: '이 숙소에 없음',
     to: '보유 (사용 여부 별도 설정)',
-    warn: '항목만 추가됩니다. 실제 판매 노출은 값 입력 후 "사용으로 전환"에서 켜세요.',
+    warn: '항목만 생깁니다. 값을 채운 뒤 "쓰기 시작"을 눌러야 판매 사이트에 나갑니다.',
     groups: [
       {
-        title: '숙소 블록 1',
-        desc: '전사 카탈로그에서 이 숙소로 항목 추가',
+        title: '시설 1',
+        desc: '전체 목록에서 이 숙소로 가져옴',
         items: [{ key: `blk:${bk.key}`, label: bk.label, before: '미보유', after: '보유 · 사용안함', on: true, isOv: false }],
       },
       {
-        title: '입력 필요 필드',
-        desc: '카탈로그가 정의한 필수 필드',
+        title: '채워야 할 항목',
+        desc: '이 시설에 꼭 필요한 항목',
         items: (['이용 객실', '이용 요금', '이용 시간'] as const).map((k) => ({
           key: `fld:${k}`,
           label: `${bk.label} · ${k}`,
@@ -356,7 +356,7 @@ export const previewAddBlockItem = (st: MasterState, bk: Block): Cascade => {
           isOv: false,
         })),
       },
-      ...(faq.length ? [{ title: `FAQ ${faq.length}`, desc: '이 시설을 묻는 문항', items: faq }] : []),
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '이 시설을 묻는 질문', items: faq }] : []),
     ],
   };
 };
@@ -409,13 +409,13 @@ export const previewBlockEdit = (st: MasterState, bk: Block, fieldKey: string, v
     to: value,
     warn: '',
     groups: [
-      { title: `상속 객실 ${items.length}`, desc: '이 블록을 이용하는 객실', items },
+      { title: `이 값을 쓰는 객실 ${items.length}`, desc: '이 시설을 쓰는 객실', items },
       {
-        title: '판매 채널 3',
-        desc: '채널 상세 설명 문구',
+        title: '판매 사이트 3',
+        desc: '사이트 설명 문구',
         items: channelItems((ch) => `${ch} · ${bk.label}`, '이전 값', value),
       },
-      ...(faq.length ? [{ title: `FAQ ${faq.length}`, desc: '이 시설을 인용하는 답변', items: faq }] : []),
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '이 시설을 옮겨 적는 답변', items: faq }] : []),
     ],
   };
 };
@@ -431,18 +431,18 @@ export const previewOptFee = (st: MasterState, code: OptionCode, label: string, 
     field: `${label} · 이용요금`,
     from: feeOf(st, code),
     to: value,
-    warn: `요금은 옵션에 붙습니다. 이 옵션을 쓰는 객실 ${hit.length}개와 숙소 블록 요금 문구, 채널 요금이 한 번에 갱신됩니다.`,
+    warn: `요금은 바베큐 종류에 붙어 있어요. 이 종류를 쓰는 객실 ${hit.length}개와 안내문, 사이트 요금이 한 번에 바뀝니다.`,
     groups: [
       {
-        title: '옵션 1',
-        desc: '전사 옵션의 이 숙소 요금',
+        title: '바베큐 종류 1',
+        desc: '이 숙소에서 받는 요금',
         items: [{ key: `opt:${code}`, label, before: feeOf(st, code), after: value, on: true, locked: true, isOv: false }],
       },
       ...(hit.length
         ? [
             {
               title: `객실 ${hit.length}`,
-              desc: '이 옵션을 쓰는 객실',
+              desc: '이 종류를 쓰는 객실',
               items: hit.map((r) => ({
                 key: `room:${r.code}`,
                 label: `${r.short} · ${r.code}`,
@@ -457,8 +457,8 @@ export const previewOptFee = (st: MasterState, code: OptionCode, label: string, 
         : []),
       ...derivedGroup(derivedDiff(st.rooms, st.blocks, nextRooms)),
       {
-        title: '판매 채널 3',
-        desc: '채널 요금 표기',
+        title: '판매 사이트 3',
+        desc: '사이트에 적히는 요금',
         items: channelItems((ch) => `${ch} · ${label} 요금`, feeOf(st, code), value),
       },
     ],
@@ -480,16 +480,16 @@ export const previewRule = (bk: Block, ri: number, si: number, value: string | n
     field: `${bk.label} · 안내 규칙`,
     from: ruleText(r),
     to: after,
-    warn: '안내 문장은 규칙 조각(시각·금액·수치)에서 생성됩니다. 문장을 직접 쓰는 곳이 없으므로 숫자와 문장이 어긋날 수 없습니다.',
+    warn: '안내 문장은 값(시각·금액·숫자)에서 자동으로 만들어집니다. 문장을 직접 쓰는 곳이 없어서 숫자와 문장이 어긋날 수 없어요.',
     groups: [
       {
-        title: '숙소 블록 1',
-        desc: '규칙 값 변경 · 문장 재생성',
+        title: '시설 1',
+        desc: '값이 바뀌어 문장을 다시 만듦',
         items: [{ key: `rule:${bk.key}:${ri}`, label: `${bk.label} 규칙 ${ri + 1}`, before: ruleText(r), after, on: true, locked: true, isOv: false }],
       },
       {
-        title: '판매 채널 3',
-        desc: '채널 안내 문구 재생성',
+        title: '판매 사이트 3',
+        desc: '사이트 안내 문구 다시 만듦',
         items: channelItems((ch) => `${ch} · ${bk.label} 안내`, '이전 문장', after),
       },
     ],
@@ -505,16 +505,16 @@ export const previewRuleAdd = (bk: Block, ruleId: string): Cascade => {
     field: `${bk.label} · 안내 규칙 추가`,
     from: '없음',
     to: ruleText(cat),
-    warn: '전사 규칙 카탈로그에서 고릅니다 — 자유 문장 입력은 없습니다.',
+    warn: '미리 만들어 둔 문구 중에서 고릅니다 — 직접 쓰는 곳은 없어요.',
     groups: [
       {
-        title: '숙소 블록 1',
-        desc: '규칙 추가',
+        title: '시설 1',
+        desc: '안내 문구 넣기',
         items: [{ key: `ruleadd:${ruleId}`, label: bk.label, before: '—', after: ruleText(cat), on: true, locked: true, isOv: false }],
       },
       {
-        title: '판매 채널 3',
-        desc: '채널 안내 문구에 추가',
+        title: '판매 사이트 3',
+        desc: '사이트 안내 문구에 들어감',
         items: channelItems((ch) => `${ch} · ${bk.label} 안내`, '이전 문장', '규칙 1건 추가'),
       },
     ],
@@ -531,8 +531,8 @@ export const previewRuleDel = (bk: Block, ri: number): Cascade => ({
   warn: '',
   groups: [
     {
-      title: '숙소 블록 1',
-      desc: '규칙 삭제',
+      title: '시설 1',
+      desc: '안내 문구 빼기',
       items: [{ key: `ruledel:${ri}`, label: bk.label, before: ruleText(bk.rules![ri]), after: '삭제', on: true, locked: true, isOv: false }],
     },
   ],
@@ -555,16 +555,16 @@ export const previewChannelSync = (
   field: `${label} · ${chName}`,
   from: st.channels[rowId][ck],
   to,
-  warn: '채널이 마스터와 다른 값을 갖고 있습니다. 교정하면 채널 쪽 수동 편집분은 사라집니다.',
+  warn: '이 사이트만 다른 값을 갖고 있어요. 맞추면 사이트에서 따로 고쳤던 내용은 사라집니다.',
   groups: [
     {
-      title: '채널 값 1',
-      desc: '매핑 사전 규칙으로 교정',
+      title: '사이트 값 1',
+      desc: '기준값으로 맞춤',
       items: [{ key: `ch:${ck}`, label: `${chName} · ${label}`, before: st.channels[rowId][ck], after: to, on: true, isOv: false }],
     },
     {
-      title: '연동 재전송',
-      desc: '교정 후 자동 재전송 큐에 등록',
+      title: '사이트에 다시 보내기',
+      desc: '맞춘 뒤 자동으로 다시 보냄',
       items: [{ key: `q:${ck}`, label: `${chName} 상품 재전송`, before: '대기', after: '즉시 전송', on: true, isOv: false }],
     },
   ],

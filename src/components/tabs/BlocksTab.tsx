@@ -8,9 +8,9 @@ import { Corners, CountChip, Seg, SegItem } from '../primitives';
 
 const FILTERS: [BlockFilter, string][] = [
   ['all', '전체'],
-  ['used', '사용중'],
-  ['off', '보유·사용안함'],
-  ['none', '미보유'],
+  ['used', '쓰는 중'],
+  ['off', '있지만 안 씀'],
+  ['none', '없음'],
 ];
 
 const smallBtn = { height: 22, padding: '0 8px', fontSize: 11 } as const;
@@ -33,11 +33,11 @@ const RulesSection = ({ b }: { b: Block }) => {
   return (
     <div style={{ marginTop: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)' }}>안내 규칙 {rules.length}</span>
-        <span style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>조각 값에서 문장 생성 · 직접 입력 없음</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)' }}>안내 문구 {rules.length}개</span>
+        <span style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>값만 고르면 문장은 자동으로 만들어집니다</span>
         <div style={{ flex: 1 }} />
         <button className="btn btn-secondary" onClick={() => setPicking((v) => !v)} style={smallBtn}>
-          {picking ? '닫기' : '+ 규칙 추가'}
+          {picking ? '닫기' : '+ 문구 넣기'}
         </button>
       </div>
 
@@ -59,14 +59,14 @@ const RulesSection = ({ b }: { b: Block }) => {
               className="btn btn-secondary"
               onClick={() => dispatch({ type: 'OPEN_RULE_SLOT', blockKey: b.key, ri, si })}
               style={{ ...smallBtn, flex: 'none' }}
-              title={`${typeName(s.type)} 값 수정`}
+              title={`눌러서 ${typeName(s.type)} 고치기`}
             >
               {slotText(s)}
             </button>
           ))}
           {r.slots.length === 0 ? (
             <span className="tag tag-neutral" style={{ flex: 'none', fontSize: 10 }}>
-              고정 문장
+              고칠 값 없음
             </span>
           ) : null}
           <button
@@ -74,7 +74,7 @@ const RulesSection = ({ b }: { b: Block }) => {
             onClick={() => dispatch({ type: 'PREVIEW_RULE_DEL', blockKey: b.key, ri })}
             style={{ ...smallBtn, flex: 'none' }}
           >
-            삭제
+            빼기
           </button>
         </div>
       ))}
@@ -90,10 +90,10 @@ const RulesSection = ({ b }: { b: Block }) => {
           }}
         >
           <div style={{ fontSize: 10.5, color: 'var(--color-neutral-600)', marginBottom: 6 }}>
-            전사 규칙 카탈로그 — 고른 뒤 조각 값을 이 숙소 값으로 맞춥니다. 문장은 직접 쓰지 않습니다.
+            쓸 수 있는 문구 목록입니다. 고른 다음 숫자·시각만 이 숙소에 맞게 바꾸면 됩니다.
           </div>
           {available.length === 0 ? (
-            <div style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>추가할 수 있는 규칙이 없습니다.</div>
+            <div style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>넣을 수 있는 문구를 다 넣었습니다.</div>
           ) : (
             groups.map((g) => (
               <div key={g} style={{ marginBottom: 6 }}>
@@ -128,7 +128,7 @@ const RulesSection = ({ b }: { b: Block }) => {
                         }}
                         style={{ ...smallBtn, flex: 'none' }}
                       >
-                        추가
+                        넣기
                       </button>
                     </div>
                   ))}
@@ -163,17 +163,17 @@ const BlockCard = ({ b }: { b: Block }) => {
         <span style={{ fontSize: 12.5, fontWeight: 700 }}>{b.label}</span>
         {isUsed ? (
           <span className="tag tag-accent" style={{ fontWeight: 700 }}>
-            사용중
+            쓰는 중
           </span>
         ) : null}
         {isOff ? (
           <span className="tag tag-neutral" style={{ fontWeight: 700 }}>
-            보유 · 사용안함
+            있지만 안 씀
           </span>
         ) : null}
         {isNone ? (
           <span className="tag tag-outline" style={{ fontWeight: 700 }}>
-            미보유
+            없음
           </span>
         ) : null}
         <div style={{ flex: 1 }} />
@@ -183,7 +183,7 @@ const BlockCard = ({ b }: { b: Block }) => {
             onClick={() => dispatch({ type: 'PREVIEW_BLOCK_STATE', blockKey: b.key, nextSt: 'off' })}
             style={smallBtn}
           >
-            사용 중지
+            잠시 안 쓰기
           </button>
         ) : null}
         {isOff ? (
@@ -192,7 +192,7 @@ const BlockCard = ({ b }: { b: Block }) => {
             onClick={() => dispatch({ type: 'PREVIEW_BLOCK_STATE', blockKey: b.key, nextSt: 'none' })}
             style={smallBtn}
           >
-            항목 제거
+            이 숙소에서 없애기
           </button>
         ) : null}
         <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 10, color: 'var(--color-neutral-400)' }}>
@@ -212,15 +212,15 @@ const BlockCard = ({ b }: { b: Block }) => {
               color: 'var(--color-neutral-600)',
             }}
           >
-            이 숙소에 없는 항목입니다. 추가하면 카탈로그가 정의한 필수 필드가 생기고, 채널 {b.chanN}곳 · FAQ {b.faqN}건이
-            함께 살아납니다.
+            이 숙소에 없는 시설입니다. 추가하면 채워야 할 항목이 생기고, 판매 사이트 {b.chanN}곳과 질문·답변 {b.faqN}개가
+            같이 살아납니다.
           </div>
           <button
             className="btn btn-secondary"
             onClick={() => dispatch({ type: 'PREVIEW_ADD_BLOCK_ITEM', blockKey: b.key })}
             style={{ flex: 'none', height: 28, fontSize: 12 }}
           >
-            + 항목 추가
+            + 시설 추가하기
           </button>
         </div>
       ) : null}
@@ -237,14 +237,14 @@ const BlockCard = ({ b }: { b: Block }) => {
           }}
         >
           <span style={{ flex: 1, fontSize: 11.5, lineHeight: 1.6, color: 'var(--color-neutral-700)' }}>
-            항목은 보유하지만 판매에 노출하지 않습니다. 관련 FAQ {b.faqN}건은 자동 비활성 상태입니다.
+            가지고 있지만 판매 사이트에는 안 내보내는 중입니다. 관련 질문·답변 {b.faqN}개도 함께 빠져 있습니다.
           </span>
           <button
             className="btn btn-primary"
             onClick={() => dispatch({ type: 'PREVIEW_BLOCK_USE', blockKey: b.key })}
             style={{ flex: 'none', height: 28, fontSize: 12 }}
           >
-            사용으로 전환
+            쓰기 시작
           </button>
         </div>
       ) : null}
@@ -272,11 +272,11 @@ const BlockCard = ({ b }: { b: Block }) => {
                 <span style={{ flex: 1, fontSize: 12, lineHeight: 1.5 }}>{v}</span>
                 {calc ? (
                   <span className="tag tag-outline" style={{ flex: 'none', fontSize: 10 }}>
-                    객실에서 자동 산출
+                    자동 계산
                   </span>
                 ) : isFree ? (
                   <span className="tag tag-neutral" style={{ flex: 'none', fontSize: 10, opacity: 0.65 }}>
-                    자유 텍스트
+                    직접 입력
                   </span>
                 ) : (
                   <span className="tag tag-neutral" style={{ flex: 'none', fontSize: 10 }}>
@@ -289,7 +289,7 @@ const BlockCard = ({ b }: { b: Block }) => {
                     onClick={() => dispatch({ type: 'OPEN_BLOCK_EDIT', blockKey: b.key, k, v })}
                     style={{ ...smallBtn, height: 23, flex: 'none' }}
                   >
-                    수정
+                    고치기
                   </button>
                 ) : null}
               </div>
@@ -299,13 +299,13 @@ const BlockCard = ({ b }: { b: Block }) => {
           {isUsed ? <RulesSection b={b} /> : null}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 9, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>연결</span>
+            <span style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>이어져 있는 곳</span>
             {b.rooms === 0 ? <CountChip tone="accent">객실 0</CountChip> : <CountChip>객실 {b.rooms}</CountChip>}
-            <CountChip>채널 {b.chanN}</CountChip>
+            <CountChip>판매 사이트 {b.chanN}</CountChip>
             {b.st !== 'used' && b.faqN > 0 ? (
-              <CountChip tone="accent">FAQ {b.faqN} 비활성</CountChip>
+              <CountChip tone="accent">질문·답변 {b.faqN} 빠짐</CountChip>
             ) : (
-              <CountChip>FAQ {b.faqN}</CountChip>
+              <CountChip>질문·답변 {b.faqN}</CountChip>
             )}
           </div>
 
@@ -324,7 +324,7 @@ export const BlocksTab = () => {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 40px', background: 'var(--color-bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 700 }}>시설 항목 · 블록정보</span>
+        <span style={{ fontSize: 12.5, fontWeight: 700 }}>이 숙소가 가진 시설</span>
         <div style={{ flex: 1 }} />
         <Seg>
           {FILTERS.map(([f, label]) => (
@@ -339,9 +339,9 @@ export const BlocksTab = () => {
       </div>
 
       <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6, marginBottom: 12 }}>
-        전사 시설 카탈로그 {state.catalogN}개 항목 중 이 숙소 보유 <b>{derived.filter((b) => b.st !== 'none').length}</b>개
-        — 사용중 {count('used')} · 보유하지만 판매 미노출 {count('off')} · 미보유 {count('none')}. 항목 자체가 없는 시설은
-        채널 전송에서 제외되고, 관련 FAQ도 자동 비활성됩니다.
+        전체 시설 목록 {state.catalogN}개 중 이 숙소에 있는 것 <b>{derived.filter((b) => b.st !== 'none').length}</b>개
+        — 쓰는 중 {count('used')} · 있지만 안 씀 {count('off')} · 없음 {count('none')}. 없는 시설은 판매 사이트로 나가지
+        않고, 그 시설을 묻는 질문·답변도 자동으로 빠집니다.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }}>

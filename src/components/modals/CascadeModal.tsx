@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { willSentence } from '../../domain/summary';
 import { useStore } from '../../state/store';
 import { Modal } from '../primitives';
 
@@ -7,15 +9,19 @@ const ellipsis = {
   textOverflow: 'ellipsis',
 } as const;
 
-/** Preview of everything one edit reaches. Pickable rows are choices;
- *  locked rows are results — they are recomputed whether you like it or not. */
+/** 되돌리기로 못 되살리는 변경에만 뜨는 확인 창.
+ *  맨 위는 한 문장 — 표는 접어 두고, 고를 것이 있을 때만 펼칩니다. */
 export const CascadeModal = () => {
   const { state, dispatch } = useStore();
   const cas = state.cas;
+  const [openDetail, setOpenDetail] = useState(false);
   if (!cas) return null;
 
   const totalN = cas.groups.reduce((a, g) => a + g.items.length, 0);
   const checkedN = cas.groups.reduce((a, g) => a + g.items.filter((i) => i.on).length, 0);
+  /** 체크를 풀 수 있는 줄이 있으면 표를 처음부터 펼쳐 둡니다 — 고를 게 있으니까요. */
+  const hasChoice = cas.groups.some((g) => g.items.some((i) => !i.locked));
+  const showDetail = openDetail || hasChoice;
 
   return (
     <Modal
@@ -23,46 +29,26 @@ export const CascadeModal = () => {
       onClose={() => dispatch({ type: 'CLOSE_CAS' })}
       panelStyle={{ maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}
     >
-      <div style={{ padding: '15px 18px', borderBottom: '1px solid var(--color-divider)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ fontFamily: 'var(--font-heading)', fontSize: 19, fontWeight: 600 }}>연쇄 갱신 미리보기</span>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'var(--color-accent-800)',
-              background: 'var(--color-accent-100)',
-              padding: '3px 8px',
-              borderRadius: 0,
-            }}
-          >
-            대상 {checkedN} / {totalN}
+      <div style={{ padding: '16px 18px 14px', borderBottom: '1px solid var(--color-divider)' }}>
+        <div style={{ fontFamily: 'var(--font-heading)', fontSize: 19, fontWeight: 600 }}>이렇게 바뀝니다</div>
+        <div style={{ marginTop: 7, fontSize: 13.5, lineHeight: 1.65 }}>{willSentence(cas)}</div>
+        <div style={{ marginTop: 9, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11.5, color: 'var(--color-neutral-600)' }}>
+            바뀌는 것 {checkedN}개{checkedN !== totalN ? ` (전체 ${totalN}개 중)` : ''}
           </span>
-        </div>
-        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
-          <span style={{ fontWeight: 700 }}>{cas.field}</span>
-          <span style={{ color: 'var(--color-neutral-500)', textDecoration: 'line-through' }}>{cas.from}</span>
-          <span style={{ color: 'var(--color-neutral-400)' }}>→</span>
-          <span style={{ fontWeight: 700, color: 'var(--color-accent-700)' }}>{cas.to}</span>
+          {hasChoice ? null : (
+            <button
+              className="btn btn-secondary"
+              onClick={() => setOpenDetail((v) => !v)}
+              style={{ height: 24, padding: '0 9px', fontSize: 11.5 }}
+            >
+              {openDetail ? '목록 접기' : '하나하나 보기'}
+            </button>
+          )}
         </div>
       </div>
 
-      {cas.warn ? (
-        <div
-          style={{
-            padding: '10px 18px',
-            background: 'var(--color-accent-100)',
-            borderBottom: '1px solid var(--color-accent-300)',
-            fontSize: 11.5,
-            color: 'var(--color-accent-900)',
-            lineHeight: 1.6,
-          }}
-        >
-          {cas.warn}
-        </div>
-      ) : null}
-
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: showDetail ? undefined : 'none' }}>
         {cas.groups.map((g) => (
           <div key={g.title}>
             <div
@@ -100,7 +86,7 @@ export const CascadeModal = () => {
                       background: 'var(--color-accent)',
                       position: 'relative',
                     }}
-                    title="자동 산출 — 해제할 수 없습니다"
+                    title="자동으로 계산되는 값이라 끌 수 없어요"
                   />
                 ) : (
                   <input
@@ -148,12 +134,12 @@ export const CascadeModal = () => {
                       borderRadius: 0,
                     }}
                   >
-                    오버라이드 덮어씀
+                    원래 따로 정해둔 값
                   </span>
                 ) : null}
                 {it.locked ? (
                   <span className="tag tag-outline" style={{ flex: 'none', fontSize: 10 }}>
-                    자동 산출
+                    자동 계산
                   </span>
                 ) : null}
               </div>
@@ -173,13 +159,13 @@ export const CascadeModal = () => {
         }}
       >
         <div style={{ flex: 1, fontSize: 11, color: 'var(--color-neutral-600)' }}>
-          적용 즉시 변경 이력에 기록되고, 되돌리기가 가능합니다.
+          바꾼 뒤에도 되돌릴 수 있어요.
         </div>
         <button className="btn btn-secondary" onClick={() => dispatch({ type: 'CLOSE_CAS' })} style={{ height: 32 }}>
-          취소
+          그만두기
         </button>
         <button className="btn btn-primary" onClick={() => dispatch({ type: 'APPLY_CAS' })} style={{ height: 32 }}>
-          적용하고 저장
+          네, 바꿀게요
         </button>
       </div>
     </Modal>

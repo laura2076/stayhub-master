@@ -10,12 +10,12 @@ export const BulkEditModal = () => {
   return (
     <Modal width={520} onClose={() => dispatch({ type: 'CLOSE_BULK' })}>
       <ModalHead
-        title={`일괄 편집 · ${state.sel.length}객실`}
-        sub="선택한 객실에만 값을 씁니다. 저장 전에 연쇄 갱신 대상을 확인합니다."
+        title={`객실 ${state.sel.length}개 한꺼번에 바꾸기`}
+        sub="고른 객실에만 적용됩니다. 무엇을 바꿀지 고르세요."
       />
 
       <div style={{ padding: '16px 18px' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)', marginBottom: 7 }}>필드</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)', marginBottom: 7 }}>무엇을 바꿀까요</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 15 }}>
           {FIELDS.map((f) => (
             <Chip
@@ -29,7 +29,7 @@ export const BulkEditModal = () => {
           ))}
         </div>
 
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)', marginBottom: 7 }}>값</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)', marginBottom: 7 }}>어떤 값으로</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {bulkValueList(state).map(([value, label]) => (
             <RadioRow
@@ -44,10 +44,10 @@ export const BulkEditModal = () => {
 
       <ModalFoot hint={bulkHint(state)}>
         <button className="btn btn-secondary" onClick={() => dispatch({ type: 'CLOSE_BULK' })} style={{ height: 32 }}>
-          취소
+          그만두기
         </button>
         <button className="btn btn-primary" onClick={() => dispatch({ type: 'PREVIEW_BULK' })} style={{ height: 32 }}>
-          연쇄 갱신 미리보기
+          바꾸기
         </button>
       </ModalFoot>
     </Modal>

@@ -386,6 +386,6 @@ export const initialState = (): MasterState => {
     snapshot: null,
     savedAt: '2026-07-26 09:12',
     history: seedHistory(),
-    settings: { inheritanceViz: 'marker', cascadeMode: 'preview', layout: '3panel' },
+    settings: { inheritanceViz: 'marker', cascadeMode: 'smart', layout: '3panel' },
   };
 };

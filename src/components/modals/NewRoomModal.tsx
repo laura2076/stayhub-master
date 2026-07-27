@@ -4,8 +4,8 @@ import { Chip, Modal, ModalFoot, ModalHead, RadioRow } from '../primitives';
 
 const FLOORS = ['3', '4', '5', '6', '7'];
 const PAX: ['2/4' | '4/6', string][] = [
-  ['2/4', '기준 2 / 최대 4 (숙소 기본값)'],
-  ['4/6', '기준 4 / 최대 6 (오버라이드)'],
+  ['2/4', '기준 2명 / 최대 4명 (전체와 같음)'],
+  ['4/6', '기준 4명 / 최대 6명 (이 객실만 다름)'],
 ];
 
 const label = { fontSize: 11, fontWeight: 700, color: 'var(--color-neutral-700)', marginBottom: 7 } as const;
@@ -17,7 +17,7 @@ export const NewRoomModal = () => {
 
   return (
     <Modal width={520} onClose={() => dispatch({ type: 'CLOSE_NEW_ROOM' })}>
-      <ModalHead title="객실 신규 등록" sub="값을 지정하지 않은 항목은 숙소 기본값을 상속합니다." />
+      <ModalHead title="객실 만들기" sub="고르지 않은 항목은 숙소 전체값을 그대로 씁니다." />
 
       <div style={{ padding: '16px 18px' }}>
         <div className="field" style={{ marginBottom: 14 }}>
@@ -70,12 +70,12 @@ export const NewRoomModal = () => {
         </div>
       </div>
 
-      <ModalFoot hint="등록 시 블록 문구·객실 수·채널 상품이 함께 생성됩니다.">
+      <ModalFoot hint="만들면 시설 안내문과 객실 수, 판매 사이트 상품도 같이 생깁니다.">
         <button className="btn btn-secondary" onClick={() => dispatch({ type: 'CLOSE_NEW_ROOM' })} style={{ height: 32 }}>
-          취소
+          그만두기
         </button>
         <button className="btn btn-primary" onClick={() => dispatch({ type: 'PREVIEW_NEW_ROOM' })} style={{ height: 32 }}>
-          연쇄 갱신 미리보기
+          만들기
         </button>
       </ModalFoot>
     </Modal>

@@ -41,9 +41,9 @@ export const ChannelsTab = () => {
             borderBottom: '1px solid var(--color-divider)',
           }}
         >
-          <span style={{ fontSize: 12.5, fontWeight: 700 }}>채널별 값 매핑</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700 }}>판매 사이트에 나가는 값</span>
           <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>
-            마스터 값 1개 → 채널 사전(dictionary)을 통해 채널 표현으로 변환합니다.
+            우리 값 하나를 사이트마다 쓰는 말로 바꿔서 내보냅니다.
           </span>
           <div style={{ flex: 1 }} />
           <span
@@ -56,7 +56,7 @@ export const ChannelsTab = () => {
               borderRadius: 0,
             }}
           >
-            불일치 {mismatchN}
+            다른 값 {mismatchN}개
           </span>
         </div>
 
@@ -68,7 +68,7 @@ export const ChannelsTab = () => {
             borderBottom: '1px solid var(--color-divider)',
           }}
         >
-          {['항목', '마스터 값 (단일 원본)', '네이버', '여기어때', '야놀자'].map((h) => (
+          {['항목', '우리 값 (기준)', '네이버', '여기어때', '야놀자'].map((h) => (
             <Th key={h} style={{ padding: '8px 14px' }}>
               {h}
             </Th>
@@ -100,7 +100,7 @@ export const ChannelsTab = () => {
                   >
                     <div style={{ color: 'var(--color-accent-900)', fontWeight: 600, lineHeight: 1.5 }}>{c.v}</div>
                     <div style={{ marginTop: 3, fontSize: 10.5, color: 'var(--color-accent-800)', lineHeight: 1.5 }}>
-                      매핑 규칙: {c.rule}
+                      기준대로면: {c.rule}
                     </div>
                     <button
                       className="btn btn-primary"
@@ -116,7 +116,7 @@ export const ChannelsTab = () => {
                       }
                       style={{ marginTop: 6, height: 23, padding: '0 8px', fontSize: 11 }}
                     >
-                      마스터값으로 교정
+                      기준값으로 맞추기
                     </button>
                   </div>
                 ) : (
@@ -137,10 +137,9 @@ export const ChannelsTab = () => {
           minWidth: 900,
         }}
       >
-        <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 3 }}>테마 매핑 사전</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 3 }}>사이트마다 다른 말</div>
         <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', marginBottom: 11 }}>
-          채널마다 용어가 다르므로, 마스터 값 1개 = 채널별 용어 N개로 사전을 고정해 두면 사람이 채널마다 다시 고를 필요가
-          없습니다.
+          같은 것을 사이트마다 다르게 부릅니다. 여기에 한 번 정해 두면 사이트마다 따로 고를 필요가 없습니다.
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
           {THEME_DICT.map((d) => (

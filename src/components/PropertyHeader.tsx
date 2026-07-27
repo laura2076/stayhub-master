@@ -10,11 +10,11 @@ export const PropertyHeader = () => {
 
   const tabs: [TabId, string, number][] = [
     ['rooms', '객실', state.rooms.length],
-    ['blocks', '시설·블록정보', state.blocks.length],
-    ['options', '옵션·요금', OPTIONS.length],
-    ['channels', '채널 매핑', 3],
-    ['faq', 'FAQ', state.faqs.length],
-    ['history', '변경 이력', state.history.length],
+    ['blocks', '시설 정보', state.blocks.length],
+    ['options', '요금표', OPTIONS.length],
+    ['channels', '판매 사이트', 3],
+    ['faq', '자주 묻는 질문', state.faqs.length],
+    ['history', '바꾼 기록', state.history.length],
   ];
 
   return (
@@ -88,7 +88,7 @@ export const PropertyHeader = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ textAlign: 'right', marginRight: 4 }}>
-            <div style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>마지막 저장</div>
+            <div style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>마지막으로 저장한 때</div>
             <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--color-neutral-700)' }}>{state.savedAt}</div>
           </div>
           <SettingsMenu />
@@ -97,10 +97,10 @@ export const PropertyHeader = () => {
             onClick={() => dispatch({ type: 'SET_TAB', tab: 'channels' })}
             style={{ height: 32 }}
           >
-            연결 관계 보기
+            판매 사이트 확인
           </button>
           <button className="btn btn-primary" style={{ height: 32 }}>
-            채널 전송
+            사이트에 보내기
           </button>
         </div>
       </div>

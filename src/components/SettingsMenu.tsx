@@ -13,29 +13,29 @@ type Row<K extends keyof Settings> = {
 const ROWS: [Row<'inheritanceViz'>, Row<'cascadeMode'>, Row<'layout'>] = [
   {
     k: 'inheritanceViz',
-    label: '상속 표현',
-    note: '오버라이드는 언제나 액센트 마커입니다. 고스트를 켜면 상속 셀 아래에 숙소 기본값이 함께 보입니다.',
+    label: '따로 정한 값 표시',
+    note: '전체와 다른 값은 항상 표시됩니다. "전체값도 보기"를 켜면 같은 값을 쓰는 칸 아래에 전체값이 작게 보입니다.',
     options: [
-      ['marker', '마커'],
-      ['ghost', '고스트'],
+      ['marker', '다른 것만'],
+      ['ghost', '전체값도 보기'],
     ],
   },
   {
     k: 'cascadeMode',
-    label: '연쇄 갱신',
-    note: '즉시 적용은 미리보기 없이 바로 씁니다 — 되돌리기는 그대로 남습니다.',
+    label: '바꾸기 전 확인',
+    note: '값 바꾸기는 되돌릴 수 있어서 바로 반영합니다. 만들기·지우기와, 따로 정해둔 값을 덮어쓸 때만 물어봅니다.',
     options: [
-      ['preview', '미리보기'],
-      ['instant', '즉시 적용'],
+      ['smart', '필요할 때만'],
+      ['always', '항상'],
     ],
   },
   {
     k: 'layout',
-    label: '레이아웃',
-    note: '2단으로 두면 우측 필드 인스펙터가 숨고 그리드가 넓어집니다.',
+    label: '오른쪽 설명창',
+    note: '끄면 표가 넓어집니다.',
     options: [
-      ['3panel', '3단'],
-      ['2panel', '2단'],
+      ['3panel', '보이기'],
+      ['2panel', '숨기기'],
     ],
   },
 ];
@@ -57,7 +57,7 @@ export const SettingsMenu = () => {
   return (
     <div ref={wrap} style={{ position: 'relative' }}>
       <button className="btn btn-secondary" onClick={() => setOpen((v) => !v)} style={{ height: 32 }}>
-        표시 설정
+        화면 설정
       </button>
 
       {open ? (
@@ -75,9 +75,9 @@ export const SettingsMenu = () => {
         >
           <Corners />
           <div style={{ padding: '11px 13px', borderBottom: '1px solid var(--color-divider)' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700 }}>표시 설정</div>
+            <div style={{ fontSize: 12.5, fontWeight: 700 }}>화면 설정</div>
             <div style={{ marginTop: 3, fontSize: 11, color: 'var(--color-neutral-600)' }}>
-              데이터에는 영향이 없습니다 — 화면 표현과 저장 흐름만 바뀝니다.
+              저장된 값은 바뀌지 않습니다. 보이는 방식만 달라집니다.
             </div>
           </div>
           <div style={{ padding: '4px 13px 12px' }}>

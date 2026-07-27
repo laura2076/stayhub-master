@@ -82,18 +82,21 @@ describe('field format resolution', () => {
 });
 
 describe('A401 바베큐 이용 불가 — one edit, everything follows', () => {
-  const edited = () => {
-    const st = initialState();
-    return run(
-      st,
+  /** 값 변경은 평소 확인 창 없이 바로 반영되므로, 미리보기 내용을 볼 때만 "항상 확인"을 켭니다. */
+  const previewed = () =>
+    run(
+      initialState(),
+      { type: 'SET_SETTINGS', patch: { cascadeMode: 'always' } },
       { type: 'EDIT_ROOM_FIELD', code: A401, field: 'bbq' },
       { type: 'PICK_BULK_VALUE', value: '이용 불가' },
       { type: 'PREVIEW_BULK' },
     );
-  };
+
+  /** 실제 사용 흐름: 셀에서 값을 고르면 그대로 반영됩니다. */
+  const edited = () => run(initialState(), { type: 'PICK_CELL', code: A401, field: 'bbq', value: '이용 불가' });
 
   it('shows the block phrase recomputing in the preview, locked', () => {
-    const st = edited();
+    const st = previewed();
     const derived = st.cas!.groups.find((g) => g.title.startsWith('숙소 블록'))!;
     const phrase = derived.items.find((i) => i.label === '공용 BBQ · 이용 객실')!;
     expect(phrase.before).toBe('4~7층 객실 · 22객실');
@@ -103,7 +106,7 @@ describe('A401 바베큐 이용 불가 — one edit, everything follows', () => 
   });
 
   it('writes the room and the derived phrase together on apply', () => {
-    const st = run(edited(), { type: 'APPLY_CAS' });
+    const st = edited();
     expect(st.rooms.find((r) => r.code === A401)!.bbq).toBe('이용 불가');
     expect(field(st, 'shared_bbq', '이용 객실')).toBe('4~7층 객실 · 21객실 (A401 제외)');
     expect(block(st, 'shared_bbq').rooms).toBe(21);
@@ -111,7 +114,7 @@ describe('A401 바베큐 이용 불가 — one edit, everything follows', () => 
   });
 
   it('restores both sides on undo', () => {
-    const st = run(edited(), { type: 'APPLY_CAS' }, { type: 'UNDO' });
+    const st = run(edited(), { type: 'UNDO' });
     expect(st.rooms.find((r) => r.code === A401)!.bbq).toBe('공용BBQ · 가스그릴');
     expect(field(st, 'shared_bbq', '이용 객실')).toBe('4~7층 객실 · 22객실');
     expect(st.history).toHaveLength(initialState().history.length);
@@ -189,18 +192,15 @@ describe('fees hang off the option', () => {
 
 describe('안내 규칙', () => {
   it('regenerates the sentence from an edited fragment', () => {
-    const st = run(
+    const applied = run(
       initialState(),
       { type: 'OPEN_RULE_SLOT', blockKey: 'checkin_checkout', ri: 0, si: 0 },
       { type: 'SET_PART', k: 'h', v: '20' },
       { type: 'PREVIEW_EDIT' },
     );
-    expect(st.cas!.from).toBe('21:00 이후 입실 시 사전 연락 필수');
-    expect(st.cas!.to).toBe('20:00 이후 입실 시 사전 연락 필수');
-
-    const applied = run(st, { type: 'APPLY_CAS' });
     const rules = applied.blocks.find((b) => b.key === 'checkin_checkout')!.rules!;
     expect(ruleText(rules[0])).toBe('20:00 이후 입실 시 사전 연락 필수');
+    expect(applied.toast).toContain('20:00 이후 입실 시 사전 연락 필수');
   });
 
   it('adds a rule from the catalogue and deletes it again', () => {
@@ -261,17 +261,24 @@ describe('cascade preview hygiene', () => {
     expect(st.cas!.groups.some((g) => g.title.startsWith('숙소 블록 · 자동 재생성') && g.items.length === 0)).toBe(false);
   });
 
-  it('applies straight away in 즉시 적용 mode', () => {
-    const st = run(
-      initialState(),
-      { type: 'SET_SETTINGS', patch: { cascadeMode: 'instant' } },
-      { type: 'EDIT_ROOM_FIELD', code: A401, field: 'bbq' },
-      { type: 'PICK_BULK_VALUE', value: '이용 불가' },
-      { type: 'PREVIEW_BULK' },
-    );
+  it('값 변경은 확인 창 없이 바로 반영되고, 무엇이 바뀌었는지 문장으로 알린다', () => {
+    const st = run(initialState(), { type: 'PICK_CELL', code: A401, field: 'bbq', value: '이용 불가' });
     expect(st.cas).toBeNull();
     expect(st.rooms.find((r) => r.code === A401)!.bbq).toBe('이용 불가');
-    expect(st.toast).toContain('연쇄 갱신');
+    expect(st.toast).toBe('객실 1개의 바베큐 유형을 이용 불가로 바꿨어요. 시설 안내문 2곳도 같이 바뀌었어요.');
+  });
+
+  it('남이 따로 정해둔 값을 여러 개 덮어쓸 때만 확인 창이 뜬다', () => {
+    const before = initialState();
+    const third = before.rooms.filter((r) => r.floor === 3).map((r) => r.code);
+    const st = run(
+      before,
+      ...third.map((code): Action => ({ type: 'TOGGLE_ROOM', code })),
+      { type: 'OPEN_BULK' },
+      { type: 'PICK_BULK_VALUE', value: '공용BBQ · 가스그릴' },
+      { type: 'PREVIEW_BULK' },
+    );
+    expect(st.cas).not.toBeNull();
   });
 });
 
@@ -292,6 +299,7 @@ describe('the preview and the save agree', () => {
     const b401 = st.rooms.find((r) => r.short === 'B401')!.code;
     const previewed = run(
       st,
+      { type: 'SET_SETTINGS', patch: { cascadeMode: 'always' } },
       { type: 'EDIT_ROOM_FIELD', code: b401, field: 'bbq' },
       { type: 'PICK_BULK_VALUE', value: '공용BBQ · 숯불' },
       { type: 'PREVIEW_BULK' },

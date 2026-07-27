@@ -10,11 +10,10 @@ export const OptionsTab = () => {
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px 40px', background: 'var(--color-bg)' }}>
       <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 3 }}>바베큐 형태 옵션 · 요금</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 3 }}>바베큐 종류와 요금</div>
         <div style={{ fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6 }}>
-          모든 입력값은 전사 옵션 코드에서 고릅니다 — 자유 텍스트가 아니므로 연결 규칙을 걸 수 있습니다.{' '}
-          <b>요금은 객실이 아니라 옵션에 붙습니다</b>: 옵션 요금 한 번을 고치면 그 옵션을 쓰는 모든 객실·블록 문구·채널
-          요금이 함께 갱신됩니다.
+          <b>요금은 객실이 아니라 바베큐 종류에 붙어 있습니다.</b> 여기서 요금을 한 번 고치면 그 종류를 쓰는 모든
+          객실과 안내문, 판매 사이트 요금이 같이 바뀝니다. 객실마다 따로 고칠 필요가 없습니다.
         </div>
       </div>
 
@@ -28,7 +27,7 @@ export const OptionsTab = () => {
             borderBottom: '1px solid var(--color-divider)',
           }}
         >
-          {['옵션', '코드', '이용요금 (이 숙소)', '네이버', '여기어때', '야놀자', '사용'].map((h) => (
+          {['바베큐 종류', '코드', '이 숙소 요금', '네이버', '여기어때', '야놀자', '쓰는 객실'].map((h) => (
             <Th key={h} style={{ padding: '8px 13px' }}>
               {h}
             </Th>
@@ -78,7 +77,7 @@ export const OptionsTab = () => {
                     {used.length}객실
                   </span>
                 ) : (
-                  <span className="tag tag-neutral">미사용</span>
+                  <span className="tag tag-neutral">쓰는 객실 없음</span>
                 )}
               </div>
             </div>
@@ -87,8 +86,8 @@ export const OptionsTab = () => {
       </div>
 
       <div style={{ marginTop: 12, fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.6 }}>
-        채널 열은 매핑 사전값입니다 — 같은 옵션이 네이버 "숯불그릴", 여기어때 "참숯BBQ", 야놀자 "숯불BBQ"로 자동
-        변환됩니다. 객실 탭의 바베큐 셀을 누르면 이 옵션 목록에서만 고를 수 있고, 요금은 선택한 옵션에서 따라옵니다.
+        판매 사이트마다 부르는 말이 다릅니다 — 같은 숯불이 네이버는 "숯불그릴", 여기어때는 "참숯BBQ", 야놀자는
+        "숯불BBQ"로 알아서 바뀌어 나갑니다. 객실 표에서 바베큐 칸을 누르면 이 목록에서 고르게 되고, 요금은 따라옵니다.
       </div>
     </div>
   );
