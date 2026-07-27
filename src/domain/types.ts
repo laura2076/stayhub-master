@@ -211,9 +211,20 @@ export type BulkDraft = {
   open: boolean;
 };
 
-/** 시설 항목 하나를 객실마다 다르게 정하는 중.
- *  고르는 일과 값 넣는 일을 한 창에서 끝내려고 고른 객실을 여기 담아 둡니다. */
-export type BlockFieldDraft = { blockKey: string; fieldKey: string; sel: string[] };
+/** 시설의 "이용 객실"을 고치는 두 가지 조작 — 이 시설을 어느 객실이 쓰는지(멤버십),
+ *  그리고 항목 하나를 어느 객실만 다르게 정할지(예외) — 을 한 창에서 다룹니다.
+ *  둘 다 "시설 카드에서 객실을 고른다"는 같은 동작이라, 창을 둘로 나누면 오히려
+ *  헷갈립니다. `tab`으로 갈리고, 두 탭이 각자의 선택을 따로 기억합니다. */
+export type BlockRoomsDraft = {
+  blockKey: string;
+  tab: 'members' | 'fields';
+  /** 'fields' 탭에서 지금 보고 있는 항목. 갈릴 수 있는 항목이 여럿이면 위에서 고릅니다. */
+  fieldKey: string;
+  memberSel: string[];
+  fieldSel: string[];
+  /** 객실 표에서 들어왔을 때 — 그 객실 줄을 강조해 보여 줍니다. */
+  focusCode?: string;
+};
 
 /** 객실을 설명하는 값들 — 속성 사전이 아니라 객실 자체에 붙어 있는 것. */
 export type RoomInfo = { name: string; floor: number; area: string; form: string; bed: string; tag: string };
@@ -260,10 +271,10 @@ export type MasterState = {
   nr: NewRoomDraft | null;
   /** 객실 정보를 고치는 중. */
   re: RoomEdit | null;
-  /** 이 시설에 어느 객실을 붙일지 다시 고르는 중. */
-  pickRooms: string | null;
-  /** 시설 항목을 객실마다 다르게 정하는 중 — 어느 객실에 넣을지 고르는 단계. */
-  bf: BlockFieldDraft | null;
+  /** 시설의 이용 객실(멤버십)이나 항목별 예외를 고치는 중. */
+  br: BlockRoomsDraft | null;
+  /** 객실 표에서 "시설" 버튼을 눌러 이 객실이 쓰는 시설을 고르는 중 — 그 객실 코드. */
+  roomFacilityPick: string | null;
   sort: RoomSort;
   /** 따로 정한 객실만 보기. */
   onlyOwn: boolean;

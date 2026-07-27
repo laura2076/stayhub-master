@@ -5,6 +5,7 @@ import {
   buildRoom,
   previewAddBlockItem,
   previewBlockEdit,
+  previewBlockMembers,
   previewBlockPer,
   previewBlockState,
   previewBlockUse,
@@ -22,7 +23,7 @@ import {
   previewRuleDel,
 } from '../domain/cascade';
 import { baseValue, fieldValueOf, ownRooms } from '../domain/blockValues';
-import { membersOf, slotText } from '../domain/derive';
+import { canSplit, membersOf, slotText } from '../domain/derive';
 import { composeVal, parseVal, typeOf } from '../domain/fieldTypes';
 import { initialState } from '../domain/seed';
 import { doneSentence, needsConfirm } from '../domain/summary';
@@ -79,8 +80,6 @@ export type Action =
   | { type: 'CLOSE_ROOM_EDIT' }
   | { type: 'SET_RE'; patch: Partial<RoomEdit> }
   | { type: 'PREVIEW_ROOM_EDIT' }
-  | { type: 'OPEN_PICK_ROOMS'; blockKey: string }
-  | { type: 'CLOSE_PICK_ROOMS' }
   | { type: 'PREVIEW_FIELD_ADD'; blockKey: string; fieldKey: string }
   | { type: 'PREVIEW_FIELD_DEL'; blockKey: string; fieldKey: string }
   | { type: 'PREVIEW_BULK' }
@@ -92,13 +91,18 @@ export type Action =
   | { type: 'PREVIEW_RULE_ADD'; blockKey: string; ruleId: string }
   | { type: 'PREVIEW_RULE_DEL'; blockKey: string; ri: number }
   | { type: 'OPEN_BLOCK_EDIT'; blockKey: string; k: string }
-  | { type: 'OPEN_BLOCK_FIELD'; blockKey: string; fieldKey: string }
-  | { type: 'CLOSE_BLOCK_FIELD' }
-  | { type: 'BF_TOGGLE_ROOM'; code: string }
-  | { type: 'BF_TOGGLE_FLOOR'; floor: number }
-  | { type: 'BF_SELECT_SAME'; value: string }
-  | { type: 'BF_EDIT_PICKED' }
-  | { type: 'BF_RESET_PICKED' }
+  | { type: 'OPEN_BLOCK_ROOMS'; blockKey: string; fieldKey?: string; focusCode?: string }
+  | { type: 'CLOSE_BLOCK_ROOMS' }
+  | { type: 'BR_SET_TAB'; tab: 'members' | 'fields' }
+  | { type: 'BR_SET_FIELD'; fieldKey: string }
+  | { type: 'BR_TOGGLE_ROOM'; code: string }
+  | { type: 'BR_TOGGLE_FLOOR'; floor: number }
+  | { type: 'BR_SELECT_SAME'; value: string }
+  | { type: 'BR_EDIT_PICKED' }
+  | { type: 'BR_RESET_PICKED' }
+  | { type: 'BR_APPLY_MEMBERS' }
+  | { type: 'OPEN_ROOM_FACILITIES'; code: string }
+  | { type: 'CLOSE_ROOM_FACILITIES' }
   | { type: 'OPEN_OPT_FEE'; attr: string; code: string }
   | { type: 'OPEN_RULE_SLOT'; blockKey: string; ri: number; si: number }
   | { type: 'CLOSE_EDIT' }
@@ -308,13 +312,6 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       return openCascade({ ...st, re: null }, previewRoomInfo(p, code, patch));
     }
 
-    case 'OPEN_PICK_ROOMS': {
-      const bk = p.blocks.find((b) => b.key === a.blockKey);
-      return bk ? { ...st, cas: previewBlockUse(p, bk, false) } : st;
-    }
-    case 'CLOSE_PICK_ROOMS':
-      return { ...st, pickRooms: null };
-
     case 'PREVIEW_FIELD_ADD': {
       const bk = p.blocks.find((b) => b.key === a.blockKey);
       return bk ? openCascade(st, previewFieldAdd(bk, a.fieldKey)) : st;
@@ -362,56 +359,86 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       return { ...st, edit: { kind: 'block', bk, k: a.k, type, p: parseVal(type, baseValue(bk, a.k)) } };
     }
 
-    /** 항목 하나를 객실마다 다르게 정하는 흐름 — 고르기(여기) → 값 넣기(편집기) → 확인. */
-    case 'OPEN_BLOCK_FIELD': {
+    /** 시설의 "이용 객실"을 고치는 한 창 — 멤버십과 항목별 예외가 탭으로 갈립니다.
+     *  `fieldKey`를 주면 항목 탭으로, 아니면 멤버십 탭(있으면)으로 엽니다. */
+    case 'OPEN_BLOCK_ROOMS': {
       const bk = p.blocks.find((b) => b.key === a.blockKey);
       if (!bk) return st;
-      /** 이미 따로 정해둔 객실이 있으면 그것부터 골라 둡니다 — 대개 그걸 고치러 옵니다. */
       const scope = bk.memberOf ? membersOf(p, bk) : p.rooms;
-      const own = ownRooms(bk, scope, a.fieldKey).map((r) => r.code);
-      return { ...st, bf: { blockKey: a.blockKey, fieldKey: a.fieldKey, sel: own } };
+      const splittable = bk.fields.filter(([k]) => canSplit(bk, k)).map(([k]) => k);
+      const fieldKey = a.fieldKey ?? splittable[0] ?? '';
+      const tab: 'members' | 'fields' = a.fieldKey ? 'fields' : bk.memberOf ? 'members' : 'fields';
+      const memberSel = bk.memberOf ? membersOf(p, bk).map((r) => r.code) : [];
+      /** 표에서 들어왔으면 그 객실을 항목 탭 선택에 더해 둡니다 — 대개 그 객실 값을 고치러
+       *  왔을 테니까요. 멤버십 탭은 건드리지 않습니다 — 최종 목록이라 잘못 건드리면
+       *  다른 객실이 빠질 수 있습니다. */
+      const own = fieldKey ? ownRooms(bk, scope, fieldKey).map((r) => r.code) : [];
+      const fieldSel = a.focusCode && !own.includes(a.focusCode) ? [...own, a.focusCode] : own;
+      return { ...st, roomFacilityPick: null, br: { blockKey: a.blockKey, tab, fieldKey, memberSel, fieldSel, focusCode: a.focusCode } };
     }
-    case 'CLOSE_BLOCK_FIELD':
-      return { ...st, bf: null };
-    case 'BF_TOGGLE_ROOM':
-      return st.bf
-        ? { ...st, bf: { ...st.bf, sel: st.bf.sel.includes(a.code) ? st.bf.sel.filter((c) => c !== a.code) : [...st.bf.sel, a.code] } }
-        : st;
-    case 'BF_TOGGLE_FLOOR': {
-      if (!st.bf) return st;
+    case 'CLOSE_BLOCK_ROOMS':
+      return { ...st, br: null };
+    case 'BR_SET_TAB':
+      return st.br ? { ...st, br: { ...st.br, tab: a.tab } } : st;
+    case 'BR_SET_FIELD': {
+      const bk = st.br && p.blocks.find((b) => b.key === st.br!.blockKey);
+      if (!st.br || !bk) return st;
+      const scope = bk.memberOf ? membersOf(p, bk) : p.rooms;
+      return { ...st, br: { ...st.br, fieldKey: a.fieldKey, fieldSel: ownRooms(bk, scope, a.fieldKey).map((r) => r.code) } };
+    }
+    case 'BR_TOGGLE_ROOM': {
+      if (!st.br) return st;
+      const k = st.br.tab === 'members' ? 'memberSel' : 'fieldSel';
+      const list = st.br[k];
+      return { ...st, br: { ...st.br, [k]: list.includes(a.code) ? list.filter((c) => c !== a.code) : [...list, a.code] } };
+    }
+    case 'BR_TOGGLE_FLOOR': {
+      if (!st.br) return st;
+      const k = st.br.tab === 'members' ? 'memberSel' : 'fieldSel';
       const codes = p.rooms.filter((r) => r.floor === a.floor).map((r) => r.code);
-      const allOn = codes.every((c) => st.bf!.sel.includes(c));
-      return {
-        ...st,
-        bf: { ...st.bf, sel: allOn ? st.bf.sel.filter((c) => !codes.includes(c)) : [...new Set([...st.bf.sel, ...codes])] },
-      };
+      const list = st.br[k];
+      const allOn = codes.every((c) => list.includes(c));
+      return { ...st, br: { ...st.br, [k]: allOn ? list.filter((c) => !codes.includes(c)) : [...new Set([...list, ...codes])] } };
     }
-    /** "지금 이 값을 쓰는 객실 전부" — 22실을 한 번에 고릅니다. */
-    case 'BF_SELECT_SAME': {
-      const bk = st.bf && p.blocks.find((b) => b.key === st.bf!.blockKey);
-      if (!st.bf || !bk) return st;
+    /** "지금 이 값을 쓰는 객실 전부" — 항목 탭에서만 뜻이 있습니다. */
+    case 'BR_SELECT_SAME': {
+      const br = st.br;
+      const bk = br && p.blocks.find((b) => b.key === br.blockKey);
+      if (!br || !bk || br.tab !== 'fields') return st;
       const scope = bk.memberOf ? membersOf(p, bk) : p.rooms;
-      const codes = scope.filter((r) => fieldValueOf(bk, r, st.bf!.fieldKey) === a.value).map((r) => r.code);
-      return { ...st, bf: { ...st.bf, sel: [...new Set([...st.bf.sel, ...codes])] } };
+      const codes = scope.filter((r) => fieldValueOf(bk, r, br.fieldKey) === a.value).map((r) => r.code);
+      return { ...st, br: { ...br, fieldSel: [...new Set([...br.fieldSel, ...codes])] } };
     }
     /** 고른 객실에 넣을 값을 편집기로 받습니다 — 형식은 시설 값을 고칠 때와 똑같습니다. */
-    case 'BF_EDIT_PICKED': {
-      const bk = st.bf && p.blocks.find((b) => b.key === st.bf!.blockKey);
-      if (!st.bf || !bk || !st.bf.sel.length) return st;
-      const first = p.rooms.find((r) => r.code === st.bf!.sel[0]);
-      const type = typeOf(bk.key, st.bf.fieldKey);
-      const seed = first ? fieldValueOf(bk, first, st.bf.fieldKey) : baseValue(bk, st.bf.fieldKey);
-      return { ...st, edit: { kind: 'block', bk, k: st.bf.fieldKey, type, p: parseVal(type, seed), codes: st.bf.sel } };
+    case 'BR_EDIT_PICKED': {
+      const br = st.br;
+      const bk = br && p.blocks.find((b) => b.key === br.blockKey);
+      if (!br || !bk || !br.fieldSel.length) return st;
+      const first = p.rooms.find((r) => r.code === br.fieldSel[0]);
+      const type = typeOf(bk.key, br.fieldKey);
+      const seed = first ? fieldValueOf(bk, first, br.fieldKey) : baseValue(bk, br.fieldKey);
+      return { ...st, edit: { kind: 'block', bk, k: br.fieldKey, type, p: parseVal(type, seed), codes: br.fieldSel } };
     }
     /** 따로 정한 값을 떼고 시설 값을 따라가게 되돌립니다 — 값 넣기와 같은 경로를 씁니다. */
-    case 'BF_RESET_PICKED': {
-      const bk = st.bf && p.blocks.find((b) => b.key === st.bf!.blockKey);
-      if (!st.bf || !bk || !st.bf.sel.length) return st;
-      return openCascade(
-        { ...st, bf: null },
-        previewBlockPer(p, bk, st.bf.fieldKey, st.bf.sel, baseValue(bk, st.bf.fieldKey)),
-      );
+    case 'BR_RESET_PICKED': {
+      const br = st.br;
+      const bk = br && p.blocks.find((b) => b.key === br.blockKey);
+      if (!br || !bk || !br.fieldSel.length) return st;
+      return openCascade({ ...st, br: null }, previewBlockPer(p, bk, br.fieldKey, br.fieldSel, baseValue(bk, br.fieldKey)));
     }
+    /** 멤버십 탭에서 고른 목록을 최종으로 확정합니다 — 늘 한 번 더 확인 창을 거칩니다
+     *  (판매 사이트·질문·답변까지 걸린 조작이라서요). */
+    case 'BR_APPLY_MEMBERS': {
+      const br = st.br;
+      const bk = br && p.blocks.find((b) => b.key === br.blockKey);
+      if (!br || !bk || !bk.memberOf) return st;
+      return openCascade({ ...st, br: null }, previewBlockMembers(p, bk, br.memberSel));
+    }
+
+    case 'OPEN_ROOM_FACILITIES':
+      return { ...st, roomFacilityPick: a.code };
+    case 'CLOSE_ROOM_FACILITIES':
+      return { ...st, roomFacilityPick: null };
     case 'OPEN_OPT_FEE': {
       const def = attrDef(a.attr);
       const label = def?.kind === 'option' ? (def.options.find((o) => o.code === a.code)?.label ?? a.code) : a.code;
@@ -460,7 +487,7 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       }
       /** 고른 객실이 있으면 그 객실에만, 없으면 시설 값 전체에 — 편집기는 하나입니다. */
       if (e.codes?.length) {
-        return openCascade({ ...cleared, bf: null }, previewBlockPer(p, e.bk, e.k, e.codes, composeVal(e.type, e.p)));
+        return openCascade({ ...cleared, br: null }, previewBlockPer(p, e.bk, e.k, e.codes, composeVal(e.type, e.p)));
       }
       return openCascade(cleared, previewBlockEdit(p, e.bk, e.k, composeVal(e.type, e.p)));
     }

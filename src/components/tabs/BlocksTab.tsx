@@ -184,7 +184,7 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
         {isUsed && b.memberOf ? (
           <button
             className="btn btn-secondary"
-            onClick={() => dispatch({ type: 'OPEN_PICK_ROOMS', blockKey: b.key })}
+            onClick={() => dispatch({ type: 'OPEN_BLOCK_ROOMS', blockKey: b.key })}
             style={smallBtn}
           >
             쓰는 객실 수정
@@ -284,7 +284,7 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                   {/** 갈려 있으면 그 사실을 값 옆에 적습니다 — 카드만 보고도 "이 시설은 객실마다 다르다"를 압니다. */}
                   {own ? (
                     <span
-                      onClick={() => dispatch({ type: 'OPEN_BLOCK_FIELD', blockKey: b.key, fieldKey: k })}
+                      onClick={() => dispatch({ type: 'OPEN_BLOCK_ROOMS', blockKey: b.key, fieldKey: k })}
                       className="hov-accent"
                       title="눌러서 객실별 값 수정"
                       style={{ marginLeft: 6, fontSize: 10.5, color: 'var(--color-neutral-600)', cursor: 'pointer', whiteSpace: 'nowrap' }}
@@ -303,7 +303,7 @@ const BlockCard = ({ p, b }: { p: Property; b: Block }) => {
                     {canSplit(b, k) && scope.length > 1 ? (
                       <button
                         className="btn btn-secondary"
-                        onClick={() => dispatch({ type: 'OPEN_BLOCK_FIELD', blockKey: b.key, fieldKey: k })}
+                        onClick={() => dispatch({ type: 'OPEN_BLOCK_ROOMS', blockKey: b.key, fieldKey: k })}
                         style={{ ...smallBtn, height: 20, fontSize: 10.5 }}
                       >
                         객실별

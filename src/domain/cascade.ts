@@ -403,6 +403,54 @@ export const previewBlockState = (p: Property, bk: Block, nextSt: 'off' | 'none'
   };
 };
 
+/** "쓰는 객실 수정" — 최종 멤버 목록을 그대로 받아 확정합니다.
+ *
+ *  후보를 추리는 일은 이미 `BlockRoomsModal`이 끝냈습니다. 여기서는 그 결과를
+ *  "이렇게 바뀝니다" 확인 창의 모양으로 바꾸기만 합니다. 새로 들어오는 객실은
+ *  이 시설의 기본 선택지 값을 받고, 빠지는 객실은 값이 비워집니다 — `applyCascade`의
+ *  `blockstate` 처리를 그대로 씁니다. */
+export const previewBlockMembers = (p: Property, bk: Block, codes: string[]): Cascade => {
+  const attr = bk.memberOf!.attr;
+  const applyCode = bk.memberOf!.codes[0];
+  const current = membersOf(p, bk);
+  const pick: CascadeItem[] = p.rooms.map((r) => {
+    const on = codes.includes(r.code);
+    const now = showRoomValue(p, r, attr);
+    const wasMember = current.some((c) => c.code === r.code);
+    return {
+      key: `apply:${r.code}`,
+      label: `${r.name} · ${r.code} (${r.floor}층)`,
+      before: now,
+      after: on ? (wasMember ? now : (attrOption(attr, applyCode)?.label ?? String(applyCode))) : '없음',
+      on,
+      locked: true,
+      isOv: isOwn(r, attr),
+    };
+  });
+  const faq = faqItemsFor(p, [bk.key], '지금 답변', '객실 목록이 바뀌어 다시 만들어짐');
+
+  return {
+    kind: 'blockstate',
+    blockKey: bk.key,
+    nextSt: 'used',
+    applyAttr: attr,
+    applyCode,
+    field: `${bk.label} · 쓰는 객실 수정`,
+    from: `${current.length}객실`,
+    to: `${codes.length}객실`,
+    warn: `이 시설을 쓰는 객실을 ${current.length}개에서 ${codes.length}개로 바꿉니다. 새로 들어오는 객실은 "${attrOption(attr, applyCode)?.label ?? applyCode}" 값을 받고, 빠지는 객실은 값이 비워집니다.`,
+    groups: [
+      { title: `쓰는 객실 ${pick.length}`, desc: '체크된 객실이 최종 목록입니다', items: pick },
+      {
+        title: `판매 사이트 ${bk.chanN}`,
+        desc: '사이트 시설 목록에 나감',
+        items: channelItems((ch) => `${ch} · ${bk.label}`, `${current.length}객실`, `${codes.length}객실`, bk.chanN),
+      },
+      ...(faq.length ? [{ title: `질문·답변 ${faq.length}`, desc: '이 시설을 옮겨 적는 답변', items: faq }] : []),
+    ],
+  };
+};
+
 /** 다시 켤 때, 그리고 쓰는 중에도 — 어느 객실에 붙일지 그 자리에서 고릅니다.
  *  체크를 풀면 그 객실에서 시설이 빠지고, 새로 체크하면 붙습니다. */
 export const previewBlockUse = (p: Property, bk: Block, reviving = bk.st !== 'used'): Cascade => {

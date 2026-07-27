@@ -378,10 +378,10 @@ describe('직원 시나리오 — 시설 항목 넣고 제외 · 쓰는 객실 �
   it('쓰는 중인 시설에서 객실 하나를 빼면 값이 비워지고 문구가 줄어든다', () => {
     const before = initialState();
     const a401 = room(before, 'A401').code;
-    const st = run(before, { type: 'OPEN_PICK_ROOMS', blockKey: 'shared_bbq' });
-    expect(st.cas).not.toBeNull();
+    const opened = run(before, { type: 'OPEN_BLOCK_ROOMS', blockKey: 'shared_bbq' }, { type: 'BR_TOGGLE_ROOM', code: a401 }, { type: 'BR_APPLY_MEMBERS' });
+    expect(opened.cas).not.toBeNull();
 
-    const after = run(st, { type: 'TOGGLE_TARGET', key: `apply:${a401}` }, { type: 'APPLY_CAS' });
+    const after = run(opened, { type: 'APPLY_CAS' });
     const p = P(after);
     expect(valueOf(p, p.rooms.find((r) => r.code === a401)!, 'bbq')).toBe('none');
     expect(field(after, 'shared_bbq', '이용 객실')).toBe('4~7층 객실 · 21객실 (A401 제외)');
@@ -870,8 +870,8 @@ describe('직원 시나리오 — 시설은 하나인데 조건만 객실마다 
 
     const after = commit(
       before,
-      { type: 'OPEN_BLOCK_FIELD', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
-      { type: 'BF_EDIT_PICKED' },
+      { type: 'OPEN_BLOCK_ROOMS', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
+      { type: 'BR_EDIT_PICKED' },
       { type: 'SET_PART', k: 'h', v: '14' },
       { type: 'PREVIEW_EDIT' },
     );
@@ -906,8 +906,8 @@ describe('직원 시나리오 — 시설은 하나인데 조건만 객실마다 
   it('시설 값으로 되돌리면 따로 정한 값이 사라진다', () => {
     const after = commit(
       initialState(),
-      { type: 'OPEN_BLOCK_FIELD', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
-      { type: 'BF_RESET_PICKED' },
+      { type: 'OPEN_BLOCK_ROOMS', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
+      { type: 'BR_RESET_PICKED' },
     );
     const p = P(after);
     expect(p.rooms.every((r) => !('blk:shared_bbq:이용 시간' in r.values))).toBe(true);
@@ -918,8 +918,8 @@ describe('직원 시나리오 — 시설은 하나인데 조건만 객실마다 
   it('시설 값과 같은 값을 넣으면 따로 정한 표시가 남지 않는다', () => {
     const after = commit(
       initialState(),
-      { type: 'OPEN_BLOCK_FIELD', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
-      { type: 'BF_EDIT_PICKED' },
+      { type: 'OPEN_BLOCK_ROOMS', blockKey: 'shared_bbq', fieldKey: '이용 시간' },
+      { type: 'BR_EDIT_PICKED' },
       { type: 'SET_PART', k: 'h', v: '17' },
       { type: 'SET_PART', k: 'h2', v: '21' },
       { type: 'PREVIEW_EDIT' },
@@ -971,6 +971,49 @@ describe('직원 시나리오 — 시설은 하나인데 조건만 객실마다 
       rooms: p.rooms.map((r) => (r.name === 'A301' ? { ...r, values: { ...r.values, 'blk:shared_bbq:이용 시간': '19:00~20:00' } } : r)),
     });
     expect(errorsOf(broken).some((v) => v.what.includes('쓰지 않는 객실인데'))).toBe(true);
+  });
+
+  it('객실 표에서 들어가면 그 객실이 항목 선택에 이미 들어가 있다', () => {
+    const st = run(initialState(), {
+      type: 'OPEN_BLOCK_ROOMS',
+      blockKey: 'shared_bbq',
+      fieldKey: '이용 시간',
+      focusCode: room(initialState(), 'A501').code,
+    });
+    expect(st.br?.tab).toBe('fields');
+    expect(st.br?.fieldSel).toContain(room(initialState(), 'A501').code);
+    /** 표에서 들어와도 멤버십은 건드리지 않습니다 — 조회일 뿐, 최종 목록을 바꾸는 게
+     *  아니라서요. */
+    expect(st.br?.memberSel.length).toBe(22);
+  });
+});
+
+describe('직원 시나리오 — 이용 객실 창에서 멤버십과 항목별 값을 함께 다룬다', () => {
+  it('멤버십이 있고 갈리는 항목도 있으면 두 탭이 다 뜬다', () => {
+    const st = run(initialState(), { type: 'OPEN_BLOCK_ROOMS', blockKey: 'shared_bbq' });
+    expect(st.br?.tab).toBe('members');
+    expect(st.br?.memberSel.length).toBe(22);
+    /** 탭을 넘어가면 항목 탭 선택은 그대로 남아 있습니다 — 창을 나눈 게 아니라 한 창
+     *  안에서 왔다 갔다 하는 것이므로 진행 중이던 것을 잃지 않습니다. */
+    const onFields = run(st, { type: 'BR_SET_TAB', tab: 'fields' }, { type: 'BR_TOGGLE_ROOM', code: '27746' });
+    const backToMembers = run(onFields, { type: 'BR_SET_TAB', tab: 'members' });
+    expect(backToMembers.br?.fieldSel).toContain('27746');
+    expect(backToMembers.br?.memberSel.length).toBe(22);
+  });
+
+  it('멤버십만 있고 갈리는 항목이 없는 시설은 항목 탭이 뜨지 않는다', () => {
+    const st = run(initialState(), { type: 'OPEN_BLOCK_ROOMS', blockKey: 'spa' });
+    /** 스파는 멤버십은 있지만 이 숙소에서 갈릴 수 있는 항목이 하나도 없습니다. */
+    const bk = P(st).blocks.find((b) => b.key === 'spa')!;
+    expect(bk.fields.some(([k]) => k === '이용 시간')).toBe(true);
+    expect(st.br?.tab).toBe('members');
+  });
+
+  it('멤버십이 없는 시설(공용 수영장)은 항목 탭으로 곧장 연다', () => {
+    const st = run(initialState(), { type: 'OPEN_BLOCK_ROOMS', blockKey: 'shared_pool' });
+    expect(P(st).blocks.find((b) => b.key === 'shared_pool')!.memberOf).toBeUndefined();
+    expect(st.br?.tab).toBe('fields');
+    expect(st.br?.fieldKey).toBeTruthy();
   });
 });
 

@@ -286,6 +286,14 @@ export const RoomsTab = () => {
                   <span className="row-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>
                     <button
                       className="btn btn-secondary"
+                      onClick={() => dispatch({ type: 'OPEN_ROOM_FACILITIES', code: r.code })}
+                      style={{ height: 20, padding: '0 6px', fontSize: 10.5 }}
+                      title="이 객실이 쓰는 시설 · 항목별 값"
+                    >
+                      시설
+                    </button>
+                    <button
+                      className="btn btn-secondary"
                       onClick={() => dispatch({ type: 'OPEN_ROOM_EDIT', code: r.code })}
                       style={{ height: 20, padding: '0 6px', fontSize: 10.5 }}
                       title="객실명 · 층 · 면적 · 구조 · 침구 수정"
