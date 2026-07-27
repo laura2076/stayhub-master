@@ -1,7 +1,6 @@
 import { attrsOf, feeAttrsOf } from '../domain/attrs';
 import type { Property, TabId } from '../domain/types';
 import { current, useStore } from '../state/store';
-import { SettingsMenu } from './SettingsMenu';
 
 /** 머리글의 한 줄 설명도 숙소가 가진 속성에서 나옵니다 — 손으로 쓴 문장이 아닙니다. */
 const metaOf = (p: Property): string[] => [
@@ -92,7 +91,6 @@ export const PropertyHeader = () => {
             <div style={{ fontSize: 10.5, color: 'var(--color-neutral-500)' }}>마지막으로 저장한 때</div>
             <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--color-neutral-700)' }}>{p.savedAt}</div>
           </div>
-          <SettingsMenu />
           <button className="btn btn-secondary" onClick={() => dispatch({ type: 'SET_TAB', tab: 'channels' })} style={{ height: 32 }}>
             판매 사이트 확인
           </button>

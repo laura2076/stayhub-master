@@ -29,6 +29,14 @@ export const RoomEditModal = () => {
       </div>
 
       <ModalFoot hint="층을 바꾸면 시설 안내문의 이용 객실이 다시 계산됩니다.">
+        <button
+          className="btn btn-secondary"
+          onClick={() => dispatch({ type: 'OPEN_NEW_ROOM', from: re.code })}
+          style={{ height: 32 }}
+          title="이 객실의 값·구조·침구를 그대로 가져와 새 객실을 만듭니다"
+        >
+          복제해서 새로 만들기
+        </button>
         <button className="btn btn-secondary" onClick={() => dispatch({ type: 'CLOSE_ROOM_EDIT' })} style={{ height: 32 }}>
           그만두기
         </button>

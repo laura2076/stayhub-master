@@ -2,13 +2,13 @@ import { attrsOf, feeOf, isOwn, showValue, valueOf } from '../../domain/attrs';
 import type { AttrDef, Property, Room } from '../../domain/types';
 import { current, useStore } from '../../state/store';
 import { CellPicker, type PickerMode } from '../CellPicker';
-import { ChannelBadge, Chip, Seg, SegItem, Th } from '../primitives';
+import { Chip, Th } from '../primitives';
 
 /** 표의 열은 이 숙소가 쓰는 속성에서 만들어집니다 — 코드에 박힌 열은
  *  체크박스·객실·구조·판매 사이트 넷뿐입니다. 그래서 바베큐가 없고 캠핑장만
  *  있는 숙소도, 수영장만 있는 숙소도 같은 화면이 그대로 그립니다. */
 const cols = (defs: AttrDef[]): string =>
-  ['36px', '236px', ...defs.map((d) => `${d.width ?? 130}px`), '150px', '78px'].join(' ');
+  ['36px', '236px', ...defs.map((d) => `${d.width ?? 130}px`), '150px'].join(' ');
 
 /** 값을 어떻게 고치는지는 속성의 종류가 정합니다.
  *  인원·요금처럼 끝이 없는 값은 목록으로 만들 수 없어서 숫자로 직접 칩니다. */
@@ -107,22 +107,12 @@ export const RoomsTab = () => {
     .filter((r) => (query ? `${r.name}${r.code}${r.tag}`.includes(query) : true))
     .filter((r) => (state.onlyOwn ? own(r) : true))
     .slice()
-    .sort((a, b) =>
-      state.sort === 'name'
-        ? a.name.localeCompare(b.name)
-        : state.sort === 'own'
-          ? Number(own(b)) - Number(own(a)) || a.floor - b.floor || a.name.localeCompare(b.name)
-          : a.floor - b.floor || a.name.localeCompare(b.name),
-    );
+    /** 층순 고정. 정렬 세 가지를 두었더니 조작만 늘고 층순 말고는 거의 안 쓰였습니다. */
+    .sort((a, b) => a.floor - b.floor || a.name.localeCompare(b.name));
 
   const ownCount = p.rooms.filter(own).length;
   const hasSel = state.sel.length > 0;
   const floors = [...new Set(p.rooms.map((r) => r.floor))].sort((a, b) => a - b);
-  const SORTS: [typeof state.sort, string][] = [
-    ['floor', '층순'],
-    ['name', '이름순'],
-    ['own', '따로 정함 먼저'],
-  ];
 
   return (
     <>
@@ -140,7 +130,7 @@ export const RoomsTab = () => {
         <div
           onClick={() => dispatch({ type: 'TOGGLE_ONLY_OWN' })}
           className={state.onlyOwn ? undefined : 'hov-neutral'}
-          title="따로 정한 객실만 보기"
+          title="파란 표시가 붙은 객실만 남깁니다"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -154,18 +144,12 @@ export const RoomsTab = () => {
             fontWeight: state.onlyOwn ? 700 : 400,
           }}
         >
-          <OwnMark />이 객실만 따로 정함 {ownCount}
-          {state.onlyOwn ? ' · 보는 중' : ''}
+          <OwnMark />따로 정한 것만 보기
         </div>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--color-neutral-700)' }}>
           <span style={{ width: 11, height: 0, borderTop: '1px dashed var(--color-neutral-400)' }} />
           전체와 같음
         </span>
-        <Seg>
-          {SORTS.map(([s, l], i) => (
-            <SegItem key={s} label={l} on={state.sort === s} onClick={() => dispatch({ type: 'SET_SORT', sort: s })} borderLeft={i > 0} padding="4px 9px" />
-          ))}
-        </Seg>
         <div style={{ flex: 1 }} />
         {hasSel ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'fin .16s ease' }}>
@@ -235,7 +219,7 @@ export const RoomsTab = () => {
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--color-bg)' }}>
-        <div style={{ minWidth: 542 + defs.reduce((n, d) => n + (d.width ?? 130), 0) }}>
+        <div style={{ minWidth: 464 + defs.reduce((n, d) => n + (d.width ?? 130), 0) }}>
           <div
             style={{
               display: 'grid',
@@ -265,7 +249,6 @@ export const RoomsTab = () => {
               </Th>
             ))}
             <Th>구조 · 침구</Th>
-            <Th>판매 사이트</Th>
           </div>
 
           {rows.map((r) => (
@@ -309,14 +292,6 @@ export const RoomsTab = () => {
                     >
                       정보
                     </button>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => dispatch({ type: 'OPEN_NEW_ROOM', from: r.code })}
-                      style={{ height: 20, padding: '0 6px', fontSize: 10.5 }}
-                      title="이 객실을 복제해서 새로 만들기"
-                    >
-                      복제
-                    </button>
                   </span>
                 </div>
                 <div
@@ -342,11 +317,6 @@ export const RoomsTab = () => {
                 <span style={{ color: 'var(--color-neutral-500)' }}>· {r.bed}</span>
               </div>
 
-              <div style={{ padding: '7px 12px', display: 'flex', gap: 3 }} title="판매 사이트에 나가는 값이 기준과 다른지">
-                <ChannelBadge k="N" bad={false} />
-                <ChannelBadge k="여" bad={isOwn(r, 'capacity_max')} />
-                <ChannelBadge k="야" bad={defs.some((d) => d.kind === 'option' && isOwn(r, d.key))} />
-              </div>
 
             </div>
           ))}

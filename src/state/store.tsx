@@ -261,6 +261,7 @@ export const reducer = (st: MasterState, a: Action): MasterState => {
       const floor = src?.floor ?? Math.min(...p.rooms.map((r) => r.floor));
       return {
         ...st,
+        re: null,
         nr: {
           name: src ? `${src.name} 사본` : '',
           floor,

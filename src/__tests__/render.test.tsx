@@ -27,7 +27,7 @@ describe('console shell', () => {
     expect(out).toContain('STAYHUB 마스터');
     expect(out).toContain('속초 더샵 스파 펜션');
     expect(out).toContain('A701');
-    expect(out).toContain('이 객실만 따로 정함');
+    expect(out).toContain('따로 정한 것만 보기');
     expect(out).toContain('이 숙소의 전체값');
   });
 
@@ -89,7 +89,9 @@ describe('every tab renders', () => {
     expect(out).toContain('이 숙소가 가진 시설');
     expect(out).toContain('자동 계산');
     expect(out).toContain('안내 문구');
-    expect(out).toContain('21:00 이후 입실 시 사전 연락 필수');
+    /** 문장이 조각 단위로 쪼개져 렌더됩니다 — 숫자만 누를 수 있게 하려고요. */
+    expect(out).toContain('이후 입실 시 사전 연락 필수');
+    expect(out).toContain('눌러서 시간 고치기');
     expect(out).toContain('없음');
   });
 
