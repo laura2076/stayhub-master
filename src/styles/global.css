@@ -1,0 +1,90 @@
+/* Document-level styles carried over from the design prototype's <helmet> block.
+   The design system itself lives in ds-industry.css — nothing here re-declares a token. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body), 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-accent-800);
+}
+
+input,
+select,
+button,
+textarea {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-400);
+  border: 3px solid var(--color-bg);
+}
+
+@keyframes tin {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fin {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Hover treatments. The prototype expressed these with a `style-hover` attribute
+   its runtime understood; as plain CSS they are one class per treatment. */
+.hov-surface:hover {
+  background: var(--color-surface);
+}
+
+.hov-neutral:hover {
+  background: var(--color-neutral-200);
+}
+
+.hov-accent:hover {
+  background: var(--color-accent-100);
+}
+
+.hov-accent-text:hover {
+  color: var(--color-accent-900);
+}
+
+/* Checkboxes read as square wireframe marks like the rest of the system. */
+input[type='checkbox'] {
+  accent-color: var(--color-accent);
+}
